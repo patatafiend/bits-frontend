@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import config from "@/app.config";
 
 type FetchState<T> = {
   data: T | null;
@@ -16,7 +17,8 @@ export function useServerFetch<T>(url: string, options?: RequestInit) {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch(url, options);
+        const fullUrl = `${config.NEXT_PUBLIC_BACKEND_URL}${url}`;
+        const response = await fetch(fullUrl, options);
         if (!response.ok) throw new Error(response.statusText);
         const data = await response.json();
         setState({ data, loading: false, error: null });
@@ -26,7 +28,7 @@ export function useServerFetch<T>(url: string, options?: RequestInit) {
     };
 
     fetchData();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [url]);
 
   return state;
@@ -40,7 +42,7 @@ type ActionState<T> = {
 
 export function useServerAction<T, TBody = unknown>(
   url: string,
-  options?: Omit<RequestInit, "body">
+  options?: Omit<RequestInit, "body">,
 ) {
   const [state, setState] = useState<ActionState<T>>({
     data: null,
@@ -51,7 +53,8 @@ export function useServerAction<T, TBody = unknown>(
   const execute = async (body?: TBody) => {
     setState({ data: null, loading: true, error: null });
     try {
-      const response = await fetch(url, {
+      const fullUrl = `${config.NEXT_PUBLIC_BACKEND_URL}${url}`;
+      const response = await fetch(fullUrl, {
         ...options,
         headers: {
           "Content-Type": "application/json",
