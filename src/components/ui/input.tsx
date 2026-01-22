@@ -1,5 +1,6 @@
 import * as React from "react"
-
+import { Button } from "./button";
+import { Eye, EyeClosed } from "lucide-react";
 import { cn } from "@/lib/utils"
 
 function Input({ className, type, ...props }: React.ComponentProps<"input">) {
@@ -18,4 +19,32 @@ function Input({ className, type, ...props }: React.ComponentProps<"input">) {
   )
 }
 
-export { Input }
+function PasswordInput({
+  className,
+  ...props
+}: React.ComponentProps<typeof Input>) {
+  const [show, setShow] = React.useState(false);
+  return (
+    <div className="relative flex items-center">
+      <Input
+        type={show ? "text" : "password"}
+        data-slot="password-input"
+        className={cn("placeholder:text-muted-foreground pr-10", className)}
+        {...props}
+      />
+
+      <div className="absolute inset-y-0 right-0 flex items-center">
+        <Button
+          onClick={() => setShow((prev) => !prev)}
+          type="button"
+          variant="ghost"
+          className="absolute right-0"
+        >
+          {show ? <Eye /> : <EyeClosed />}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+export { Input, PasswordInput }
