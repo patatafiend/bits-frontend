@@ -1,6 +1,6 @@
 "use client";
 
-import { useAuth } from "@/components/providers/auth-provider";
+import { useGetCurrentUser } from "@/components/providers/auth-provider";
 import { Button } from "@/components/ui/button";
 import { Copy } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
@@ -17,13 +17,9 @@ import {
   FieldError,
 } from "@/components/ui/field";
 
-type MfaResponse = {
-  key: string;
-  totp_uri: string;
-};
-
 export default function Mfa() {
-  const { currentUser, redirectToDashboard } = useAuth();
+  // const { data: currentUser, redirectToDashboard } = useGetCurrentUser();
+  const { data: currentUser } = useGetCurrentUser();
   const { execute: submitVerify, loading: submitLoading } = useMfaVerify()
   const {
     data: mfa,
@@ -54,7 +50,8 @@ export default function Mfa() {
         description: "Your account is now secured with MFA.",
       });
       if (currentUser) {
-        redirectToDashboard(currentUser);
+        // redirectToDashboard(currentUser);
+        console.log("successss!");
       }
     }
   }
@@ -135,7 +132,6 @@ export default function Mfa() {
           <div className="text-center">
             <Button
               variant="link"
-              onClick={() => redirectToDashboard(currentUser)}
             >
               Skip For Now
             </Button>

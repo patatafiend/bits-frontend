@@ -10,7 +10,7 @@ type MfaVerifyRequest = {
 };
 
 export function useMfaSetup() {
-  return useServerFetch<MfaResponse>("/api/user/mfa/setup", {
+  return useServerFetch<MfaResponse>("/user/mfa/setup", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -19,7 +19,7 @@ export function useMfaSetup() {
 }
 
 export function useMfaVerify() {
-  return useServerAction<unknown, MfaVerifyRequest>("/api/user/mfa/verify", {
+  return useServerAction<unknown, MfaVerifyRequest>("/user/mfa/verify", {
     method: "POST",
   });
 }
