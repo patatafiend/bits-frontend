@@ -1,4 +1,4 @@
-import { SERVICES } from "./utils";
+import { BACKEND } from "./utils";
 
 export class TokenRefreshManager {
   private refreshPromise: Promise<boolean> | null = null;
@@ -50,7 +50,7 @@ export class TokenRefreshManager {
 
   private async performRefresh(): Promise<boolean> {
     try {
-      const refreshRes = await fetch(SERVICES.backend + "/user/refresh_token", {
+      const refreshRes = await fetch(BACKEND.bits_backend + "/user/refresh_token", {
         method: "POST",
         credentials: "include",
         headers: {
