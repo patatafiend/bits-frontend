@@ -7,20 +7,29 @@ import { Input } from "@/components/ui/input";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useSignIn } from "@/components/providers/auth-provider";
+import {
+  useSignIn,
+  useSignInFetch,
+} from "@/components/providers/auth-provider";
 import { PasswordInput } from "@/components/ui/input";
 import Link from "next/link";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 export function LoginForm({
   className,
   ...props
 }: React.ComponentProps<"form">) {
   const { execute, loading, error } = useSignIn();
+  const { data: user, loading: userLoading } = useSignInFetch();
+  const router = useRouter();
+
+
 
   const loginSchema = z.object({
     email: z.string().email(),
-    password: z.string().min(6).max(255),
+    password: z.string().min(4).max(255),
   });
 
   const loginForm = useForm<z.infer<typeof loginSchema>>({
@@ -33,8 +42,16 @@ export function LoginForm({
 
   async function onSubmit({ email, password }: z.infer<typeof loginSchema>) {
     const { error } = await execute({ email, password });
+
     if (error) {
-      toast.error("sigin in failed");
+      toast.error("Sign In Failed.");
+    } else {
+      toast.success("Sign In Success.");
+    }
+
+    if (user && "mfa_required" in user) {
+      console.log("dssd");
+      router.push("/signin/mfa");
     }
   }
 
@@ -59,7 +76,7 @@ export function LoginForm({
             disabled={loading}
             {...loginForm.register("email")}
           />
-          <FieldError />
+          <FieldError>{loginForm.formState.errors.email?.message}</FieldError>
         </Field>
         <Field>
           <div className="flex items-center justify-between">
@@ -75,7 +92,9 @@ export function LoginForm({
             disabled={loading}
             {...loginForm.register("password")}
           />
-          <FieldError>{error?.message}</FieldError>
+          <FieldError>
+            {loginForm.formState.errors.password?.message || error?.message}
+          </FieldError>
         </Field>
         <Button loading={loading} type="submit" className="w-full" size="lg">
           Sign in
