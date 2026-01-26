@@ -19,7 +19,7 @@ export function useMfaSetup() {
 }
 
 export function useMfaVerify() {
-  return useServerAction<unknown, MfaVerifyRequest>("/user/mfa/verify", {
+  return useServerAction<void, MfaVerifyRequest>("/user/mfa/verify", {
     method: "POST",
   });
 }
