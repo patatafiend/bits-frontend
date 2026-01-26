@@ -2,6 +2,9 @@
 
 import { UserPayload } from "@/lib/types";
 import { useServerFetch, useServerAction } from "@/hooks/use-server";
+import { ReactNode, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 
 export function useGetCurrentUser() {
   return useServerFetch<UserPayload>("/user/current_user");
@@ -15,7 +18,7 @@ export function useSignIn() {
 }
 
 export function useSignInFetch() {
-  return useServerFetch<UserPayload>("/user/signin", { method: undefined });
+  return useServerFetch<UserPayload>("/user/signin", { method: "GET" });
 }
 
 export function useMfaSignIn() {
@@ -40,4 +43,45 @@ export function useRefreshToken() {
   return useServerAction<UserPayload, void>("/user/refresh_token", {
     method: "POST",
   });
+}
+
+const PUBLIC_ROUTES = [
+  "/signin",
+  "/signup",
+  "/auth/forgot_password",
+  "/auth/password_reset",
+  "/auth/mfa/verify",
+  "/signin/mfa",
+];
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const { data: user, loading } = useGetCurrentUser();
+  const router = useRouter();
+  const pathname = usePathname();
+
+  useEffect(() => {
+    if (user?.exp) {
+      localStorage.setItem("exp", user.exp.toString());
+    } else {
+      localStorage.removeItem("exp");
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (loading) return;
+
+    const isPublicRoute = PUBLIC_ROUTES.some((route) =>
+      pathname.startsWith(route),
+    );
+
+    if (!user && !isPublicRoute) {
+      router.push("/signin");
+    }
+  }, [user, loading, pathname, router]);
+
+  if (loading) {
+    return null;
+  }
+
+  return <>{children}</>;
 }
