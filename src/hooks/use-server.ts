@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import config from "@/app.config";
+import { useEffect, useRef, useState } from "react";
+import { serverFetch } from "@/lib/utils";
 
 type FetchState<T> = {
   data: T | null;
@@ -7,31 +7,99 @@ type FetchState<T> = {
   error: Error | null;
 };
 
-export function useServerFetch<T>(url: string, options?: RequestInit) {
+export function useServerFetch<T>(
+  url: string,
+  options?: RequestInit & {
+    fetchImmediately?: boolean;
+    initialParams?: string;
+    initialQuery?: Record<string, unknown>;
+  },
+) {
+  const baseOptions = options || { fetchImmediately: true };
+  if (baseOptions.fetchImmediately === undefined) {
+    baseOptions.fetchImmediately = true;
+  }
+
   const [state, setState] = useState<FetchState<T>>({
     data: null,
-    loading: true,
+    loading: baseOptions.fetchImmediately ? true : false,
     error: null,
   });
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const fullUrl = `${config.NEXT_PUBLIC_BACKEND_URL}${url}`;
-        const response = await fetch(fullUrl, options);
-        if (!response.ok) throw new Error(response.statusText);
-        const data = await response.json();
-        setState({ data, loading: false, error: null });
-      } catch (error) {
-        setState({ data: null, loading: false, error: error as Error });
+  type RefetchOptions = {
+    query?: Record<string, unknown>;
+    params?: string;
+    options?: RequestInit;
+  };
+
+  function buildRoute(base: string, params?: string) {
+    if (!params) return base;
+    if (params.startsWith("/")) return base.replace(/\/$/, "") + params;
+    return `${base.replace(/\/$/, "")}/${params}`;
+  }
+
+  function buildQueryString(query?: Record<string, unknown>) {
+    if (!query || Object.keys(query).length === 0) return "";
+    const params = new URLSearchParams();
+    Object.entries(query).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        params.append(key, String(value));
       }
+    });
+    const queryStr = params.toString();
+    return queryStr ? `?${queryStr}` : "";
+  }
+
+  async function doFetch(input: RefetchOptions = {}) {
+    const { query, params, options: extraOptions } = input;
+    const finalRoute = buildRoute(url, params);
+    const queryString = buildQueryString(query);
+
+    const mergedOptions: RequestInit = {
+      ...baseOptions,
+      ...extraOptions,
+      headers: {
+        "Content-Type": "application/json",
+        ...(baseOptions?.headers || {}),
+        ...(extraOptions?.headers || {}),
+      },
     };
 
-    fetchData();
+    const result = await serverFetch.service.public<T>(
+      finalRoute + queryString,
+      mergedOptions,
+      (loading) => setState((prev) => ({ ...prev, loading })),
+    );
+
+    if (result.error) {
+      setState({
+        data: null,
+        loading: false,
+        error: new Error(result.error.detail),
+      });
+    } else {
+      setState({ data: result.data, loading: false, error: null });
+    }
+  }
+
+  function refetch(input: RefetchOptions = {}) {
+    return doFetch(input);
+  }
+
+  const didInitialFetchRef = useRef(false);
+  useEffect(() => {
+    if (didInitialFetchRef.current) return;
+    didInitialFetchRef.current = true;
+    if (!baseOptions.fetchImmediately) return;
+
+    refetch({
+      query: baseOptions.initialQuery,
+      params: baseOptions.initialParams,
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [url]);
 
-  return state;
+  return { ...state, refetch };
 }
 
 type ActionState<T> = {
@@ -50,32 +118,41 @@ export function useServerAction<T, TBody = unknown>(
     error: null,
   });
 
-  const execute = async (body?: TBody) => {
-    setState({ data: null, loading: true, error: null });
-    try {
-      const fullUrl = `${config.NEXT_PUBLIC_BACKEND_URL}${url}`;
-      const response = await fetch(fullUrl, {
+  const execute = async (body?: TBody, query?: Record<string, unknown>) => {
+    let finalUrl = url;
+    
+    if (query && Object.keys(query).length > 0) {
+      const params = new URLSearchParams();
+      Object.entries(query).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          params.append(key, String(value));
+        }
+      });
+      const queryStr = params.toString();
+      finalUrl = queryStr ? `${url}?${queryStr}` : url;
+    }
+
+    const result = await serverFetch.service.public<T>(
+      finalUrl,
+      {
         ...options,
         headers: {
           "Content-Type": "application/json",
           ...options?.headers,
         },
         body: body ? JSON.stringify(body) : undefined,
-      });
+      },
+      (loading) => setState((prev) => ({ ...prev, loading })),
+    );
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.detail || response.statusText);
-      }
-
-      const data = await response.json();
-      setState({ data, loading: false, error: null });
-      return { data, error: null };
-    } catch (error) {
-      const err = error as Error;
+    if (result.error) {
+      const err = new Error(result.error.detail);
       setState({ data: null, loading: false, error: err });
       return { data: null, error: err };
     }
+
+    setState({ data: result.data, loading: false, error: null });
+    return { data: result.data, error: null };
   };
 
   return { ...state, execute };
