@@ -9,23 +9,19 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   useSignIn,
-  useSignInFetch,
+  useRefreshToken,
 } from "@/components/providers/auth-provider";
 import { PasswordInput } from "@/components/ui/input";
 import Link from "next/link";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
 
 export function LoginForm({
   className,
   ...props
 }: React.ComponentProps<"form">) {
   const { execute, loading, error } = useSignIn();
-  const { data: user, loading: userLoading } = useSignInFetch();
   const router = useRouter();
-
-
 
   const loginSchema = z.object({
     email: z.string().email(),
@@ -41,17 +37,24 @@ export function LoginForm({
   });
 
   async function onSubmit({ email, password }: z.infer<typeof loginSchema>) {
-    const { error } = await execute({ email, password });
+    const response = await execute({ email, password });
 
-    if (error) {
+    if (response.error) {
       toast.error("Sign In Failed.");
-    } else {
-      toast.success("Sign In Success.");
     }
 
-    if (user && "mfa_required" in user) {
-      console.log("dssd");
+    router.refresh();
+    
+    if (
+      response.data &&
+      "mfa_required" in response.data &&
+      response.data.mfa_required
+    ) {
+      console.log("mfa true");
       router.push("/signin/mfa");
+    } else {
+      console.log("mfa false");
+      router.push("/auth/mfa/verify");
     }
   }
 
