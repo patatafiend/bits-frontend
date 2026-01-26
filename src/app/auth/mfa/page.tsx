@@ -12,20 +12,13 @@ import Loader from "@/components/ui/loader";
 import z from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  Field,
-  FieldError,
-} from "@/components/ui/field";
+import { Field, FieldError } from "@/components/ui/field";
 
 export default function Mfa() {
   // const { data: currentUser, redirectToDashboard } = useGetCurrentUser();
   const { data: currentUser } = useGetCurrentUser();
-  const { execute: submitVerify, loading: submitLoading } = useMfaVerify()
-  const {
-    data: mfa,
-    loading: loadingMFA,
-    error: errorMFA,
-  } = useMfaSetup();
+  const { execute: submitVerify, loading: submitLoading } = useMfaVerify();
+  const { data: mfa, loading: loadingMFA, error: errorMFA } = useMfaSetup();
 
   const formSchema = z.object({
     code: z
@@ -130,11 +123,7 @@ export default function Mfa() {
 
         {!currentUser?.mfa_enabled && currentUser?.allow_skip_mfa ? (
           <div className="text-center">
-            <Button
-              variant="link"
-            >
-              Skip For Now
-            </Button>
+            <Button variant="link">Skip For Now</Button>
           </div>
         ) : (
           <div>

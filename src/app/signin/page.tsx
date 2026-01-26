@@ -10,14 +10,14 @@ export default function LoginPage() {
           <div className="grid lg:grid-cols-2 min-h-[600px]">
             <div className="flex flex-col p-8 md:p-12 lg:p-16">
               <div className="mb-8">
-                <Image
+                {/* <Image
                   src="/stock-care-logo.png"
                   alt="StockCare Logo"
                   width={56}
                   height={56}
                   className="dark:brightness-90"
                   priority
-                />
+                /> */}
               </div>
               <div className="flex flex-1 items-center justify-center">
                 <div className="w-full max-w-sm">
@@ -27,13 +27,13 @@ export default function LoginPage() {
             </div>
             <div className="relative hidden lg:block bg-slate-900">
               <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-transparent z-10" />
-              <Image
+              {/* <Image
                 src="/ws.png"
                 alt="Warehouse"
                 fill
                 className="object-cover opacity-80"
                 priority
-              />
+              /> */}
             </div>
           </div>
         </CardContent>
