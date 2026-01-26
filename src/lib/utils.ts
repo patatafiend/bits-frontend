@@ -1,10 +1,10 @@
-import { clsx, type ClassValue } from "clsx"
+import { clsx, type ClassValue } from "clsx";
 import config from "@/app.config";
-import { twMerge } from "tailwind-merge"
+import { twMerge } from "tailwind-merge";
 import { TokenRefreshManager } from "./refresh-token-manager";
 
 export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
+  return twMerge(clsx(inputs));
 }
 
 export function parseError(error: { detail: unknown; status?: number }) {
@@ -42,9 +42,15 @@ async function createService<T>(
   try {
     loadingState?.(true);
 
-
     await tokenRefreshManager.ensureValidToken();
     // Make the actual API request
+
+    console.log("Request:", {
+      url: baseUrl + route,
+      credentials: "include",
+      cookies: document.cookie,
+    });
+
     const res = await fetch(baseUrl + route, {
       credentials: "include",
       headers: {
@@ -52,6 +58,12 @@ async function createService<T>(
         "Content-type": "application/json",
       },
       ...options,
+    });
+
+    console.log("Response:", {
+      status: res.status,
+      headers: Object.fromEntries(res.headers.entries()),
+      cookies: document.cookie,
     });
 
     const data = await res.json();
@@ -87,7 +99,6 @@ async function createService<T>(
     };
   }
 }
-
 
 export const serverFetch = {
   service: {
