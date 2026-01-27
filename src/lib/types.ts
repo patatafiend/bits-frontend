@@ -17,3 +17,21 @@ export type UserPayload = {
   permissions: string[];
   company: string;
 };
+
+export type User = {
+  id: number;
+  account_type: string;
+  username: string;
+  email: string;
+  first_name: string;
+  middle_name: string;
+  last_name: string;
+  phone_number: string;
+  profile_url: string;
+  created_at: Date;
+  updated_at: Date;
+  is_blocked: boolean;
+  role?: string | undefined;
+  role_id?: number | undefined;
+  mfa_enabled: boolean;
+};
