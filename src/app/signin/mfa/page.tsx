@@ -21,6 +21,7 @@ export default function MfaSignin() {
             const result = await execute({ mfa_code: data.code });
             if (!result.error) {
               router.push("/client/bill-management");
+              return;
             }
           }}
           error={error?.message}

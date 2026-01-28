@@ -3,8 +3,6 @@
 import { UserPayload } from "@/lib/types";
 import { useServerFetch, useServerAction } from "@/hooks/use-server";
 import { ReactNode, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { usePathname } from "next/navigation";
 
 export function useGetCurrentUser() {
   return useServerFetch<UserPayload>("/user/current_user");
@@ -45,19 +43,8 @@ export function useRefreshToken() {
   });
 }
 
-const PUBLIC_ROUTES = [
-  "/signin",
-  "/signup",
-  "/auth/forgot_password",
-  "/auth/password_reset",
-  "/auth/mfa/verify",
-  "/signin/mfa",
-];
-
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { data: user, loading } = useGetCurrentUser();
-  const router = useRouter();
-  const pathname = usePathname();
 
   useEffect(() => {
     if (user?.exp) {
@@ -66,18 +53,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.removeItem("exp");
     }
   }, [user]);
-
-  useEffect(() => {
-    if (loading) return;
-
-    const isPublicRoute = PUBLIC_ROUTES.some((route) =>
-      pathname.startsWith(route),
-    );
-
-    if (!user && !isPublicRoute) {
-      router.push("/signin");
-    }
-  }, [user, loading, pathname, router]);
 
   if (loading) {
     return null;

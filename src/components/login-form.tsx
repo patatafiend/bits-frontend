@@ -41,9 +41,8 @@ export function LoginForm({
 
     if (response.error) {
       toast.error("Sign In Failed.");
+      return;
     }
-
-    router.refresh();
     
     if (
       response.data &&
