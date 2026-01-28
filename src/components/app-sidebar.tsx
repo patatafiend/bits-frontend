@@ -11,13 +11,8 @@ import {
   SidebarGroupLabel,
 } from "@/components/ui/sidebar";
 import { useState } from "react";
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-} from "@radix-ui/react-dropdown-menu";
-import { ChevronDown, File } from "lucide-react";
+import { File } from "lucide-react";
+import { ComboBox } from "./combo-box";
 
 const clientData = {
   navMain: [
@@ -62,27 +57,24 @@ export function AppSidebar() {
   const [workspace, setWorkspace] = useState<"admin" | "billing">("billing");
   const navItems =
     workspace === "admin" ? clientData.adminMain : clientData.navMain;
+
+  const workspaceOptions = [
+    { value: "billing", label: "Billing Management" },
+    { value: "admin", label: "Admin" },
+  ];
+
   return (
     <Sidebar>
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <SidebarMenuButton>
-                  {workspace === "admin" ? "Admin" : "Billing Management"}
-                  <ChevronDown className="ml-auto" />
-                </SidebarMenuButton>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-[--radix-popper-anchor-width]">
-                <DropdownMenuItem onClick={() => setWorkspace("admin")}>
-                  Admin
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setWorkspace("billing")}>
-                  Billing Management
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <ComboBox
+              options={workspaceOptions}
+              value={workspace}
+              onValueChange={(value) =>
+                setWorkspace(value as "admin" | "billing")
+              }
+            />
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>

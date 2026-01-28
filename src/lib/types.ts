@@ -35,3 +35,23 @@ export type User = {
   role_id?: number | undefined;
   mfa_enabled: boolean;
 };
+
+export type Option = {
+  value: string;
+  label: string;
+};
+
+
+export type ComboBoxProps = {
+  options: Option[];
+  placeholder?: string;
+  searchPlaceholder?: string;
+  emptyMessage?: string;
+  value?: string;
+  onValueChange?: (value: string) => void;
+  className?: string;
+  allowEmpty?: boolean;
+  disabled?: boolean;
+  showClear?: boolean;
+  virtualize?: boolean;
+};
