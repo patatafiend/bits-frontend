@@ -55,3 +55,35 @@ export type ComboBoxProps = {
   showClear?: boolean;
   virtualize?: boolean;
 };
+
+export type Role = {
+  id: number;
+  name: string;
+  created_at: string;
+  account_type: string;
+  company_id: string | null;
+  description: string;
+  updated_at: string;
+  client_id: number;
+};
+
+export type CreateRole = {
+  role_schema: {
+    name: string;
+    description?: string | null;
+    account_type: string;
+  };
+  permissions: string[];
+};
+
+export type Permission = {
+  id: number;
+  resource: string;
+  action: string;
+  description: string;
+};
+
+export type RoleWithUserPermissions = Role & {
+  permissions: Permission[];
+  users: User[];
+};
