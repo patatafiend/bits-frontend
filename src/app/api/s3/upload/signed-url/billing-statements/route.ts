@@ -1,6 +1,7 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { verifyTokenAndGetUser, getTokenFromRequest } from "@/lib/auth-server";
 
 const s3 = new S3Client({
   region: process.env.AWS_S3_REGION,
@@ -13,9 +14,19 @@ const s3 = new S3Client({
 /**
  * Use this endpoint as much as possible to get a presigned URL for uploading files to S3.
  */
-export async function POST(req: Request) {
-  const { fileName, fileType } = await req.json();
+export async function POST(req: NextRequest) {
+  const token = getTokenFromRequest(req);
 
+  if (!token) {
+    return NextResponse.json({ error: "Unauthorized " }, { status: 401 });
+  }
+  const user = await verifyTokenAndGetUser(token);
+
+  if (!user) {
+    return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+  }
+
+  const { fileName, fileType } = await req.json();
   if (!fileName) {
     return NextResponse.json({ error: "Missing fileName" }, { status: 400 });
   }
