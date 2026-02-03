@@ -2,9 +2,27 @@ import { clsx, type ClassValue } from "clsx";
 import config from "@/app.config";
 import { twMerge } from "tailwind-merge";
 import { TokenRefreshManager } from "./refresh-token-manager";
+import imageCompression from "browser-image-compression";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
+}
+
+export async function compressImage(file: File) {
+  const options = {
+    maxSizeMB: 8, // optional, limit output size
+    // maxWidthOrHeight: 1920, // optional, resize if needed
+    initialQuality: 0.8, // 80% quality (for JPEG/WebP)
+    useWebWorker: true, // faster compression off main thread
+  };
+
+  const compressedFile = await imageCompression(file, options);
+  console.log(`Original size: ${(file.size / 1024 / 1024).toFixed(2)} MB`);
+  console.log(
+    `Compressed size: ${(compressedFile.size / 1024 / 1024).toFixed(2)} MB`,
+  );
+
+  return compressedFile;
 }
 
 export function parseError(error: { detail: unknown; status?: number }) {
