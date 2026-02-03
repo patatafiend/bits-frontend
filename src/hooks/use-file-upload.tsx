@@ -1,8 +1,7 @@
 import { compressImage } from "@/lib/utils";
 import axios from "axios";
 import { useState, useRef, type ChangeEvent } from "react";
-
-type Location = "/billing-statements" | "/profiles";
+import { toast } from "sonner";
 
 export default function useFileUpload() {
   const [file, setFile] = useState<File | null>(null);
@@ -79,7 +78,7 @@ export default function useFileUpload() {
 
   async function getPresignedUploadUrl(
     file: File,
-    location: Location = "",
+    location: string,
   ) {
     try {
       setUploading(true);
@@ -93,19 +92,25 @@ export default function useFileUpload() {
       return res.data.uploadUrl;
     } catch (err) {
       console.error("Error getting presigned URL:", err);
-      setError("Error getting presigned URL");
+      const errorMsg = axios.isAxiosError(err)
+        ? err.response?.data?.error || "Error getting presigned URL"
+        : "Error getting presigned URL";
+      setError(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setUploading(false);
     }
   }
 
   async function uploadFileToS3(
-    location: Location = "/",
+    location: string,
     uploadUrl?: string,
   ) {
     try {
       if (!file) {
-        setError("No file selected for upload");
+        const errorMsg = "No file selected for upload";
+        setError(errorMsg);
+        toast.error(errorMsg);
         return;
       }
 
@@ -132,7 +137,11 @@ export default function useFileUpload() {
       // If no upload URL provided, get one
       if (!uploadUrl)
         uploadUrl = await getPresignedUploadUrl(fileToUpload, location);
-      if (!uploadUrl) throw new Error("Failed to get upload URL");
+      if (!uploadUrl) {
+        const errorMsg = "Failed to get upload URL";
+        toast.error(errorMsg);
+        throw new Error(errorMsg);
+      }
 
       setUploading(true);
       setProgress(0);
@@ -153,6 +162,7 @@ export default function useFileUpload() {
       const publicUrl = uploadUrl.split("?")[0];
       setFileUrl(publicUrl);
       setUploading(false);
+      toast.success("File uploaded successfully");
 
       // Fire all registered completion handlers
       uploadCompleteHandlers.current.forEach((h) => {
@@ -166,7 +176,13 @@ export default function useFileUpload() {
       return publicUrl;
     } catch (err) {
       console.error("Error uploading file to S3:", err);
-      setError("Error uploading file to S3");
+      const errorMsg = axios.isAxiosError(err)
+        ? err.response?.data?.error || "Error uploading file to S3"
+        : err instanceof Error
+          ? err.message
+          : "Error uploading file to S3";
+      setError(errorMsg);
+      toast.error(errorMsg);
       setUploading(false);
     }
   }
