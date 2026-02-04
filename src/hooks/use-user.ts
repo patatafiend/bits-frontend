@@ -5,7 +5,7 @@ export function useFetchUsers() {
   return useServerFetch<User[]>("/user", { method: "GET" });
 }
 
-export function useFetchUserById(userId: string) {
+export function useFetchUser(userId: string) {
   return useServerFetch<User>(`/user/${userId}`, { method: "GET" });
 }
 
