@@ -13,6 +13,7 @@ import {
 import { useState } from "react";
 import { File } from "lucide-react";
 import { ComboBox } from "./combo-box";
+import Link from "next/link";
 
 const clientData = {
   navMain: [
@@ -23,7 +24,7 @@ const clientData = {
       isActive: true,
       items: [
         {
-          title: "Bill Upload",
+          title: "Bill Statements",
           url: "/client/bill-management/bill-upload",
         },
         {
@@ -86,7 +87,7 @@ export function AppSidebar() {
               {item.items?.map((subItem) => (
                 <SidebarMenuItem key={subItem.title}>
                   <SidebarMenuButton asChild>
-                    <a href={subItem.url}>{subItem.title}</a>
+                    <Link href={subItem.url}>{subItem.title}</Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
