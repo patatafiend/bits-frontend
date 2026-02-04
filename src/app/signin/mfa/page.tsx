@@ -18,7 +18,7 @@ export default function MfaSignin() {
         </div>
         <InputOTPForm
           onSubmit={async (data) => {
-            const result = await execute({ mfa_code: data.code });
+            const result = await execute({ body: { mfa_code: data.code } });
             if (!result.error) {
               router.push("/client/bill-management");
               return;
