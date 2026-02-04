@@ -18,5 +18,5 @@ export function useDeactivateUser() {
 }
 
 export function useCreateUser() {
-  return useServerAction<User, CreateUser>(`/create`, { method: "POST" });
+  return useServerAction<User, CreateUser>(`/user/create`, { method: "POST" });
 }
