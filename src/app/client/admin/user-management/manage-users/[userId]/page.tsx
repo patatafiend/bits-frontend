@@ -1,6 +1,6 @@
 "use client";
 
-import { useDeactivateUser, useFetchUserById } from "@/hooks/use-user";
+import { useDeactivateUser, useFetchUser } from "@/hooks/use-user";
 import { useParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -21,7 +21,7 @@ import { toast } from "sonner";
 export default function UserDetailsPage() {
   const params = useParams<{ userId: string }>();
   const userId = params.userId;
-  const { data: userData } = useFetchUserById(userId);
+  const { data: userData } = useFetchUser(userId);
   const {
     execute: deactivateUser,
     loading: userLoading,
