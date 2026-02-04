@@ -25,11 +25,7 @@ export default function Mfa() {
   const { data: currentUser } = useGetCurrentUser();
   const { execute: submitVerify, loading: submitLoading } = useMfaVerify();
   const router = useRouter();
-  const {
-    data: mfa,
-    loading: loadingMFA,
-    error: errorMFA,
-  } = useMfaSetup();
+  const { data: mfa, loading: loadingMFA, error: errorMFA } = useMfaSetup();
 
   const formSchema = z.object({
     code: z
@@ -46,10 +42,7 @@ export default function Mfa() {
   });
 
   async function onSubmit(data: z.infer<typeof formSchema>) {
-    const { error } = await submitVerify(
-      { mfa_code: data.code },
-      { mfa_code: data.code }
-    );
+    const { error } = await submitVerify({ body: { mfa_code: data.code } });
     if (error) {
       form.setError("code", { type: "manual", message: error.message });
     } else {
@@ -146,10 +139,7 @@ export default function Mfa() {
 
         {!currentUser?.mfa_enabled && currentUser?.allow_skip_mfa ? (
           <div className="text-center">
-            <Button
-              variant="link"
-              onClick={() => router.push("/client")}
-            >
+            <Button variant="link" onClick={() => router.push("/client")}>
               Skip For Now
             </Button>
           </div>
