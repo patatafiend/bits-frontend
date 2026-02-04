@@ -35,7 +35,7 @@ export default function Mfa() {
   });
 
   async function onSubmit(data: z.infer<typeof formSchema>) {
-    const { error } = await submitVerify({ mfa_code: data.code });
+    const { error } = await submitVerify({ body: { mfa_code: data.code } });
     if (error) {
       form.setError("code", { type: "manual", message: error.message });
     } else {
