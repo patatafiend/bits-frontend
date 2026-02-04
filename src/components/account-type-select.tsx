@@ -29,10 +29,6 @@ export default function AccountTypeSelect({
       label: "Admin Account",
       value: "admin_account",
     },
-    {
-      label: "Warehouse Operator",
-      value: "warehouse_account",
-    },
   ];
 
   return (
