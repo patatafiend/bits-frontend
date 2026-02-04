@@ -36,6 +36,18 @@ export type User = {
   mfa_enabled: boolean;
 };
 
+export type CreateUser = {
+  account_type: string;
+  username: string;
+  email: string;
+  first_name: string;
+  middle_name?: string;
+  last_name: string;
+  phone_number?: string;
+  password?: string;
+  role_id?: number;
+};
+
 export type Option = {
   value: string;
   label: string;
