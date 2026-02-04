@@ -9,7 +9,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   useSignIn,
-//  useRefreshToken,
+  //  useRefreshToken,
 } from "@/components/providers/auth-provider";
 import { PasswordInput } from "@/components/ui/input";
 import Link from "next/link";
@@ -37,13 +37,13 @@ export function LoginForm({
   });
 
   async function onSubmit({ email, password }: z.infer<typeof loginSchema>) {
-    const response = await execute({ email, password });
+    const response = await execute({ body: { email, password } });
 
     if (response.error) {
       toast.error("Sign In Failed.");
       return;
     }
-    
+
     if (
       response.data &&
       "mfa_required" in response.data &&
