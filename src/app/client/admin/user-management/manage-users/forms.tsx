@@ -6,27 +6,31 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input, PasswordInput } from "@/components/ui/input";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
+// import { zodResolver } from "@hookform/resolvers/zod";
+// import { useForm } from "react-hook-form";
 import { Form } from "@/components/ui/form";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import RoleComboBox from "@/components/role-combo-box";
-import { MultiSelect, MultiSelectRef } from "@/components/ui/multi-select";
+// import { MultiSelectRef, MultiSelect } from "@/components/ui/multi-select";
 import AccountTypeSelect from "@/components/account-type-select";
-import useRolePermission from "@/hooks/use-role-permission";
+//import { useCreateRole } from "@/hooks/use-role-permission";
 import Loader from "@/components/ui/loader";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import ControlledDialog from "@/components/controlled-dialog";
 import useFileUpload from "@/hooks/use-file-upload";
 import { useDropzone } from "react-dropzone";
-import ProgressPercent from "@/components/progress-percent";
+import { Progress } from "@/components/ui/progress";
 import Image from "next/image";
 import { Check, Pencil } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
+import { useForm, useWatch } from "react-hook-form";
+import { useRef } from "react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useFetchRoles } from "@/hooks/use-role-permission";
 
 const formSchema = z.object({
   username: z.string().min(2).max(100),
@@ -58,7 +62,7 @@ const formSchema = z.object({
   account_type: z.enum(
     ["company_account", "admin_account", "warehouse_account"],
     {
-      errorMap: () => ({ message: "Please select an account type" }),
+      message: "Please select an account type",
     },
   ),
   profile_url: z.string().url(),
@@ -108,14 +112,18 @@ export function UserForm({
   isEdit?: boolean;
   mfa_enabled?: boolean;
 }) {
-  const { userWarehouses } = useAuth();
-  const { roles, loadingRoles } = useRolePermission();
+  const { data: roles, loading: loadingRoles } = useFetchRoles();
 
-  const multiSelectRef = useRef<MultiSelectRef>(null);
+  // const multiSelectRef = useRef<MultiSelectRef>(null);
   const defaultsSignatureRef = useRef<string | undefined>(undefined);
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: buildDefaultValues(defaulValues),
+  });
+
+  const accountType = useWatch({
+    control: form.control,
+    name: "account_type",
   });
 
   useEffect(() => {
@@ -126,7 +134,8 @@ export function UserForm({
       defaultsSignatureRef.current = signature;
       form.reset(nextValues);
     }
-  }, [defaulValues, form]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [defaulValues]);
   async function onSubmit(values: z.infer<typeof formSchema>) {
     if (onSubmitSuccess) {
       onSubmitSuccess(values);
@@ -183,7 +192,7 @@ export function UserForm({
                 )}
               />
             ) : (
-              <Badge variant="success" className="mb-4 flex items-center gap-2">
+              <Badge variant="default" className="mb-4 flex items-center gap-2">
                 <Check /> <span>User has MFA enabled</span>
               </Badge>
             )}
@@ -309,49 +318,7 @@ export function UserForm({
                   </FormItem>
                 )}
               />
-              {form.watch("account_type") !== "company_account" && (
-                <FormField
-                  control={form.control}
-                  name="warehouses"
-                  render={({ field }) => (
-                    <FormItem className="">
-                      <FormLabel className="flex justify-between">
-                        {form.watch("account_type") !== "warehouse_account"
-                          ? "Warehouse"
-                          : "Select Warehouse"}
-                      </FormLabel>
-
-                      <FormControl>
-                        <MultiSelect
-                          disabled={
-                            form.watch("account_type") !== "warehouse_account"
-                          }
-                          placeholder={
-                            form.watch("account_type") !== "warehouse_account"
-                              ? "All warehouse access including upcoming ones"
-                              : "Select warehouse"
-                          }
-                          ref={multiSelectRef}
-                          className="w-full"
-                          defaultValue={field.value?.map(String) || []}
-                          onValueChange={(values) =>
-                            field.onChange(values.map(Number))
-                          }
-                          options={
-                            userWarehouses?.map((warehouse) => ({
-                              value: warehouse.id.toString(),
-                              label: warehouse.wh_name,
-                            })) || []
-                          }
-                        />
-                      </FormControl>
-
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              )}
-              {form.watch("account_type") !== "company_account" && (
+              {accountType !== "company_account" && (
                 <Loader loading={loadingRoles}>
                   <FormField
                     control={form.control}
@@ -361,10 +328,10 @@ export function UserForm({
                         <FormLabel>Role</FormLabel>
                         <FormControl>
                           <RoleComboBox
-                            roles={roles?.data}
+                            roles={Array.isArray(roles) ? roles : null}
                             allowEmpty={false}
                             value={field?.value?.toString() || ""}
-                            onValueChange={(accType) => {
+                            onValueChange={(accType: string) => {
                               field.onChange(Number(accType));
                             }}
                           />
@@ -488,7 +455,7 @@ function SelectImageDialog({
               )}
             </div>
           </div>
-          {progress > 0 && <ProgressPercent percent={progress} />}
+          {progress > 0 && <Progress value={progress} />}
           {error && <p className="text-red-500 text-center mt-2">{error}</p>}
           {compressing && (
             <p className="text-blue-500 text-center mt-2">
