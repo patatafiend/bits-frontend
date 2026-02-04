@@ -29,7 +29,7 @@ export function useDeleteRole() {
 }
 
 export function useFetchPermissions() {
-  return useServerFetch<Permission[]>("/role_permission/roles/persmissions", {
+  return useServerFetch<Permission[]>("/role_permission/permissions", {
     method: "GET",
   });
 }
