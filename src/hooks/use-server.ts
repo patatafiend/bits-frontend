@@ -118,19 +118,35 @@ export function useServerAction<T, TBody = unknown>(
     error: null,
   });
 
-  const execute = async (body?: TBody, query?: Record<string, unknown>) => {
-    let finalUrl = url;
-    
-    if (query && Object.keys(query).length > 0) {
-      const params = new URLSearchParams();
-      Object.entries(query).forEach(([key, value]) => {
-        if (value !== undefined && value !== null) {
-          params.append(key, String(value));
-        }
-      });
-      const queryStr = params.toString();
-      finalUrl = queryStr ? `${url}?${queryStr}` : url;
-    }
+  type ExecuteOptions = {
+    body?: TBody;
+    query?: Record<string, unknown>;
+    params?: string;
+  };
+
+  function buildRoute(base: string, params?: string) {
+    if (!params) return base;
+    if (params.startsWith("/")) return base.replace(/\/$/, "") + params;
+    return `${base.replace(/\/$/, "")}/${params}`;
+  }
+
+  function buildQueryString(query?: Record<string, unknown>) {
+    if (!query || Object.keys(query).length === 0) return "";
+    const params = new URLSearchParams();
+    Object.entries(query).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        params.append(key, String(value));
+      }
+    });
+    const queryStr = params.toString();
+    return queryStr ? `?${queryStr}` : "";
+  }
+
+  const execute = async (input: ExecuteOptions = {}) => {
+    const { body, query, params } = input;
+    const finalRoute = buildRoute(url, params);
+    const queryString = buildQueryString(query);
+    const finalUrl = finalRoute + queryString;
 
     const result = await serverFetch.service.public<T>(
       finalUrl,
