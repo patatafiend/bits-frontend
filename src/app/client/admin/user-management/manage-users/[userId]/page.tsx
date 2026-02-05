@@ -21,7 +21,7 @@ import { toast } from "sonner";
 export default function UserDetailsPage() {
   const params = useParams<{ userId: string }>();
   const userId = params.userId;
-  const { data: userData } = useFetchUser(userId);
+  const { data: userData, refetch: refetchUser } = useFetchUser(userId);
   const {
     execute: deactivateUser,
     loading: userLoading,
@@ -54,6 +54,7 @@ export default function UserDetailsPage() {
               await deactivateUser({
                 params: `${userData.id}/${isBlocked ? "activate" : "deactivate"}`,
               });
+              refetchUser();
             }}
             loading={userLoading}
           />
@@ -181,13 +182,13 @@ function DangerZone({
               <h3 className="font-medium text-destructive">Deactivate User</h3>
               {!user.is_blocked ? (
                 <p className="text-sm text-muted-foreground">
-                  This will disable the user&apos;s account. They will not be
+                  This will disable the users account. They will not be
                   able to sign in or access any resources until the account is
                   reactivated. This action can be reversed.
                 </p>
               ) : (
                 <p>
-                  This will reactivate the user&apos;s account, allowing them to
+                  This will reactivate the users account, allowing them to
                   sign in and access resources again.
                 </p>
               )}
@@ -196,8 +197,8 @@ function DangerZone({
               title={user.is_blocked ? "Reactivate User" : "Deactivate User"}
               description={
                 user.is_blocked
-                  ? "This will reactivate the user&apos;s account, allowing them to sign in and access resources again."
-                  : "This will disable the user&apos;s account. They will not be able to sign in or access any resources until the account is reactivated. This action can be reversed."
+                  ? "This will reactivate the users account, allowing them to sign in and access resources again."
+                  : "This will disable the users account. They will not be able to sign in or access any resources until the account is reactivated. This action can be reversed."
               }
               renderTrigger={
                 <Button size="sm" variant="destructive">
