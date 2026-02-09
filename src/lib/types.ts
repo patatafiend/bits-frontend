@@ -15,7 +15,20 @@ export type UserPayload = {
   wh_id: string;
   allow_skip_mfa: boolean;
   permissions: string[];
-  company: string;
+  company: Company;
+  client: Client;
+};
+
+export type Company = {
+  id: number;
+  company_name: string;
+  company_email: string;
+};
+
+export type Client = {
+  id: number;
+  client_name: string;
+  client_email: string;
 };
 
 export type User = {
@@ -52,7 +65,6 @@ export type Option = {
   value: string;
   label: string;
 };
-
 
 export type ComboBoxProps = {
   options: Option[];
@@ -98,4 +110,56 @@ export type Permission = {
 export type RoleWithUserPermissions = Role & {
   permissions: Permission[];
   users: User[];
+};
+
+export type Invoice = {
+  id: number;
+  invoice_number: string;
+  client_id: number;
+  billing_receiver_id: number;
+  status: string;
+  invoice_date: string;
+  sent_date: string;
+  received_date: string;
+  response_date: string;
+  notes: string;
+  rejection_reason: string;
+  created_by: string;
+  created_at: string;
+};
+
+export type InvoiceWithItems = {
+  id: number;
+  invoice_number: string;
+  client_id: number;
+  billing_receiver_id: number;
+  status: string;
+  invoice_date: string;
+  sent_date: string;
+  received_date: string;
+  response_date: string;
+  notes: string;
+  rejection_reason: string;
+  created_by: string;
+  created_at: string;
+
+  invoice_items: InvoiceItems[];
+};
+
+export type InvoiceItems = {
+  id: number;
+  invoice_id: number;
+  file_name: string;
+  file_key: string;
+  file_size: string;
+  file_type: string;
+  s3_bucket: string;
+  uploaded_by: string;
+  uploaded_at: string;
+};
+
+export type CreateInvoice = {
+  invoice_number: string;
+  client_id: number;
+  status: string;
 };
