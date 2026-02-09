@@ -25,7 +25,7 @@ const clientData = {
       items: [
         {
           title: "Bill Statements",
-          url: "/client/bill-management/bill-upload",
+          url: "/client/bill-management/invoice",
         },
         {
           title: "Bill Endorse",
