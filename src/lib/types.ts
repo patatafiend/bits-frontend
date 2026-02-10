@@ -126,6 +126,7 @@ export type Invoice = {
   rejection_reason: string;
   created_by: string;
   created_at: string;
+  invoice_items: InvoiceItems[];
 };
 
 export type InvoiceWithItems = {
@@ -162,4 +163,13 @@ export type CreateInvoice = {
   invoice_number: string;
   client_id: number;
   status: string;
+};
+
+export type AddInvoiceItemPayload = {
+  invoice_id: number;
+  file_name: string;
+  file_key: string;
+  file_size: string;
+  file_type: string;
+  s3_bucket: string;
 };
