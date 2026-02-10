@@ -14,12 +14,36 @@ import {
   CheckCircle,
   AlertCircle,
   ArrowLeft,
+  RefreshCw,
 } from "lucide-react";
 import Link from "next/link";
+import { useAddItemToInvoice, useFetchInvoice } from "@/hooks/use-invoice";
+import { useEffect } from "react";
+import { toast } from "sonner";
 
 export default function InvoiceDetailPage() {
   const params = useParams();
   const invoiceId = params?.id as string;
+  const {
+    data: invoiceData,
+    refetch: refetchInvoice,
+    loading: invoiceLoading,
+  } = useFetchInvoice();
+  // const { data: invoiceItems, refetch: refetchInvoiceItems } =
+  //   useFetchInvoiceItems();
+  const { execute: addItemToInvoice, loading: addingItem } =
+    useAddItemToInvoice();
+
+  useEffect(() => {
+    if (invoiceId) {
+      refetchInvoice({
+        params: `${invoiceId}`,
+        query: { include_items: true },
+      });
+    }
+    // refetchInvoiceItems({ params: `${invoiceId}/items` });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const {
     file,
@@ -33,31 +57,62 @@ export default function InvoiceDetailPage() {
     reset,
   } = useFileUpload();
 
-  // Mock invoice data - replace with actual API call
-  const invoice = {
-    id: invoiceId,
-    invoiceNumber: `INV-2024-${invoiceId.padStart(3, "0")}`,
-    customerName: "Acme Corp",
-    customerEmail: "contact@acmecorp.com",
-    amount: 1250.0,
-    status: "pending",
-    date: "2024-01-15",
-    dueDate: "2024-02-15",
-    items: [
-      { description: "Service Fee", quantity: 1, price: 1000.0 },
-      { description: "Additional Charges", quantity: 1, price: 250.0 },
-    ],
-  };
+  async function handleAddItem() {
+    if (!file || !invoiceData) return;
 
-  const handleUpload = async () => {
-    if (!file) return;
-    const url = await uploadFileToS3("billing-statements");
-    if (url) {
-      console.log("File uploaded successfully for invoice:", invoiceId, url);
+    try {
+      // Step 1: Upload to S3
+      const url = await uploadFileToS3("billing-statements");
+
+      if (!url) {
+        toast.error("Failed to upload file to S3. Please try again.");
+        return;
+      }
+
+      // Step 2: Save metadata to database
+      const s3Key = url.split(".com/")[1];
+
+      const { error: dbError } = await addItemToInvoice({
+        body: [
+          {
+            invoice_id: invoiceData.id,
+            file_name: file.name,
+            file_key: s3Key,
+            file_size: file.size.toString(),
+            file_type: file.type,
+            s3_bucket: "bits-staging-bucket",
+          },
+        ],
+        params: `/${invoiceId}/items`,
+      });
+
+      if (dbError) {
+        // File uploaded to S3 but database save failed
+        // TODO: Implement S3 cleanup or retry logic
+        toast.error(
+          `File uploaded but failed to save record: ${dbError.message}. Please contact support.`,
+        );
+        return;
+      }
+
+      // Step 3: Success - refresh and reset
+      await refetchInvoice({
+        params: `${invoiceId}`,
+        query: { include_items: true },
+      });
+      reset();
+      console.log("File uploaded and saved successfully!");
+    } catch (err) {
+      console.error("Unexpected error during upload:", err);
+      toast.error(
+        "An unexpected error occurred. Please try again or contact support.",
+      );
     }
-  };
+  }
 
   const getStatusBadge = (status: string) => {
+    if (!status) return null;
+
     const variants: Record<string, "default" | "secondary" | "destructive"> = {
       paid: "default",
       pending: "secondary",
@@ -81,63 +136,110 @@ export default function InvoiceDetailPage() {
 
       <div className="grid gap-6">
         {/* Invoice Details */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle>Invoice Details</CardTitle>
-              {getStatusBadge(invoice.status)}
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm text-muted-foreground">Invoice Number</p>
-                <p className="font-medium">{invoice.invoiceNumber}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Date</p>
-                <p className="font-medium">{invoice.date}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Customer</p>
-                <p className="font-medium">{invoice.customerName}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Due Date</p>
-                <p className="font-medium">{invoice.dueDate}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Email</p>
-                <p className="font-medium">{invoice.customerEmail}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Total Amount</p>
-                <p className="font-medium text-lg">
-                  ${invoice.amount.toFixed(2)}
-                </p>
-              </div>
-            </div>
-
-            <Separator />
-
-            <div>
-              <h3 className="font-semibold mb-3">Line Items</h3>
-              <div className="space-y-2">
-                {invoice.items.map((item, index) => (
-                  <div
-                    key={index}
-                    className="flex justify-between p-2 bg-muted rounded"
+        {invoiceData && (
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle>Invoice Details</CardTitle>
+                <div className="flex items-center gap-2">
+                  {getStatusBadge(invoiceData?.status)}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      refetchInvoice({
+                        params: `${invoiceId}`,
+                        query: { include_items: true },
+                      });
+                      toast.info("Refreshing invoice data...");
+                    }}
+                    disabled={invoiceLoading}
                   >
-                    <span>{item.description}</span>
-                    <span className="font-medium">
-                      ${item.price.toFixed(2)}
-                    </span>
-                  </div>
-                ))}
+                    <RefreshCw
+                      className={`w-4 h-4 ${invoiceLoading ? "animate-spin" : ""}`}
+                    />
+                  </Button>
+                </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-muted-foreground">
+                    Invoice Number
+                  </p>
+                  <p className="font-medium">{invoiceData.invoice_number}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Date</p>
+                  <p className="font-medium">{invoiceData.invoice_date}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Customer</p>
+                  <p className="font-medium">
+                    {invoiceData.billing_receiver_id}
+                  </p>
+                </div>
+              </div>
+
+              <Separator />
+
+              {invoiceData?.invoice_items &&
+                invoiceData.invoice_items.length > 0 && (
+                  <div className="space-y-2">
+                    <h3 className="text-sm font-medium">Uploaded Files</h3>
+                    <div className="divide-y rounded-lg border">
+                      {invoiceData.invoice_items.map((item) => (
+                        <div
+                          key={item.id}
+                          className="flex items-center justify-between p-3"
+                        >
+                          <div className="flex items-center gap-3">
+                            <FileText className="w-5 h-5 text-muted-foreground" />
+                            <div>
+                              <p className="text-sm font-medium">
+                                {item.file_name}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {(
+                                  parseInt(item.file_size) /
+                                  1024 /
+                                  1024
+                                ).toFixed(2)}{" "}
+                                MB •{" "}
+                                {new Date(
+                                  item.uploaded_at,
+                                ).toLocaleDateString()}
+                              </p>
+                            </div>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              const fileUrl = `https://${item.s3_bucket}.s3.${process.env.NEXT_PUBLIC_AWS_REGION}.amazonaws.com/${item.file_key}`;
+                              window.open(fileUrl, "_blank");
+                            }}
+                          >
+                            View
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+              {/* Show message if no files uploaded yet */}
+              {(!invoiceData?.invoice_items ||
+                invoiceData.invoice_items.length === 0) && (
+                <div className="text-center py-8 text-muted-foreground">
+                  <FileText className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                  <p className="text-sm">No files uploaded yet</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         {/* Upload Section */}
         <Card>
@@ -215,17 +317,23 @@ export default function InvoiceDetailPage() {
             {/* Action Buttons */}
             <div className="flex gap-3">
               <Button
-                onClick={handleUpload}
-                disabled={!file || uploading || compressing || !!fileUrl}
+                onClick={handleAddItem}
+                disabled={
+                  !file || uploading || compressing || addingItem || !!fileUrl
+                }
                 className="flex-1"
               >
-                {uploading ? "Uploading..." : "Upload File"}
+                {uploading
+                  ? "Uploading..."
+                  : addingItem
+                    ? "Saving..."
+                    : "Upload File"}
               </Button>
               {(file || fileUrl) && (
                 <Button
                   onClick={reset}
                   variant="outline"
-                  disabled={uploading || compressing}
+                  disabled={uploading || compressing || addingItem}
                 >
                   Reset
                 </Button>
