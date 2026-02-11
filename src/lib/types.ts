@@ -173,3 +173,20 @@ export type AddInvoiceItemPayload = {
   file_type: string;
   s3_bucket: string;
 };
+
+export type UploadFileProps = {
+  invoiceData: InvoiceWithItems | null;
+  invoiceId: string;
+  refetchInvoice: ({
+    params,
+    query,
+  }: {
+    params: string;
+    query: { include_items: boolean };
+  }) => void;
+};
+
+export type FileViewerModalProps = {
+  file: { url: string; name: string; type: string } | null;
+  onClose: () => void;
+};
