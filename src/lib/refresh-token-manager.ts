@@ -14,7 +14,7 @@ export class TokenRefreshManager {
     }
 
     // Token is still valid
-    if (expDate.getTime() + 5 > new Date().getTime()) {
+    if (exp && exp !== "" && expDate.getTime() + 5 > new Date().getTime()) {
       console.log("Token is still valid, no need to refresh");
       return true;
     }
@@ -50,13 +50,16 @@ export class TokenRefreshManager {
 
   private async performRefresh(): Promise<boolean> {
     try {
-      const refreshRes = await fetch(BACKEND.bits_backend + "/user/refresh_token", {
-        method: "POST",
-        credentials: "include",
-        headers: {
-          "Content-type": "application/json",
+      const refreshRes = await fetch(
+        BACKEND.bits_backend + "/user/refresh_token",
+        {
+          method: "POST",
+          credentials: "include",
+          headers: {
+            "Content-type": "application/json",
+          },
         },
-      });
+      );
 
       if (refreshRes.ok) {
         const refreshData = await refreshRes.json();
