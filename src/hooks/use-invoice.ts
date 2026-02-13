@@ -30,3 +30,14 @@ export function useAddItemToInvoice() {
     method: "POST",
   });
 }
+
+export type InvoiceResponse = {
+  detail: string;
+  sent_to: string;
+};
+
+export function useSendInvoice() {
+  return useServerAction<InvoiceResponse, Invoice>(`/invoices`, {
+    method: "POST",
+  });
+}
