@@ -16,7 +16,11 @@ import {
   RefreshCw,
 } from "lucide-react";
 import Link from "next/link";
-import { useAddItemToInvoice, useFetchInvoice } from "@/hooks/use-invoice";
+import {
+  useAddItemToInvoice,
+  useFetchInvoice,
+  useSendInvoice,
+} from "@/hooks/use-invoice";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useGetPresignedUrl } from "@/hooks/use-media";
@@ -27,7 +31,11 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Download } from "lucide-react";
-import { UploadFileProps, FileViewerModalProps } from "@/lib/types";
+import {
+  UploadFileProps,
+  FileViewerModalProps,
+  InvoiceWithItems,
+} from "@/lib/types";
 import { useDropzone } from "react-dropzone";
 
 export default function InvoiceDetailPage() {
@@ -122,23 +130,15 @@ export default function InvoiceDetailPage() {
               <div className="flex items-center justify-between">
                 <CardTitle>Invoice Details</CardTitle>
                 <div className="flex items-center gap-2">
-                  {getStatusBadge(invoiceData?.status)}
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
+                  <SendInvoiceComponent
+                    invoiceData={invoiceData}
+                    onSend={() => {
                       refetchInvoice({
                         params: `${invoiceId}`,
                         query: { include_items: true },
                       });
-                      toast.info("Refreshing invoice data...");
                     }}
-                    disabled={invoiceLoading}
-                  >
-                    <RefreshCw
-                      className={`w-4 h-4 ${invoiceLoading ? "animate-spin" : ""}`}
-                    />
-                  </Button>
+                  />
                 </div>
               </div>
             </CardHeader>
@@ -160,6 +160,12 @@ export default function InvoiceDetailPage() {
                     {invoiceData.billing_receiver_id}
                   </p>
                 </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Status</p>
+                  <p className="font-medium">
+                    {getStatusBadge(invoiceData?.status)}
+                  </p>
+                </div>
               </div>
 
               <Separator />
@@ -167,7 +173,26 @@ export default function InvoiceDetailPage() {
               {invoiceData?.invoice_items &&
                 invoiceData.invoice_items.length > 0 && (
                   <div className="space-y-2">
-                    <h3 className="text-sm font-medium">Uploaded Files</h3>
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="text-sm font-medium">Uploaded Files</h3>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          refetchInvoice({
+                            params: `${invoiceId}`,
+                            query: { include_items: true },
+                          });
+                          toast.info("Refreshing invoice data...");
+                        }}
+                        disabled={invoiceLoading}
+                      >
+                        <RefreshCw
+                          className={`w-4 h-4 ${invoiceLoading ? "animate-spin" : ""}`}
+                        />
+                      </Button>
+                    </div>
+
                     <div className="divide-y rounded-lg border">
                       {invoiceData.invoice_items.map((item) => (
                         <div
@@ -536,5 +561,42 @@ export function UploadFile({
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+export function SendInvoiceComponent({
+  invoiceData,
+  onSend,
+}: {
+  invoiceData: InvoiceWithItems;
+  onSend: () => void;
+}) {
+  const { execute: sendInvoice, loading } = useSendInvoice();
+  const [sent, setSent] = useState(false);
+
+  const handleSend = async () => {
+    if (!invoiceData) return;
+    const { error } = await sendInvoice({
+      body: invoiceData,
+      params: `/${invoiceData.id}/send`,
+    });
+    if (error) {
+      toast.error(error.message || "Failed to send invoice");
+      return;
+    }
+    setSent(true);
+    onSend();
+    toast.success("Invoice sent successfully!");
+  };
+
+  return (
+    <Button
+      variant="default"
+      size="sm"
+      onClick={handleSend}
+      disabled={loading || sent || !invoiceData}
+    >
+      {loading ? "Sending..." : sent ? "Sent" : "Send"}
+    </Button>
   );
 }
