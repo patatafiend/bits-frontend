@@ -35,7 +35,6 @@ export default function InvoiceViewPage() {
               <p className="text-sm text-muted-foreground">Due Date</p>
             </div>
           </div>
-
           <Separator />
 
           <div className="text-center py-8 text-muted-foreground">
