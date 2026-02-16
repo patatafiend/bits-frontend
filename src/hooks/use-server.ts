@@ -29,6 +29,7 @@ export function useServerFetch<T>(
   type RefetchOptions = {
     query?: Record<string, unknown>;
     params?: string;
+    headers?: HeadersInit;
     options?: RequestInit;
   };
 
@@ -51,7 +52,7 @@ export function useServerFetch<T>(
   }
 
   async function doFetch(input: RefetchOptions = {}) {
-    const { query, params, options: extraOptions } = input;
+    const { query, params, headers: customHeaders, options: extraOptions } = input;
     const finalRoute = buildRoute(url, params);
     const queryString = buildQueryString(query);
 
@@ -62,6 +63,7 @@ export function useServerFetch<T>(
         "Content-Type": "application/json",
         ...(baseOptions?.headers || {}),
         ...(extraOptions?.headers || {}),
+        ...(customHeaders || {}),
       },
     };
 
