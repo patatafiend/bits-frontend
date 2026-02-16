@@ -24,12 +24,12 @@ const clientData = {
       isActive: true,
       items: [
         {
-          title: "Bill Statements",
+          title: "Bill Invoices",
           url: "/client/bill-management/invoice",
         },
         {
-          title: "Bill Endorse",
-          url: "/client/bill-management/bill-endorse",
+          title: "Bill Statements",
+          url: "/client/bill-management/bill-statements",
         },
       ],
     },
