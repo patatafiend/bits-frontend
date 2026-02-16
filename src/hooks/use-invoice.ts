@@ -5,11 +5,18 @@ import {
   InvoiceItems,
   AddInvoiceItemPayload,
   InvoiceWithItems,
+  UpdateInvoice,
 } from "@/lib/types";
 
 export function useCreateInvoice() {
   return useServerAction<Invoice, CreateInvoice>(`/invoices/create`, {
     method: "POST",
+  });
+}
+
+export function useUpdateInvoice() {
+  return useServerAction<Invoice, UpdateInvoice>(`/invoices/`, {
+    method: "PUT",
   });
 }
 
