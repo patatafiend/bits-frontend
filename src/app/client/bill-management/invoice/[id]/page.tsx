@@ -20,6 +20,7 @@ import {
   useAddItemToInvoice,
   useFetchInvoice,
   useSendInvoice,
+  useUpdateInvoice,
 } from "@/hooks/use-invoice";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -37,6 +38,22 @@ import {
   InvoiceWithItems,
 } from "@/lib/types";
 import { useDropzone } from "react-dropzone";
+import { Receiver, useFetchReceivers } from "@/hooks/use-receiver";
+import { ComboBox } from "@/components/combo-box";
+import { Edit } from "lucide-react";
+import z from "zod";
+import { DatePicker } from "@/components/date-picker";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { DrawerDialog } from "@/components/drawer-dialog";
+import {
+  Form,
+  FormField,
+  FormLabel,
+  FormItem,
+  FormControl,
+  FormMessage,
+} from "@/components/ui/form";
 
 export default function InvoiceDetailPage() {
   const params = useParams();
@@ -51,6 +68,11 @@ export default function InvoiceDetailPage() {
     refetch: refetchInvoice,
     loading: invoiceLoading,
   } = useFetchInvoice();
+  const {
+    data: receiverData,
+    refetch: refetchReceiver,
+    loading: receiverLoading,
+  } = useFetchReceivers();
   const { execute: getPresignedUrl, loading: loadingUrl } =
     useGetPresignedUrl();
   const [urlCache, setUrlCache] = useState<
@@ -130,6 +152,11 @@ export default function InvoiceDetailPage() {
               <div className="flex items-center justify-between">
                 <CardTitle>Invoice Details</CardTitle>
                 <div className="flex items-center gap-2">
+                  <EditModal
+                    invoiceData={invoiceData}
+                    receiverData={receiverData}
+                    onSubmit={refetchReceiver}
+                  />
                   <SendInvoiceComponent
                     invoiceData={invoiceData}
                     onSend={() => {
@@ -155,7 +182,7 @@ export default function InvoiceDetailPage() {
                   <p className="font-medium">{invoiceData.invoice_date}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Customer</p>
+                  <p className="text-sm text-muted-foreground">Receiver</p>
                   <p className="font-medium">
                     {invoiceData.billing_receiver_id}
                   </p>
@@ -592,11 +619,95 @@ export function SendInvoiceComponent({
   return (
     <Button
       variant="default"
-      size="sm"
       onClick={handleSend}
       disabled={loading || sent || !invoiceData}
     >
       {loading ? "Sending..." : sent ? "Sent" : "Send"}
     </Button>
+  );
+}
+
+export function EditModal({
+  invoiceData,
+  receiverData,
+  onSubmit,
+}: {
+  invoiceData: InvoiceWithItems;
+  receiverData: Receiver[] | null;
+  onSubmit: () => void;
+}) {
+  const { execute, loading } = useUpdateInvoice();
+  const formSchema = z.object({
+    id: z.number().min(1, "Invoice id missing.."),
+    invoice_date: z.string().default(new Date().toISOString().split("T")[0]),
+    billing_receiver_id: z.number().optional(),
+  });
+  const form = useForm({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      invoice_date: invoiceData.invoice_date,
+      billing_receiver_id: invoiceData.billing_receiver_id,
+    },
+  });
+
+  const options = receiverData?.map((receiver: Receiver) => ({
+    label: receiver.receiver_name,
+    value: receiver.receiver_name,
+  }));
+
+  async function handleSubmit(
+    data: z.infer<typeof formSchema>,
+    close: () => void,
+  ) {
+    const { error } = await execute({
+      params: `/${invoiceData.id}`,
+      body: data,
+    });
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success("Invoice updated successfully");
+    close();
+    onSubmit();
+  }
+
+  return (
+    <div>
+      <DrawerDialog
+        title="Edit Invoice"
+        description="Edit invoice details"
+        renderTrigger={
+          <Button variant="outline">
+            <Edit className="h-4 w-4 mr-2" />
+            Edit
+          </Button>
+        }
+      >
+        {(close) => (
+          <form
+            onSubmit={form.handleSubmit(async (values) => {
+              await handleSubmit(values, close!);
+            })}
+            className="space-y-6"
+          >
+            <Form {...form}>
+              <FormField
+                control={form.control}
+                name="invoice_date"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Invoice Date</FormLabel>
+                    <FormControl>
+                      <DatePicker {...field} />
+                    </FormControl>
+                  </FormItem>
+                )}
+              ></FormField>
+            </Form>
+          </form>
+        )}
+      </DrawerDialog>
+    </div>
   );
 }
