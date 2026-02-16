@@ -18,7 +18,7 @@ export function useFetchInvoices() {
 }
 
 export function useFetchInvoice() {
-  return useServerFetch<Invoice>(`/invoices`, { method: "GET" });
+  return useServerFetch<InvoiceWithItems>(`/invoices`, { method: "GET" });
 }
 
 export function useFetchInvoiceItems() {
