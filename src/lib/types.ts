@@ -165,6 +165,8 @@ export type CreateInvoice = {
   status: string;
 };
 
+export type UpdateInvoice = Partial<Invoice> & { id: number };
+
 export type AddInvoiceItemPayload = {
   invoice_id: number;
   file_name: string;
