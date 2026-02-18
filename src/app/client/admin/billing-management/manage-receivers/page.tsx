@@ -1,0 +1,410 @@
+"use client";
+
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
+import z from "zod";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import ControlledDialog from "@/components/controlled-dialog";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Loader, Plus } from "lucide-react";
+import {
+  useCreateReceiver,
+  useFetchReceivers,
+  useUpdateReceiver,
+} from "@/hooks/use-receiver";
+import { useCurrentUser } from "@/components/providers/auth-provider";
+import { Receiver, UpdateReceiver, UserPayload } from "@/lib/types";
+
+export default function ReceiversPage() {
+  const { data, loading, refetch } = useFetchReceivers();
+  const user = useCurrentUser();
+
+  function refetchReceivers() {
+    refetch({
+      params: `${user?.client.id}`,
+    });
+  }
+
+  useEffect(() => {
+    refetchReceivers();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  return (
+    <div className="p-6 space-y-4">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-semibold">Receivers</h1>
+        <Button onClick={() => refetchReceivers()} variant="outline" size="sm">
+          Refresh
+        </Button>
+      </div>
+
+      {loading ? (
+        <div className="flex items-center gap-2 text-muted-foreground">
+          <Loader className="h-4 w-4 animate-spin" /> Loading receivers...
+        </div>
+      ) : (
+        <ReceiverList
+          receivers={data || undefined}
+          onUpdated={refetchReceivers}
+          onDeactivated={refetchReceivers}
+          user={user}
+        />
+      )}
+    </div>
+  );
+}
+
+function ReceiverList({
+  receivers,
+  onUpdated,
+  onDeactivated,
+  user,
+}: {
+  receivers?: Receiver[];
+  onUpdated: () => void;
+  onDeactivated: () => void;
+  user: UserPayload | null;
+}) {
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between gap-4">
+          <CardTitle>Receiver List</CardTitle>
+          <div className="flex items-center gap-2">
+            <AddReceiverDialog onAdd={onUpdated} user={user} />
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>ID</TableHead>
+              <TableHead>Name</TableHead>
+              <TableHead>Created By</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {receivers?.map((receiver, index) => (
+              <TableRow key={index}>
+                <TableCell>{receiver.id}</TableCell>
+                <TableCell>{receiver.receiver_name}</TableCell>
+                <TableCell>{receiver.created_by}</TableCell>
+                <TableCell className="text-right">
+                  <div className="flex justify-end gap-2">
+                    <UpdateReceiverDialog
+                      baseValues={receiver}
+                      onSubmit={onUpdated}
+                    />
+                    <DeactivateReceiver
+                      receiverData={receiver}
+                      onConfirm={onDeactivated}
+                    />
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
+  );
+}
+
+function UpdateReceiverDialog({
+  onSubmit,
+  baseValues,
+}: {
+  onSubmit: (data: Receiver) => void;
+  baseValues?: Receiver;
+}) {
+  const [open, setOpen] = useState(false);
+  const { execute, loading } = useUpdateReceiver();
+
+  const formSchema = z.object({
+    receiver_name: z
+      .string()
+      .min(1, { message: "Receiver name should have atleast 1 characters" }),
+  });
+
+  const form = useForm({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      receiver_name: baseValues?.receiver_name || "",
+    },
+  });
+
+  async function handleSubmit(values: z.infer<typeof formSchema>) {
+    if (baseValues?.id) {
+      const { data, error } = await execute({
+        params: `/${baseValues.id}`,
+        body: {
+          receiver_name: values.receiver_name.trim(),
+        },
+      });
+      if (!error) {
+        toast.success("Receiver successfully updated");
+        onSubmit(data);
+        setOpen(false);
+      } else {
+        toast.error(`Error updating receiver: ${error.message}`);
+      }
+    }
+  }
+
+  return (
+    <div>
+      <Button onClick={() => setOpen(true)} variant="outline" size="sm">
+        Edit
+      </Button>
+      <ControlledDialog
+        title="Update Receiver"
+        description=""
+        open={open}
+        setOpen={setOpen}
+      >
+        <Form {...form}>
+          <form
+            onSubmit={form.handleSubmit(handleSubmit)}
+            className="space-y-4"
+          >
+            <FormField
+              control={form.control}
+              name="receiver_name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Name</FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      type="text"
+                      onChange={(e) => field.onChange(e.target.value || "")}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <div className="flex justify-end gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" loading={loading}>
+                Save
+              </Button>
+            </div>
+          </form>
+        </Form>
+      </ControlledDialog>
+    </div>
+  );
+}
+
+function DeactivateReceiver({
+  onConfirm,
+  receiverData,
+}: {
+  onConfirm: (data: UpdateReceiver) => void;
+  receiverData?: UpdateReceiver;
+}) {
+  const [open, setOpen] = useState(false);
+  const { execute, loading } = useUpdateReceiver();
+
+  async function deactivateReceiver() {
+    const { data, error } = await execute({
+      params: `/${receiverData?.id}`,
+      body: {
+        is_active: false,
+      },
+    });
+    if (!error) {
+      toast.success("Receiver Deactivated");
+      onConfirm(data);
+      setOpen(false);
+    } else {
+      toast.error(`Error deactivating receiver: ${error.message}`);
+    }
+  }
+
+  return (
+    <div>
+      <Button variant="destructive" size="sm" onClick={() => setOpen(true)}>
+        Deactivate
+      </Button>
+      <ControlledDialog
+        title="Deactivate Receiver"
+        description={`Are you sure you want to deactivate ${receiverData?.receiver_name}?`}
+        open={open}
+        setOpen={setOpen}
+      >
+        <div className="flex justify-end gap-2">
+          <Button
+            variant="outline"
+            onClick={() => setOpen(false)}
+            disabled={loading}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="destructive"
+            onClick={() => {
+              deactivateReceiver();
+              setOpen(false);
+            }}
+          >
+            Deactivate
+          </Button>
+        </div>
+      </ControlledDialog>
+    </div>
+  );
+}
+
+export function AddReceiverDialog({
+  onAdd,
+  disabled = false,
+  user,
+}: {
+  onAdd: () => void;
+  disabled?: boolean;
+  user: UserPayload | null;
+}) {
+  const [open, setOpen] = useState(false);
+  const { refetch } = useFetchReceivers();
+  const { execute, loading: addingReceiver } = useCreateReceiver();
+
+  useEffect(() => {
+    refetch({
+      params: `${user?.client.id}`,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const formSchema = z.object({
+    receiver_name: z
+      .string()
+      .trim()
+      .min(1, { message: "Receiver name is required" }),
+    receiver_email: z.string().min(1, "Email required."),
+    receiver_phone: z.string().optional(),
+    receiver_positon: z.string().optional(),
+    is_active: z.boolean().optional(),
+    client_id: z.number().min(1, "Client is required."),
+  });
+
+  const form = useForm({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      receiver_name: "",
+      receiver_email: "",
+      receiver_phone: "",
+      receiver_positon: "",
+      is_active: true,
+      client_id: user?.client.id,
+    },
+  });
+
+  async function handleSubmit(values: z.infer<typeof formSchema>) {
+    const { error } = await execute({
+      body: {
+        receiver_name: values.receiver_name.trim(),
+        receiver_email: values.receiver_name,
+        receiver_phone: values.receiver_phone,
+        receiver_position: values.receiver_positon,
+        created_by: user?.username,
+        client_id: Number(user?.client?.id),
+        is_active: true,
+      },
+    });
+    if (!error) {
+      toast.success("Receiver Added");
+      onAdd?.();
+      setOpen(false);
+      form.reset();
+    } else if (error) {
+      toast.error(error.message);
+    }
+  }
+
+  return (
+    <div>
+      <Button
+        onClick={() => setOpen(true)}
+        variant="outline"
+        size="sm"
+        disabled={disabled}
+      >
+        <Plus className="mr-2 h-4 w-4 " />
+        Add Receiver
+      </Button>
+      <ControlledDialog
+        title="Add Receiver"
+        description=""
+        open={open}
+        setOpen={setOpen}
+      >
+        <Form {...form}>
+          <form
+            onSubmit={form.handleSubmit(handleSubmit)}
+            className="space-y-4"
+          >
+            <FormField
+              control={form.control}
+              name="receiver_name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Name</FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      type="text"
+                      onChange={(e) => field.onChange(e.target.value)}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <div className="flex justify-end mt-4 gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setOpen(false)}
+                type="button"
+              >
+                Cancel
+              </Button>
+              <Button loading={addingReceiver} type="submit">
+                Add Receiver
+              </Button>
+            </div>
+          </form>
+        </Form>
+      </ControlledDialog>
+    </div>
+  );
+}
