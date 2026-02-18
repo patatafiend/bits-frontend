@@ -1,16 +1,24 @@
-import { useServerFetch } from "./use-server";
-
-export type Receiver = {
-  id: number;
-  receiver_name: string;
-  receiver_email: string;
-  receiver_phone: string;
-  receiver_position: string;
-  client_id: number;
-};
+import { CreateReceiver, Receiver, UpdateReceiver } from "@/lib/types";
+import { useServerAction, useServerFetch } from "./use-server";
 
 export function useFetchReceivers() {
   return useServerFetch<Receiver[]>(`/invoices/receivers/client/`, {
     method: "GET",
   });
 }
+
+export function useCreateReceiver() {
+  return useServerAction<Receiver, CreateReceiver>(
+    `/invoices/receivers/create/`,
+    {
+      method: "POST",
+    },
+  );
+}
+
+export function useUpdateReceiver() {
+  return useServerAction<Receiver, UpdateReceiver>(`/invoices/receivers/`, {
+    method: "PUT",
+  });
+}
+
