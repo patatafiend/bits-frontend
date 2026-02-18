@@ -51,6 +51,18 @@ const clientData = {
         },
       ],
     },
+    {
+      title: "Billing Management",
+      url: "/client/admin/billing-management",
+      icon: File,
+      isActive: true,
+      items: [
+        {
+          title: "Manage Receivers",
+          url: "/client/admin/billing-management/manage-receivers",
+        },
+      ],
+    },
   ],
 };
 
