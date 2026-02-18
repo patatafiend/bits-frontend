@@ -36,9 +36,10 @@ import {
   UploadFileProps,
   FileViewerModalProps,
   InvoiceWithItems,
+  Receiver,
 } from "@/lib/types";
 import { useDropzone } from "react-dropzone";
-import { Receiver, useFetchReceivers } from "@/hooks/use-receiver";
+import { useFetchReceivers } from "@/hooks/use-receiver";
 import { Edit } from "lucide-react";
 import z from "zod";
 import { DatePicker } from "@/components/date-picker";
@@ -55,6 +56,7 @@ import {
 } from "@/components/ui/form";
 import { useCurrentUser } from "@/components/providers/auth-provider";
 import ReceiverComboBox from "@/components/receiver-combobox";
+
 export default function InvoiceDetailPage() {
   const params = useParams();
   const invoiceId = params.id;
@@ -88,13 +90,17 @@ export default function InvoiceDetailPage() {
   }
 
   useEffect(() => {
-    if (invoiceId) {
-      refetchInvoices();
+    if (!invoiceId && user?.client.id) {
+      return;
     }
+    refetchInvoice({
+      params: `${invoiceId}`,
+      query: { include_items: true },
+    });
     refetchReceiver({
       params: `${user?.client.id}`,
     });
-    console.log("invoice id", invoiceId);
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [invoiceId]);
 
@@ -649,14 +655,12 @@ export function EditModal({
 }) {
   const { execute, loading } = useUpdateInvoice();
   const formSchema = z.object({
-    id: z.number().min(1, "Invoice id missing.."),
     invoice_date: z.string().default(new Date().toISOString().split("T")[0]),
     billing_receiver_id: z.number().min(1, "no biller id"),
   });
   const form = useForm({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      id: invoiceData.id,
       invoice_date: invoiceData.invoice_date,
       billing_receiver_id: invoiceData.billing_receiver_id ?? "",
     },
@@ -668,7 +672,11 @@ export function EditModal({
   ) {
     const { error } = await execute({
       params: `/${invoiceData.id}`,
-      body: data,
+      body: {
+        id: invoiceData.id,
+        invoice_date: data.invoice_date,
+        billing_receiver_id: data.billing_receiver_id,
+      },
     });
     if (error) {
       toast.error(error.message);
