@@ -29,10 +29,7 @@ export default function InvoiceViewPage() {
         <CardContent className="space-y-6">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <p className="text-sm text-muted-foreground">Issue Date</p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Due Date</p>
+              <p className="text-sm text-muted-foreground">Invoice Date</p>
             </div>
           </div>
           <Separator />
