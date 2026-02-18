@@ -10,5 +10,7 @@ export type Receiver = {
 };
 
 export function useFetchReceivers() {
-  return useServerFetch<Receiver[]>(`/receivers/client/`, { method: "GET" });
+  return useServerFetch<Receiver[]>(`/invoices/receivers/client/`, {
+    method: "GET",
+  });
 }
