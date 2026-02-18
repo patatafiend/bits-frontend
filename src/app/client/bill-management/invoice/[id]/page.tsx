@@ -39,7 +39,6 @@ import {
 } from "@/lib/types";
 import { useDropzone } from "react-dropzone";
 import { Receiver, useFetchReceivers } from "@/hooks/use-receiver";
-import { ComboBox } from "@/components/combo-box";
 import { Edit } from "lucide-react";
 import z from "zod";
 import { DatePicker } from "@/components/date-picker";
@@ -54,15 +53,17 @@ import {
   FormControl,
   FormMessage,
 } from "@/components/ui/form";
-
+import { useCurrentUser } from "@/components/providers/auth-provider";
+import ReceiverComboBox from "@/components/receiver-combobox";
 export default function InvoiceDetailPage() {
   const params = useParams();
-  const invoiceId = params?.id as string;
+  const invoiceId = params.id;
   const [viewingFile, setViewingFile] = useState<{
     url: string;
     name: string;
     type: string;
   } | null>(null);
+  const user = useCurrentUser();
   const {
     data: invoiceData,
     refetch: refetchInvoice,
@@ -71,7 +72,7 @@ export default function InvoiceDetailPage() {
   const {
     data: receiverData,
     refetch: refetchReceiver,
-    loading: receiverLoading,
+    //loading: receiverLoading,
   } = useFetchReceivers();
   const { execute: getPresignedUrl, loading: loadingUrl } =
     useGetPresignedUrl();
@@ -79,16 +80,23 @@ export default function InvoiceDetailPage() {
     Map<string, { url: string; expires: number }>
   >(new Map());
 
+  function refetchInvoices() {
+    refetchInvoice({
+      params: `${invoiceId}`,
+      query: { include_items: true },
+    });
+  }
+
   useEffect(() => {
     if (invoiceId) {
-      refetchInvoice({
-        params: `${invoiceId}`,
-        query: { include_items: true },
-      });
+      refetchInvoices();
     }
-    // refetchInvoiceItems({ params: `${invoiceId}/items` });
+    refetchReceiver({
+      params: `${user?.client.id}`,
+    });
+    console.log("invoice id", invoiceId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [invoiceId]);
 
   async function handleViewFile(
     filekey: string,
@@ -155,15 +163,16 @@ export default function InvoiceDetailPage() {
                   <EditModal
                     invoiceData={invoiceData}
                     receiverData={receiverData}
-                    onSubmit={refetchReceiver}
+                    onSubmit={() =>
+                      refetchReceiver({
+                        params: `${user?.client.id}`,
+                      })
+                    }
                   />
                   <SendInvoiceComponent
                     invoiceData={invoiceData}
                     onSend={() => {
-                      refetchInvoice({
-                        params: `${invoiceId}`,
-                        query: { include_items: true },
-                      });
+                      refetchInvoices();
                     }}
                   />
                 </div>
@@ -194,6 +203,24 @@ export default function InvoiceDetailPage() {
                   </p>
                 </div>
               </div>
+              <div className="flex justify-end">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    refetchInvoices();
+                    refetchReceiver({
+                      params: `${user?.client.id}`,
+                    });
+                    toast.info("Refreshing invoice data...");
+                  }}
+                  disabled={invoiceLoading}
+                >
+                  <RefreshCw
+                    className={`w-4 h-4 ${invoiceLoading ? "animate-spin" : ""}`}
+                  />
+                </Button>
+              </div>
 
               <Separator />
 
@@ -202,22 +229,6 @@ export default function InvoiceDetailPage() {
                   <div className="space-y-2">
                     <div className="flex items-center justify-between mb-2">
                       <h3 className="text-sm font-medium">Uploaded Files</h3>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          refetchInvoice({
-                            params: `${invoiceId}`,
-                            query: { include_items: true },
-                          });
-                          toast.info("Refreshing invoice data...");
-                        }}
-                        disabled={invoiceLoading}
-                      >
-                        <RefreshCw
-                          className={`w-4 h-4 ${invoiceLoading ? "animate-spin" : ""}`}
-                        />
-                      </Button>
                     </div>
 
                     <div className="divide-y rounded-lg border">
@@ -281,7 +292,7 @@ export default function InvoiceDetailPage() {
         )}
         <UploadFile
           invoiceData={invoiceData}
-          invoiceId={invoiceId}
+          invoiceId={invoiceId ? Number(invoiceId) : undefined}
           refetchInvoice={refetchInvoice}
         />
       </div>
@@ -640,20 +651,16 @@ export function EditModal({
   const formSchema = z.object({
     id: z.number().min(1, "Invoice id missing.."),
     invoice_date: z.string().default(new Date().toISOString().split("T")[0]),
-    billing_receiver_id: z.number().optional(),
+    billing_receiver_id: z.number().min(1, "no biller id"),
   });
   const form = useForm({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      id: invoiceData.id,
       invoice_date: invoiceData.invoice_date,
-      billing_receiver_id: invoiceData.billing_receiver_id,
+      billing_receiver_id: invoiceData.billing_receiver_id ?? "",
     },
   });
-
-  const options = receiverData?.map((receiver: Receiver) => ({
-    label: receiver.receiver_name,
-    value: receiver.receiver_name,
-  }));
 
   async function handleSubmit(
     data: z.infer<typeof formSchema>,
@@ -701,9 +708,32 @@ export function EditModal({
                     <FormControl>
                       <DatePicker {...field} />
                     </FormControl>
+                    <FormMessage />
                   </FormItem>
                 )}
-              ></FormField>
+              />
+              <FormField
+                control={form.control}
+                name="billing_receiver_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Receiver</FormLabel>
+                    <FormControl>
+                      <ReceiverComboBox
+                        value={field.value ? String(field.value) : ""}
+                        onValueChange={(val: string) => {
+                          field.onChange(val !== "" ? Number(val) : undefined);
+                        }}
+                        receiverData={receiverData ?? []}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <Button type="submit" loading={loading} className="w-full">
+                Update Invoice
+              </Button>
             </Form>
           </form>
         )}
