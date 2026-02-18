@@ -193,3 +193,24 @@ export type FileViewerModalProps = {
   onClose: () => void;
 };
 
+export type Receiver = {
+  id: number;
+  receiver_name: string;
+  receiver_email: string;
+  receiver_phone?: string;
+  receiver_position?: string;
+  is_active: boolean;
+  client_id: number;
+  created_by?: string;
+};
+
+export type CreateReceiver = Omit<Receiver, "id">;
+
+export type UpdateReceiver = Partial<Receiver>;
+
+export type InvoiceModalProps = {
+  client_id?: number;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSubmit: () => void;
+};
