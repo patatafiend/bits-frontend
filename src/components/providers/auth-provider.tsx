@@ -2,7 +2,7 @@
 
 import { UserPayload } from "@/lib/types";
 import { useServerFetch, useServerAction } from "@/hooks/use-server";
-import { ReactNode, useEffect } from "react";
+import { ReactNode, useContext, useEffect, createContext } from "react";
 
 export function useGetCurrentUser() {
   return useServerFetch<UserPayload>("/user/current_user");
@@ -43,6 +43,11 @@ export function useRefreshToken() {
   });
 }
 
+export type AuthContextType = {
+  user: UserPayload | null;
+};
+const AuthContext = createContext<AuthContextType>({ user: null });
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { data: user, loading } = useGetCurrentUser();
 
@@ -58,5 +63,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return null;
   }
 
-  return <>{children}</>;
+  return (
+    <AuthContext.Provider value={{ user }}>{children}</AuthContext.Provider>
+  );
+}
+
+export function useCurrentUser() {
+  return useContext(AuthContext).user;
 }
