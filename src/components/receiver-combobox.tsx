@@ -1,4 +1,4 @@
-import { Receiver } from "@/hooks/use-receiver";
+import { Receiver } from "@/lib/types";
 import { useEffect } from "react";
 import { ComboBox } from "./combo-box";
 import { ComboBoxProps } from "@/lib/types";
