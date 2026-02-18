@@ -178,7 +178,7 @@ export type AddInvoiceItemPayload = {
 
 export type UploadFileProps = {
   invoiceData: InvoiceWithItems | null;
-  invoiceId: string;
+  invoiceId?: number;
   refetchInvoice: ({
     params,
     query,
@@ -192,3 +192,4 @@ export type FileViewerModalProps = {
   file: { url: string; name: string; type: string } | null;
   onClose: () => void;
 };
+
