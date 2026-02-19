@@ -21,8 +21,41 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { useCurrentUser } from "./providers/auth-provider";
+import { UserPayload } from "@/lib/types";
 
-const clientData = {
+type NavSubItem = {
+  title: string;
+  url: string;
+  permission?: string;
+  accountTypes?: string[];
+};
+
+type NavItem = {
+  title: string;
+  url: string;
+  icon: React.ElementType;
+  isActive?: boolean;
+  permission?: string;
+  accountTypes?: string[];
+  items?: NavSubItem[];
+};
+
+function canAccess(
+  user: UserPayload | null,
+  item: { permission?: string; accountTypes?: string[] },
+) {
+  if (
+    item.accountTypes &&
+    !item.accountTypes.includes(user?.account_type ?? "")
+  )
+    return false;
+  if (item.permission && !user?.permissions?.includes(item.permission))
+    return false;
+  return true;
+}
+
+const clientData: { navMain: NavItem[]; adminMain: NavItem[] } = {
   navMain: [
     {
       title: "Bill Management",
@@ -33,10 +66,12 @@ const clientData = {
         {
           title: "Bill Invoices",
           url: "/client/bill-management/invoice",
+          permission: "billing:read",
         },
         {
           title: "Bill Statements",
           url: "/client/bill-management/bill-statements",
+          permission: "billing:read",
         },
       ],
     },
@@ -51,10 +86,12 @@ const clientData = {
         {
           title: "Manage Users",
           url: "/client/admin/user-management/manage-users",
+          permission: "user:read",
         },
         {
           title: "Manage User Roles",
           url: "/client/admin/user-management/manage-user-roles",
+          permission: "role:read",
         },
       ],
     },
@@ -67,6 +104,7 @@ const clientData = {
         {
           title: "Manage Receivers",
           url: "/client/admin/billing-management/manage-receivers",
+          permission: "receiver:read",
         },
       ],
     },
@@ -74,9 +112,18 @@ const clientData = {
 };
 
 export function AppSidebar() {
+  const user = useCurrentUser();
+  const isAdmin = user?.account_type === "admin_account";
   const [workspace, setWorkspace] = useState<"admin" | "billing">("billing");
-  const navItems =
+
+  const rawItems =
     workspace === "admin" ? clientData.adminMain : clientData.navMain;
+  const navItems = rawItems
+    .filter((item) => canAccess(user, item))
+    .map((item) => ({
+      ...item,
+      items: item.items?.filter((sub) => canAccess(user, sub)),
+    }));
 
   const workspaceOptions = [
     { value: "billing", label: "Billing Management" },
@@ -88,13 +135,15 @@ export function AppSidebar() {
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <ComboBox
-              options={workspaceOptions}
-              value={workspace}
-              onValueChange={(value) =>
-                setWorkspace(value as "admin" | "billing")
-              }
-            />
+            {isAdmin && (
+              <ComboBox
+                options={workspaceOptions}
+                value={workspace}
+                onValueChange={(value) =>
+                  setWorkspace(value as "admin" | "billing")
+                }
+              />
+            )}
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
