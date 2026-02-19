@@ -59,8 +59,28 @@ export default function InvoiceListPage() {
   const { data: invoices, refetch } = useFetchInvoices();
   const { data: user } = useGetCurrentUser();
 
+  function refetchInvoices(params: {
+    search?: string;
+    status?: string;
+    skip?: number;
+    limit?: number;
+    order_by?: string;
+  }) {
+    refetch({
+      params: `client/${user?.client.id}`,
+      query: {
+        skip: params.skip ?? 0,
+        limit: params.limit ?? 10,
+        search: params.search ?? "",
+        client_id: user?.client.id,
+        order_by: params.order_by ?? "recent",
+        status: params.status === "all" ? undefined : params.status,
+      },
+    });
+  }
+
   useEffect(() => {
-    refetch();
+    refetchInvoices({});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
@@ -73,18 +93,19 @@ export default function InvoiceListPage() {
               <FileText className="w-5 h-5" />
               Invoices
             </CardTitle>
-            <Button
-              onClick={() => {
-                setModalOpen(true);
-              }}
-            >
+            <Button onClick={() => setModalOpen(true)}>
               <Plus className="w-4 h-4 mr-2" />
               New Invoice
             </Button>
           </div>
         </CardHeader>
         <CardContent>
-          {invoices && <SearchInvoiceComponent data={invoices} />}
+          {invoices && (
+            <SearchInvoiceComponent
+              data={invoices}
+              onFilter={refetchInvoices}
+            />
+          )}
         </CardContent>
       </Card>
 
@@ -92,13 +113,17 @@ export default function InvoiceListPage() {
         client_id={user?.client.id}
         open={modalOpen}
         onOpenChange={setModalOpen}
-        onSubmit={refetch}
+        onSubmit={() => refetchInvoices({})}
       />
     </div>
   );
 }
 
-export function InvoiceList({ data, page, setPage }: { 
+export function InvoiceList({
+  data,
+  page,
+  setPage,
+}: {
   data: Invoice[];
   page: number;
   setPage: (page: number) => void;
@@ -159,7 +184,9 @@ export function InvoiceList({ data, page, setPage }: {
           <PaginationItem>
             <PaginationPrevious
               onClick={() => setPage(Math.max(page - 1, 1))}
-              className={page <= 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+              className={
+                page <= 1 ? "pointer-events-none opacity-50" : "cursor-pointer"
+              }
             />
           </PaginationItem>
 
@@ -178,7 +205,11 @@ export function InvoiceList({ data, page, setPage }: {
           <PaginationItem>
             <PaginationNext
               onClick={() => setPage(Math.min(page + 1, pageCount))}
-              className={page >= pageCount ? "pointer-events-none opacity-50" : "cursor-pointer"}
+              className={
+                page >= pageCount
+                  ? "pointer-events-none opacity-50"
+                  : "cursor-pointer"
+              }
             />
           </PaginationItem>
         </PaginationContent>
@@ -280,37 +311,60 @@ export function InvoiceModal({
   );
 }
 
-export function SearchInvoiceComponent({ data }: { data: Invoice[] }) {
+export function SearchInvoiceComponent({
+  data,
+  onFilter,
+}: {
+  data: Invoice[];
+  onFilter: (params: {
+    search?: string;
+    status?: string;
+    skip?: number;
+    order_by?: string;
+  }) => void;
+}) {
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [orderBy, setOrderBy] = useState("recent");
   const [page, setPage] = useState(1);
 
-  const filtered = data.filter((invoice) => {
-    const q = query.toLowerCase();
-    const matchesQuery =
-      (invoice.invoice_number?.toLowerCase() ?? "").includes(q) ||
-      (invoice.invoice_date?.toLowerCase() ?? "").includes(q);
-    const matchesStatus =
-      statusFilter === "all" ||
-      (invoice.status?.toLowerCase() ?? "") === statusFilter;
-    return matchesQuery && matchesStatus;
-  });
+  // Debounce search so we don't hit the API on every keystroke
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      onFilter({
+        search: query,
+        status: statusFilter,
+        skip: (page - 1) * 10,
+        order_by: orderBy,
+      });
+    }, 500);
+    return () => clearTimeout(timeout);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query, statusFilter, page, orderBy]);
 
   function handleQueryChange(e: React.ChangeEvent<HTMLInputElement>) {
     setQuery(e.target.value);
-    setPage(1); // reset page on filter change
+    setPage(1);
+  }
+
+  function handleOrderByChange(value: string) {
+    setOrderBy(value);
+    setPage(1);
   }
 
   function handleStatusChange(value: string) {
     setStatusFilter(value);
-    setPage(1); // reset page on filter change
+    setPage(1);
   }
 
   function handleClear() {
     setQuery("");
     setStatusFilter("all");
+    setOrderBy("recent");
     setPage(1);
   }
+
+  const isDirty = query || statusFilter !== "all" || orderBy !== "recent";
 
   return (
     <div className="space-y-4">
@@ -327,23 +381,34 @@ export function SearchInvoiceComponent({ data }: { data: Invoice[] }) {
             <SelectValue placeholder="Status" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Statuses</SelectItem>
+            <SelectItem value="all">All</SelectItem>
             <SelectItem value="draft">Draft</SelectItem>
-            <SelectItem value="pending">Pending</SelectItem>
-            <SelectItem value="paid">Paid</SelectItem>
-            <SelectItem value="overdue">Overdue</SelectItem>
+            <SelectItem value="sent">Sent</SelectItem>
+            <SelectItem value="accepted">Accepted</SelectItem>
+            <SelectItem value="rejected">Rejected</SelectItem>
           </SelectContent>
         </Select>
 
-        {(query || statusFilter !== "all") && (
+        <Select value={orderBy} onValueChange={handleOrderByChange}>
+          <SelectTrigger className="w-40">
+            <SelectValue placeholder="Order by" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="recent">Most Recent</SelectItem>
+            <SelectItem value="oldest">Oldest</SelectItem>
+            <SelectItem value="invoice_number">Invoice Number</SelectItem>
+          </SelectContent>
+        </Select>
+
+        {isDirty && (
           <Button variant="ghost" size="sm" onClick={handleClear}>
             Clear
           </Button>
         )}
       </div>
 
-      {filtered.length > 0 ? (
-        <InvoiceList data={filtered} page={page} setPage={setPage} />
+      {data.length > 0 ? (
+        <InvoiceList data={data} page={page} setPage={setPage} />
       ) : (
         <p className="text-sm text-muted-foreground py-4 text-center">
           No invoices match your search.
