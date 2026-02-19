@@ -135,9 +135,11 @@ function ReceiverList({
 function UpdateReceiverDialog({
   onSubmit,
   baseValues,
+  user,
 }: {
   onSubmit: (data: Receiver) => void;
   baseValues?: Receiver;
+  user?: UserPayload;
 }) {
   const [open, setOpen] = useState(false);
   const { execute, loading } = useUpdateReceiver();
@@ -146,12 +148,16 @@ function UpdateReceiverDialog({
     receiver_name: z
       .string()
       .min(1, { message: "Receiver name should have atleast 1 characters" }),
+    receiver_email: z.email("Invalid Email"),
+    receiver_phone: z.string().optional(),
   });
 
   const form = useForm({
     resolver: zodResolver(formSchema),
     defaultValues: {
       receiver_name: baseValues?.receiver_name || "",
+      receiver_email: baseValues?.receiver_email || "",
+      receiver_phone: baseValues?.receiver_phone || "",
     },
   });
 
@@ -161,6 +167,11 @@ function UpdateReceiverDialog({
         params: `/${baseValues.id}`,
         body: {
           receiver_name: values.receiver_name.trim(),
+          receiver_email: values.receiver_email,
+          receiver_phone: values.receiver_phone,
+          receiver_position: "",
+          client_id: user?.client.id,
+          created_by: user?.username,
         },
       });
       if (!error) {
@@ -195,6 +206,40 @@ function UpdateReceiverDialog({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Name</FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      type="text"
+                      onChange={(e) => field.onChange(e.target.value || "")}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="receiver_email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Email</FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      type="text"
+                      onChange={(e) => field.onChange(e.target.value || "")}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="receiver_phone"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Phone</FormLabel>
                   <FormControl>
                     <Input
                       {...field}
@@ -384,6 +429,40 @@ export function AddReceiverDialog({
                       {...field}
                       type="text"
                       onChange={(e) => field.onChange(e.target.value)}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+                        <FormField
+              control={form.control}
+              name="receiver_email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Email</FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      type="text"
+                      onChange={(e) => field.onChange(e.target.value || "")}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="receiver_phone"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Phone</FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      type="text"
+                      onChange={(e) => field.onChange(e.target.value || "")}
                     />
                   </FormControl>
                   <FormMessage />
