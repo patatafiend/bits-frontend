@@ -112,6 +112,11 @@ export type RoleWithUserPermissions = Role & {
   users: User[];
 };
 
+export type PaginatedInvoice = {
+  items: Invoice[];
+  total: number;
+};
+
 export type Invoice = {
   id: number;
   invoice_number: string;
