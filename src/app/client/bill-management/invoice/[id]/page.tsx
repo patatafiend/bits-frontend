@@ -18,13 +18,14 @@ import {
 import Link from "next/link";
 import {
   useAddItemToInvoice,
+  useDeleteInvoiceItem,
   useFetchInvoice,
   useSendInvoice,
   useUpdateInvoice,
 } from "@/hooks/use-invoice";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { useGetPresignedUrl } from "@/hooks/use-media";
+import { useGetPresignedUrl, useDeleteS3Object } from "@/hooks/use-media";
 import {
   Dialog,
   DialogContent,
@@ -71,15 +72,34 @@ export default function InvoiceDetailPage() {
     refetch: refetchInvoice,
     loading: invoiceLoading,
   } = useFetchInvoice();
-  const {
-    data: receiverData,
-    refetch: refetchReceiver,
-  } = useFetchReceivers();
+  const { data: receiverData, refetch: refetchReceiver } = useFetchReceivers();
   const { execute: getPresignedUrl, loading: loadingUrl } =
     useGetPresignedUrl();
+  const { execute: deleteInvoiceItem } = useDeleteInvoiceItem();
+  const { deleteObject: deleteS3Object, loading: deletingFile } =
+    useDeleteS3Object();
   const [urlCache, setUrlCache] = useState<
     Map<string, { url: string; expires: number }>
   >(new Map());
+
+  async function handleDeleteItem(itemId: number, fileKey: string) {
+    const { error: s3Error } = await deleteS3Object(fileKey);
+    if (s3Error) {
+      toast.error("Failed to delete file from storage");
+      return;
+    }
+
+    const { error: dbError } = await deleteInvoiceItem({
+      params: `/${invoiceId}/items/${itemId}`,
+    });
+    if (dbError) {
+      toast.error("File removed from storage but failed to delete record");
+      return;
+    }
+
+    refetchInvoices();
+    toast.success("File deleted successfully");
+  }
 
   function refetchInvoices() {
     refetchInvoice({
@@ -261,19 +281,32 @@ export default function InvoiceDetailPage() {
                               </p>
                             </div>
                           </div>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() =>
-                              handleViewFile(
-                                item.file_key,
-                                item.file_name,
-                                item.file_type,
-                              )
-                            }
-                          >
-                            {loadingUrl ? "Loading..." : "View"}
-                          </Button>
+                          <div className="flex items-center gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() =>
+                                handleViewFile(
+                                  item.file_key,
+                                  item.file_name,
+                                  item.file_type,
+                                )
+                              }
+                            >
+                              {loadingUrl ? "Loading..." : "View"}
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-destructive hover:text-destructive"
+                              onClick={() =>
+                                handleDeleteItem(item.id, item.file_key)
+                              }
+                              disabled={deletingFile}
+                            >
+                              Delete
+                            </Button>
+                          </div>
 
                           <FileViewerModal
                             file={viewingFile}
@@ -632,11 +665,7 @@ export function SendInvoiceComponent({
 
   return (
     <>
-      <Button
-        variant="default"
-        onClick={() => setOpen(true)}
-        disabled={isSent}
-      >
+      <Button variant="default" onClick={() => setOpen(true)} disabled={isSent}>
         {isSent ? "Sent" : "Send"}
       </Button>
 
@@ -682,7 +711,8 @@ export function SendInvoiceComponent({
               <div className="flex items-center gap-3 p-3 bg-yellow-50 text-yellow-700 rounded-lg border border-yellow-200">
                 <AlertCircle className="w-4 h-4 shrink-0" />
                 <p className="text-sm">
-                  No files attached. Please upload at least one billing statement before sending.
+                  No files attached. Please upload at least one billing
+                  statement before sending.
                 </p>
               </div>
               <div className="flex justify-end">
