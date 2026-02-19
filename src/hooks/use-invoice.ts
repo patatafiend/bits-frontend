@@ -6,6 +6,7 @@ import {
   AddInvoiceItemPayload,
   InvoiceWithItems,
   UpdateInvoice,
+  PaginatedInvoice,
 } from "@/lib/types";
 
 export function useCreateInvoice() {
@@ -21,7 +22,7 @@ export function useUpdateInvoice() {
 }
 
 export function useFetchInvoices() {
-  return useServerFetch<Invoice[]>(`/invoices`, { method: "GET" });
+  return useServerFetch<PaginatedInvoice>(`/invoices`, { method: "GET" });
 }
 
 export function useFetchInvoice() {
