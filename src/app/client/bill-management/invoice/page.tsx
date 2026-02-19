@@ -37,7 +37,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useCreateInvoice, useFetchInvoices } from "@/hooks/use-invoice";
 import { useGetCurrentUser } from "@/components/providers/auth-provider";
 import { toast } from "sonner";
-import { Invoice, InvoiceModalProps } from "@/lib/types";
+import { InvoiceModalProps, PaginatedInvoice } from "@/lib/types";
 import {
   Select,
   SelectContent,
@@ -123,15 +123,16 @@ export function InvoiceList({
   data,
   page,
   setPage,
+  limit,
+  total,
 }: {
-  data: Invoice[];
+  data: PaginatedInvoice["items"]; // just the inner item, not the wrapper
   page: number;
   setPage: (page: number) => void;
+  limit: number;
+  total: number;
 }) {
-  const itemsPerPage = 10;
-  const pageCount = Math.ceil(data.length / itemsPerPage);
-  const start = (page - 1) * itemsPerPage;
-  const paginated = data.slice(start, start + itemsPerPage);
+  const pageCount = Math.ceil(total / limit);
   const pages = [...Array(pageCount)].map((_, i) => i + 1);
 
   const getStatusBadge = (status: string) => {
@@ -159,7 +160,7 @@ export function InvoiceList({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {paginated.map((invoice) => (
+          {data.map((invoice) => (
             <TableRow key={invoice.id}>
               <TableCell className="font-medium">
                 {invoice.invoice_number}
@@ -315,10 +316,11 @@ export function SearchInvoiceComponent({
   data,
   onFilter,
 }: {
-  data: Invoice[];
+  data: PaginatedInvoice;
   onFilter: (params: {
     search?: string;
     status?: string;
+    limit?: number;
     skip?: number;
     order_by?: string;
   }) => void;
@@ -326,24 +328,30 @@ export function SearchInvoiceComponent({
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [orderBy, setOrderBy] = useState("recent");
+  const [limit, setLimit] = useState(10);
   const [page, setPage] = useState(1);
 
-  // Debounce search so we don't hit the API on every keystroke
   useEffect(() => {
     const timeout = setTimeout(() => {
       onFilter({
         search: query,
         status: statusFilter,
-        skip: (page - 1) * 10,
+        limit: limit,
+        skip: (page - 1) * limit,
         order_by: orderBy,
       });
-    }, 500);
+    }, 450);
     return () => clearTimeout(timeout);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query, statusFilter, page, orderBy]);
+  }, [query, statusFilter, page, orderBy, limit]);
 
   function handleQueryChange(e: React.ChangeEvent<HTMLInputElement>) {
     setQuery(e.target.value);
+    setPage(1);
+  }
+
+  function handleLimitChange(value: number) {
+    setLimit(value);
     setPage(1);
   }
 
@@ -361,10 +369,12 @@ export function SearchInvoiceComponent({
     setQuery("");
     setStatusFilter("all");
     setOrderBy("recent");
+    setLimit(10);
     setPage(1);
   }
 
-  const isDirty = query || statusFilter !== "all" || orderBy !== "recent";
+  const isDirty =
+    query || statusFilter !== "all" || orderBy !== "recent" || limit !== 10;
 
   return (
     <div className="space-y-4">
@@ -400,6 +410,21 @@ export function SearchInvoiceComponent({
           </SelectContent>
         </Select>
 
+        <Select
+          value={String(limit)}
+          onValueChange={(value) => handleLimitChange(Number(value))}
+        >
+          <SelectTrigger className="w-24">
+            <SelectValue placeholder="Limit" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="10">10</SelectItem>
+            <SelectItem value="25">25</SelectItem>
+            <SelectItem value="50">50</SelectItem>
+            <SelectItem value="100">100</SelectItem>
+          </SelectContent>
+        </Select>
+
         {isDirty && (
           <Button variant="ghost" size="sm" onClick={handleClear}>
             Clear
@@ -407,8 +432,14 @@ export function SearchInvoiceComponent({
         )}
       </div>
 
-      {data.length > 0 ? (
-        <InvoiceList data={data} page={page} setPage={setPage} />
+      {(data?.items?.length ?? 0) > 0 ? (
+        <InvoiceList
+          data={data.items}
+          page={page}
+          setPage={setPage}
+          limit={limit}
+          total={data.total}
+        />
       ) : (
         <p className="text-sm text-muted-foreground py-4 text-center">
           No invoices match your search.
