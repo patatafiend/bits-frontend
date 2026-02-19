@@ -60,7 +60,7 @@ const formSchema = z.object({
     .min(10, { message: "Phone number must be at least 10 characters long" })
     .max(15, { message: "Phone number must be at most 15 characters long" }),
   account_type: z.enum(
-    ["company_account", "admin_account", "warehouse_account"],
+    ["company_account", "admin_account"],
     {
       message: "Please select an account type",
     },
