@@ -38,6 +38,12 @@ export function useAddItemToInvoice() {
   });
 }
 
+export function useDeleteInvoiceItem() {
+  return useServerAction<InvoiceItems>(`/invoices`, {
+    method: "DELETE",
+  });
+}
+
 export type InvoiceResponse = {
   detail: string;
   sent_to: string;
