@@ -74,7 +74,6 @@ export default function InvoiceDetailPage() {
   const {
     data: receiverData,
     refetch: refetchReceiver,
-    //loading: receiverLoading,
   } = useFetchReceivers();
   const { execute: getPresignedUrl, loading: loadingUrl } =
     useGetPresignedUrl();
@@ -391,8 +390,6 @@ export function FileViewerModal({ file, onClose }: FileViewerModalProps) {
   );
 }
 
-// ...existing code...
-
 export function UploadFile({
   invoiceData,
   invoiceId,
@@ -441,7 +438,6 @@ export function UploadFile({
         return;
       }
 
-      // Prepare items for database
       const items = urls.map((url, index) => {
         const urlObj = new URL(url);
         const s3Key = urlObj.pathname.substring(1);
@@ -616,10 +612,11 @@ export function SendInvoiceComponent({
   onSend: () => void;
 }) {
   const { execute: sendInvoice, loading } = useSendInvoice();
-  const [sent, setSent] = useState(false);
+  const [open, setOpen] = useState(false);
+  const isSent = invoiceData.status === "sent";
+  const hasItems = (invoiceData.invoice_items?.length ?? 0) > 0;
 
   const handleSend = async () => {
-    if (!invoiceData) return;
     const { error } = await sendInvoice({
       body: invoiceData,
       params: `/${invoiceData.id}/send`,
@@ -628,19 +625,76 @@ export function SendInvoiceComponent({
       toast.error(error.message || "Failed to send invoice");
       return;
     }
-    setSent(true);
+    setOpen(false);
     onSend();
     toast.success("Invoice sent successfully!");
   };
 
   return (
-    <Button
-      variant="default"
-      onClick={handleSend}
-      disabled={loading || sent || !invoiceData}
-    >
-      {loading ? "Sending..." : sent ? "Sent" : "Send"}
-    </Button>
+    <>
+      <Button
+        variant="default"
+        onClick={() => setOpen(true)}
+        disabled={isSent}
+      >
+        {isSent ? "Sent" : "Send"}
+      </Button>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {hasItems ? "Confirm Send Invoice" : "Cannot Send Invoice"}
+            </DialogTitle>
+          </DialogHeader>
+
+          {hasItems ? (
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                The following files will be sent with this invoice:
+              </p>
+              <div className="divide-y rounded-lg border">
+                {invoiceData.invoice_items.map((item) => (
+                  <div key={item.id} className="flex items-center gap-3 p-3">
+                    <FileText className="w-4 h-4 text-muted-foreground shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">
+                        {item.file_name}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {(parseInt(item.file_size) / 1024 / 1024).toFixed(2)} MB
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setOpen(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={handleSend} disabled={loading}>
+                  {loading ? "Sending..." : "Confirm Send"}
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="flex items-center gap-3 p-3 bg-yellow-50 text-yellow-700 rounded-lg border border-yellow-200">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <p className="text-sm">
+                  No files attached. Please upload at least one billing statement before sending.
+                </p>
+              </div>
+              <div className="flex justify-end">
+                <Button variant="outline" onClick={() => setOpen(false)}>
+                  Close
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 
