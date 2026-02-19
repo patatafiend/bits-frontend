@@ -22,8 +22,8 @@ export default function ManageUsers() {
 
   useEffect(() => {
     refetch();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div>
@@ -62,7 +62,8 @@ export default function ManageUsers() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {usersData &&
+                {!loading &&
+                  usersData &&
                   usersData.map((user) => (
                     <TableRow key={user.id}>
                       <TableCell className="whitespace-nowrap">
