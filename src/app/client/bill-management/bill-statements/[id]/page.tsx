@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { FileText } from "lucide-react";
 import { useGetPresignedUrl } from "@/hooks/use-media";
-import { FileViewerModal } from "../../invoice/[id]/page";
+import { FileViewerModal } from "../../invoice/[id]/dialogs";
 
 export default function InvoiceViewPage() {
   const params = useParams();
