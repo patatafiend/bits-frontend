@@ -46,7 +46,6 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import ReceiverComboBox from "@/components/receiver-combobox";
-import ControlledDialog from "@/components/controlled-dialog";
 
 export function FileViewerModal({ file, onClose }: FileViewerModalProps) {
   if (!file) return null;
