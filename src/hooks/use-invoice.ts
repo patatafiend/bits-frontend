@@ -55,3 +55,14 @@ export function useSendInvoice() {
     method: "POST",
   });
 }
+
+export type ReceiverResponse = {
+  invoice_id: number;
+  action: string;
+};
+
+export function useReceiverAction() {
+  return useServerAction<ReceiverResponse>(`/invoices/receiver/`, {
+    method: "PUT",
+  });
+}
