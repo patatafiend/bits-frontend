@@ -124,6 +124,7 @@ export function useServerAction<T, TBody = unknown>(
     body?: TBody;
     query?: Record<string, unknown>;
     params?: string;
+    headers?: HeadersInit;
   };
 
   function buildRoute(base: string, params?: string) {
@@ -145,7 +146,7 @@ export function useServerAction<T, TBody = unknown>(
   }
 
   const execute = async (input: ExecuteOptions = {}) => {
-    const { body, query, params } = input;
+    const { body, query, params, headers: customHeaders } = input;
     const finalRoute = buildRoute(url, params);
     const queryString = buildQueryString(query);
     const finalUrl = finalRoute + queryString;
@@ -157,6 +158,7 @@ export function useServerAction<T, TBody = unknown>(
         headers: {
           "Content-Type": "application/json",
           ...options?.headers,
+          ...(customHeaders || {}),
         },
         body: body ? JSON.stringify(body) : undefined,
       },
