@@ -2,15 +2,34 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
-import { useFetchInvoice } from "@/hooks/use-invoice";
+import { useFetchInvoice, useReceiverAction } from "@/hooks/use-invoice";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-// import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { FileText } from "lucide-react";
 import { useGetPresignedUrl } from "@/hooks/use-media";
 import { FileViewerModal } from "../../invoice/[id]/dialogs";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { AlertTriangle, CheckCircle } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 
 export default function InvoiceViewPage() {
   const params = useParams();
@@ -33,6 +52,8 @@ export default function InvoiceViewPage() {
   const [urlCache, setUrlCache] = useState<
     Map<string, { url: string; expires: number }>
   >(new Map());
+  const { execute: receiverAction, loading: actionLoading } =
+    useReceiverAction();
 
   async function handleViewFile(
     filekey: string,
@@ -65,25 +86,10 @@ export default function InvoiceViewPage() {
     setViewingFile({ url: data.url, name: fileName, type: fileType });
   }
 
-//   const getStatusBadge = (status: string) => {
-//     if (!status) return null;
-
-//     const variants: Record<string, "default" | "secondary" | "destructive"> = {
-//       paid: "default",
-//       pending: "secondary",
-//       overdue: "destructive",
-//     };
-//     return (
-//       <Badge variant={variants[status] || "default"}>
-//         {status.charAt(0).toUpperCase() + status.slice(1)}
-//       </Badge>
-//     );
-//   };
-
   useEffect(() => {
     if (invoiceId) {
       const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
-      
+
       refetchInvoice({
         params: `/receiver/${invoiceId}`,
         query: { include_items: true },
@@ -92,6 +98,43 @@ export default function InvoiceViewPage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  async function handleAccept() {
+    const { error } = await receiverAction({
+      params: `${invoiceId}/accept`,
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    });
+
+    if (error) {
+      toast.error("Failed to accept invoice");
+      return;
+    }
+    toast.success("Invoice accepted successfully");
+    refetchInvoice({
+      params: `/receiver/${invoiceId}`,
+      query: { include_items: true },
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    });
+  }
+
+  async function handleReject(reason: string) {
+    const { error } = await receiverAction({
+      params: `${invoiceId}/reject`,
+      query: { rejection_reason: reason },
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    });
+
+    if (error) {
+      toast.error("Failed to reject invoice");
+      return;
+    }
+    toast.success("Invoice rejected successfully");
+    refetchInvoice({
+      params: `/receiver/${invoiceId}`,
+      query: { include_items: true },
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    });
+  }
 
   if (loading) {
     return (
@@ -117,6 +160,9 @@ export default function InvoiceViewPage() {
     );
   }
 
+  const isActionDisabled =
+    invoiceData.status === "accepted" || invoiceData.status === "rejected";
+
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
       <Card>
@@ -126,9 +172,6 @@ export default function InvoiceViewPage() {
               <CardTitle className="text-2xl">
                 Invoice #{invoiceData.invoice_number}
               </CardTitle>
-              <p className="text-sm text-muted-foreground mt-1">
-                Client: {invoiceData.billing_receiver_id}
-              </p>
             </div>
           </div>
         </CardHeader>
@@ -200,15 +243,16 @@ export default function InvoiceViewPage() {
           <Separator />
 
           <div className="flex gap-4 justify-end">
-            <Button
-              variant="outline"
-              className="border-red-600 text-red-600 hover:bg-red-50 hover:text-red-700"
-            >
-              Reject Invoice
-            </Button>
-            <Button className="bg-green-600 hover:bg-green-700">
-              Accept Invoice
-            </Button>
+            <RejectInvoiceDialog
+              onConfirm={handleReject}
+              loading={actionLoading}
+              disabled={isActionDisabled}
+            />
+            <AcceptInvoiceDialog
+              onConfirm={handleAccept}
+              loading={actionLoading}
+              disabled={isActionDisabled}
+            />
           </div>
         </CardContent>
       </Card>
@@ -218,5 +262,161 @@ export default function InvoiceViewPage() {
         onClose={() => setViewingFile(null)}
       />
     </div>
+  );
+}
+
+export function AcceptInvoiceDialog({
+  onConfirm,
+  loading,
+  disabled,
+}: {
+  onConfirm: () => void;
+  loading?: boolean;
+  disabled: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <>
+      <Button
+        className="bg-green-600 hover:bg-green-700"
+        onClick={() => setOpen(true)}
+        disabled={disabled}
+      >
+        Accept Invoice
+      </Button>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-green-600">
+              <CheckCircle className="w-5 h-5" />
+              Accept Invoice
+            </DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Are you sure you want to accept this invoice? This action cannot be
+            undone.
+          </p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              className="bg-green-600 hover:bg-green-700"
+              onClick={() => {
+                onConfirm();
+                setOpen(false);
+              }}
+              disabled={loading}
+            >
+              {loading ? "Processing..." : "Confirm Accept"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
+const rejectSchema = z.object({
+  rejection_reason: z.string().min(1, "Rejection reason is required").trim(),
+});
+
+type RejectFormValues = z.infer<typeof rejectSchema>;
+
+export function RejectInvoiceDialog({
+  onConfirm,
+  loading,
+  disabled,
+}: {
+  onConfirm: (reason: string) => void;
+  loading?: boolean;
+  disabled?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+
+  const form = useForm<RejectFormValues>({
+    resolver: zodResolver(rejectSchema),
+    defaultValues: { rejection_reason: "" },
+  });
+
+  function handleConfirm(values: RejectFormValues) {
+    onConfirm(values.rejection_reason);
+    setOpen(false);
+    form.reset();
+  }
+
+  function handleClose() {
+    setOpen(false);
+    form.reset();
+  }
+
+  return (
+    <>
+      <Button
+        variant="outline"
+        className="border-red-600 text-red-600 hover:bg-red-50 hover:text-red-700"
+        onClick={() => setOpen(true)}
+        disabled={disabled}
+      >
+        Reject Invoice
+      </Button>
+
+      <Dialog open={open} onOpenChange={handleClose}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <AlertTriangle className="w-5 h-5" />
+              Reject Invoice
+            </DialogTitle>
+          </DialogHeader>
+
+          <Form {...form}>
+            <form
+              onSubmit={form.handleSubmit(handleConfirm)}
+              className="space-y-4"
+            >
+              <div className="rounded-md border border-yellow-300 bg-yellow-50 p-3">
+                <p className="text-sm text-yellow-800">
+                  ⚠️ This action cannot be undone. The sender will be notified
+                  with your rejection reason.
+                </p>
+              </div>
+
+              <FormField
+                control={form.control}
+                name="rejection_reason"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      Rejection Reason{" "}
+                      <span className="text-destructive">*</span>
+                    </FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Please provide a reason for rejecting this invoice..."
+                        rows={4}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <DialogFooter>
+                <Button variant="outline" type="button" onClick={handleClose}>
+                  Cancel
+                </Button>
+                <Button variant="destructive" type="submit" disabled={loading}>
+                  {loading ? "Processing..." : "Confirm Reject"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
