@@ -5,22 +5,21 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import {
-  FileText,
-  ArrowLeft,
-  RefreshCw,
-} from "lucide-react";
+import { FileText, ArrowLeft, RefreshCw } from "lucide-react";
 import Link from "next/link";
-import {
-  useDeleteInvoiceItem,
-  useFetchInvoice,
-} from "@/hooks/use-invoice";
+import { useDeleteInvoiceItem, useFetchInvoice } from "@/hooks/use-invoice";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useGetPresignedUrl, useDeleteS3Object } from "@/hooks/use-media";
 import { useFetchReceivers } from "@/hooks/use-receiver";
 import { useCurrentUser } from "@/components/providers/auth-provider";
-import { EditModal, SendInvoiceComponent, FileViewerModal, UploadFile } from "./dialogs";
+import {
+  EditModal,
+  SendInvoiceComponent,
+  FileViewerModal,
+  UploadFile,
+  RejectionReasonDialog
+} from "./dialogs";
 
 export default function InvoiceDetailPage() {
   const params = useParams();
@@ -149,6 +148,7 @@ export default function InvoiceDetailPage() {
               <div className="flex items-center justify-between">
                 <CardTitle>Invoice Details</CardTitle>
                 <div className="flex items-center gap-2">
+                  <RejectionReasonDialog invoiceData={invoiceData}/>
                   <EditModal
                     invoiceData={invoiceData}
                     receiverData={receiverData}
@@ -182,7 +182,9 @@ export default function InvoiceDetailPage() {
                 <div>
                   <p className="text-sm text-muted-foreground">Receiver</p>
                   <p className="font-medium">
-                    {invoiceData.billing_receiver_id}
+                    {invoiceData.billing_receivers
+                      .map((r) => r.receiver_name)
+                      .join(", ")}
                   </p>
                 </div>
                 <div>
