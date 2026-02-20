@@ -21,7 +21,7 @@ import {
   Dialog,
   DialogContent,
   DialogHeader,
-  DialogTitle,
+  DialogTitle
 } from "@/components/ui/dialog";
 import { Download } from "lucide-react";
 import {
@@ -46,6 +46,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import ReceiverComboBox from "@/components/receiver-combobox";
+import ControlledDialog from "@/components/controlled-dialog";
 
 export function FileViewerModal({ file, onClose }: FileViewerModalProps) {
   if (!file) return null;
@@ -355,7 +356,7 @@ export function SendInvoiceComponent({
 }) {
   const { execute: sendInvoice, loading } = useSendInvoice();
   const [open, setOpen] = useState(false);
-  const isSent = invoiceData.status === "sent";
+  const isDisabled = invoiceData.status === "sent" || invoiceData.status === "accepted";
   const hasItems = (invoiceData.invoice_items?.length ?? 0) > 0;
 
   const handleSend = async () => {
@@ -374,12 +375,12 @@ export function SendInvoiceComponent({
 
   return (
     <>
-      <Button variant="default" onClick={() => setOpen(true)} disabled={isSent}>
-        {isSent ? "Sent" : "Send"}
+      <Button variant="default" onClick={() => setOpen(true)} disabled={isDisabled}>
+        {isDisabled ? "Sent" : "Send"}
       </Button>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent>
+        <DialogContent className="w-[calc(100%-2rem)] sm:max-w-lg rounded-lg">
           <DialogHeader>
             <DialogTitle>
               {hasItems ? "Confirm Send Invoice" : "Cannot Send Invoice"}
@@ -388,44 +389,42 @@ export function SendInvoiceComponent({
 
           {hasItems ? (
             <div className="space-y-4">
-              <p className="text-sm text-muted-foreground">
-                The following files will be sent with this invoice:
-              </p>
-              <div className="divide-y rounded-lg border">
-                {invoiceData.invoice_items.map((item) => (
-                  <div key={item.id} className="flex items-center gap-3 p-3">
-                    <FileText className="w-4 h-4 text-muted-foreground shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">
-                        {item.file_name}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {(parseInt(item.file_size) / 1024 / 1024).toFixed(2)} MB
-                      </p>
-                    </div>
-                  </div>
-                ))}
+              <div className="rounded-lg border p-3 space-y-1 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Invoice</span>
+                  <span className="font-medium">{invoiceData.invoice_number}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Date</span>
+                  <span className="font-medium">
+                    {new Date(invoiceData.invoice_date).toLocaleDateString()}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Files</span>
+                  <span className="font-medium">{invoiceData.invoice_items.length} attached</span>
+                </div>
               </div>
-              <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setOpen(false)}>
+
+              <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
+                <Button variant="outline" onClick={() => setOpen(false)} className="w-full sm:w-auto">
                   Cancel
                 </Button>
-                <Button onClick={handleSend} disabled={loading}>
+                <Button onClick={handleSend} disabled={loading} className="w-full sm:w-auto">
                   {loading ? "Sending..." : "Confirm Send"}
                 </Button>
               </div>
             </div>
           ) : (
             <div className="space-y-4">
-              <div className="flex items-center gap-3 p-3 bg-yellow-50 text-yellow-700 rounded-lg border border-yellow-200">
-                <AlertCircle className="w-4 h-4 shrink-0" />
+              <div className="flex items-start gap-3 p-3 bg-yellow-50 text-yellow-700 rounded-lg border border-yellow-200">
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
                 <p className="text-sm">
-                  No files attached. Please upload at least one billing
-                  statement before sending.
+                  No files attached. Please upload at least one billing statement before sending.
                 </p>
               </div>
               <div className="flex justify-end">
-                <Button variant="outline" onClick={() => setOpen(false)}>
+                <Button variant="outline" onClick={() => setOpen(false)} className="w-full sm:w-auto">
                   Close
                 </Button>
               </div>
@@ -540,5 +539,39 @@ export function EditModal({
         )}
       </DrawerDialog>
     </div>
+  );
+}
+
+export function RejectionReasonDialog({ invoiceData }: { invoiceData: InvoiceWithItems }) {
+  if (invoiceData.status !== "rejected" || !invoiceData.rejection_reason) {
+    return null;
+  }
+
+  return (
+    <DrawerDialog
+      title="Invoice Rejected"
+      description=""
+      responsive
+      className="max-w-md"
+      renderTrigger={
+        <Button
+          variant="outline"
+          size="sm"
+          className="text-destructive border-destructive hover:text-destructive"
+        >
+          <AlertCircle className="w-4 h-4 mr-2" />
+          Notes
+        </Button>
+      }
+    >
+      <div className="space-y-3 px-4 sm:px-0 pb-4">
+        <p className="text-sm text-muted-foreground break-all">{invoiceData.rejection_reason}</p>
+        {invoiceData.response_date && (
+          <p className="text-xs text-muted-foreground">
+            Rejected on {new Date(invoiceData.response_date).toLocaleDateString()}
+          </p>
+        )}
+      </div>
+    </DrawerDialog>
   );
 }
