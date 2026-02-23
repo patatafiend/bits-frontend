@@ -150,7 +150,7 @@ export type InvoiceWithItems = {
   created_at: string;
 
   invoice_items: InvoiceItems[];
-  billing_receivers: Receiver[];
+  billing_receiver: Receiver | null;
 };
 
 export type InvoiceItems = {

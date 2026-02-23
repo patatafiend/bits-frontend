@@ -18,7 +18,7 @@ import {
   SendInvoiceComponent,
   FileViewerModal,
   UploadFile,
-  RejectionReasonDialog
+  RejectionReasonDialog,
 } from "./dialogs";
 
 export default function InvoiceDetailPage() {
@@ -148,7 +148,7 @@ export default function InvoiceDetailPage() {
               <div className="flex items-center justify-between">
                 <CardTitle>Invoice Details</CardTitle>
                 <div className="flex items-center gap-2">
-                  <RejectionReasonDialog invoiceData={invoiceData}/>
+                  <RejectionReasonDialog invoiceData={invoiceData} />
                   <EditModal
                     invoiceData={invoiceData}
                     receiverData={receiverData}
@@ -182,9 +182,8 @@ export default function InvoiceDetailPage() {
                 <div>
                   <p className="text-sm text-muted-foreground">Receiver</p>
                   <p className="font-medium">
-                    {invoiceData.billing_receivers
-                      .map((r) => r.receiver_name)
-                      .join(", ")}
+                    {invoiceData.billing_receiver?.receiver_name ??
+                      "No receiver assigned"}
                   </p>
                 </div>
                 <div>
@@ -303,5 +302,3 @@ export default function InvoiceDetailPage() {
     </div>
   );
 }
-
-
