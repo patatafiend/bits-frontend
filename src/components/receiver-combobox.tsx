@@ -15,16 +15,14 @@ export default function ReceiverComboBox({
   receiverData: Receiver[] | null;
 } & Omit<ComboBoxProps, "options">) {
 
-  // Build options from receivers
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const options = receiverData?.map((r) => ({
     label: r.receiver_name,
     value: String(r.id),
   })) ?? [];
 
-  // normalized controlled value
   const controlledValue = value ?? "";
 
-  // If the selected value no longer exists in options, clear it
   useEffect(() => {
     if (controlledValue && !options.find((o) => o.value === controlledValue)) {
       onValueChange?.("");

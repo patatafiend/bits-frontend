@@ -52,7 +52,12 @@ export function useServerFetch<T>(
   }
 
   async function doFetch(input: RefetchOptions = {}) {
-    const { query, params, headers: customHeaders, options: extraOptions } = input;
+    const {
+      query,
+      params,
+      headers: customHeaders,
+      options: extraOptions,
+    } = input;
     const finalRoute = buildRoute(url, params);
     const queryString = buildQueryString(query);
 
