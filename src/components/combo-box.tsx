@@ -35,12 +35,11 @@ export function ComboBox({
   virtualize = false,
 }: ComboBoxProps) {
   const [open, setOpen] = React.useState(false);
-  const [internalValue, setInternalValue] = React.useState(value || "");
   const [search, setSearch] = React.useState("");
 
   const virtuosoRef = React.useRef<VirtuosoHandle>(null);
 
-  const currentValue = value !== undefined ? value : internalValue;
+  const currentValue = value ?? "";
 
   const filteredOptions = React.useMemo(() => {
     if (!search) return options;
@@ -56,17 +55,12 @@ export function ComboBox({
     });
   }, [search]);
 
-  const handleSelect = (selectedValue: string) => {
-    const newValue =
-      selectedValue === currentValue && allowEmpty ? "" : selectedValue;
-
-    if (value === undefined) {
-      setInternalValue(newValue);
-    }
-
-    onValueChange?.(newValue);
-    setOpen(false);
-  };
+const handleSelect = (selectedValue: string) => {
+  const newValue =
+    selectedValue === currentValue && allowEmpty ? "" : selectedValue;
+  onValueChange?.(newValue);
+  setOpen(false);
+};
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
