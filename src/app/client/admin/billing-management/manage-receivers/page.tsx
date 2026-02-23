@@ -101,7 +101,7 @@ function ReceiverList({
             <TableRow>
               <TableHead>ID</TableHead>
               <TableHead>Name</TableHead>
-              <TableHead>Created By</TableHead>
+              <TableHead>Email</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -110,7 +110,7 @@ function ReceiverList({
               <TableRow key={index}>
                 <TableCell>{receiver.id}</TableCell>
                 <TableCell>{receiver.receiver_name}</TableCell>
-                <TableCell>{receiver.created_by}</TableCell>
+                <TableCell>{receiver.receiver_email}</TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-2">
                     <UpdateReceiverDialog
@@ -378,7 +378,7 @@ export function AddReceiverDialog({
     const { error } = await execute({
       body: {
         receiver_name: values.receiver_name.trim(),
-        receiver_email: values.receiver_name,
+        receiver_email: values.receiver_email,
         receiver_phone: values.receiver_phone,
         receiver_position: values.receiver_positon,
         created_by: user?.username,
