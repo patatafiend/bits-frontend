@@ -1,6 +1,6 @@
 "use client";
 
-import { useGetCurrentUser } from "@/components/providers/auth-provider";
+import { useGetCurrentUser, useRefetchUser } from "@/components/providers/auth-provider";
 import { Button } from "@/components/ui/button";
 import { Copy } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
@@ -25,6 +25,7 @@ export default function Mfa() {
   const { data: currentUser } = useGetCurrentUser();
   const { execute: submitVerify, loading: submitLoading } = useMfaVerify();
   const router = useRouter();
+  const refetchUser = useRefetchUser();
   const { data: mfa, loading: loadingMFA, error: errorMFA } = useMfaSetup();
 
   const formSchema = z.object({
@@ -49,9 +50,8 @@ export default function Mfa() {
       toast.success("MFA setup successfully", {
         description: "Your account is now secured with MFA.",
       });
-      if (currentUser) {
-        router.push("/client/bill-management");
-      }
+      await refetchUser();
+      router.push("/client/bill-management/invoice");
     }
   }
 

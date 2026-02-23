@@ -1,11 +1,12 @@
 "use client";
 import { InputOTPForm } from "@/components/otp-form";
-import { useMfaSignIn } from "@/components/providers/auth-provider";
+import { useMfaSignIn, useRefetchUser } from "@/components/providers/auth-provider";
 import { useRouter } from "next/navigation";
 
 export default function MfaSignin() {
   const { loading, execute, error } = useMfaSignIn();
   const router = useRouter();
+  const refetchUser = useRefetchUser();
 
   return (
     <div className="mx-auto max-w-md p-6 pt-32">
@@ -20,7 +21,8 @@ export default function MfaSignin() {
           onSubmit={async (data) => {
             const result = await execute({ body: { mfa_code: data.code } });
             if (!result.error) {
-              router.push("/client/bill-management");
+              await refetchUser();
+              router.push("/client/bill-management/invoice");
               return;
             }
           }}

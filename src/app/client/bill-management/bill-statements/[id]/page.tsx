@@ -102,6 +102,7 @@ export default function InvoiceViewPage() {
   async function handleAccept() {
     const { error } = await receiverAction({
       params: `${invoiceId}/accept`,
+      query: { rejection_reason: null },
       headers: token ? { Authorization: `Bearer ${token}` } : undefined,
     });
 
@@ -379,7 +380,7 @@ export function RejectInvoiceDialog({
             >
               <div className="rounded-md border border-yellow-300 bg-yellow-50 p-3">
                 <p className="text-sm text-yellow-800">
-                  ⚠️ This action cannot be undone. The sender will be notified
+                  This action cannot be undone. The sender will be notified
                   with your rejection reason.
                 </p>
               </div>

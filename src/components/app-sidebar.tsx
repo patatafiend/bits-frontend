@@ -11,6 +11,7 @@ import {
   SidebarMenuSub,
   SidebarMenuSubItem,
   SidebarMenuSubButton,
+  SidebarFooter,
 } from "@/components/ui/sidebar";
 import { useState } from "react";
 import { ChevronRight, ReceiptText, UserPen } from "lucide-react";
@@ -23,6 +24,7 @@ import {
 } from "@/components/ui/collapsible";
 import { useCurrentUser } from "./providers/auth-provider";
 import { UserPayload } from "@/lib/types";
+import { NavUser } from "./nav-user";
 
 type NavSubItem = {
   title: string;
@@ -181,6 +183,7 @@ export function AppSidebar() {
           </SidebarMenu>
         </SidebarGroup>
       </SidebarContent>
+      <SidebarFooter>{user && <NavUser user={user} />}</SidebarFooter>
     </Sidebar>
   );
 }
