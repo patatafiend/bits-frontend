@@ -185,6 +185,11 @@ export default function InvoiceDetailPage() {
                     {invoiceData.billing_receiver?.receiver_name ??
                       "No receiver assigned"}
                   </p>
+                  {invoiceData.billing_receiver?.receiver_email && (
+                    <p className="text-sm text-muted-foreground">
+                      {invoiceData.billing_receiver.receiver_email}
+                    </p>
+                  )}
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Status</p>

@@ -191,6 +191,7 @@ export function InvoiceModal({
     if (!error) {
       onOpenChange(false);
       onSubmit();
+      toast.success("Invoice Created Successfully!");
     } else {
       toast.error(`Error: ${error.message}`);
     }
@@ -205,8 +206,7 @@ export function InvoiceModal({
 
         <form onSubmit={form.handleSubmit(handleSubmit)}>
           <FieldSet>
-            <FieldGroup className="grid grid-cols-2 gap-4">
-              {/* Invoice Number */}
+            <FieldGroup className="grid">
               <Field>
                 <FieldLabel>Invoice Number</FieldLabel>
                 <FieldContent>
@@ -226,7 +226,6 @@ export function InvoiceModal({
 
             <FieldSeparator />
 
-            {/* Action Buttons */}
             <div className="flex justify-end gap-2">
               <Button
                 type="button"
