@@ -1,7 +1,7 @@
 export default function BillManagementPage() {
   return (
     <div>
-      <div>dsa</div>
+      <div>Bill Management</div>
     </div>
   );
 }

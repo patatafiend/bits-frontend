@@ -66,8 +66,18 @@ const clientData: { navMain: NavItem[]; adminMain: NavItem[] } = {
       isActive: true,
       items: [
         {
-          title: "Bill Invoices",
-          url: "/client/bill-management/invoice",
+          title: "Transmittals",
+          url: "/client/bill-management/transmittals",
+          permission: "billing:read",
+        },
+        {
+          title: "Assigned Transmittals",
+          url: "/client/bill-management/billing-admin",
+          permission: "billing:read",
+        },
+        {
+          title: "My Deliveries",
+          url: "/client/bill-management/billing-officer",
           permission: "billing:read",
         },
         {
