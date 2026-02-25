@@ -51,7 +51,7 @@ export default function Mfa() {
         description: "Your account is now secured with MFA.",
       });
       await refetchUser();
-      router.push("/client/bill-management/invoice");
+      router.push("/client/bill-management/");
     }
   }
 

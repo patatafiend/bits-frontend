@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 // import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { FileText } from "lucide-react";
-import { FileViewerModal } from "../transmittals/[id]/dialogs";
+import { FileViewerModal } from "../transmittal/[id]/dialogs";
 
 export default function InvoiceViewPage() {
   const [viewingFile, setViewingFile] = useState<{

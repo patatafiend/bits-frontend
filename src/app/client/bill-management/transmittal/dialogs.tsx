@@ -33,9 +33,9 @@ import {
 import z from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useCreateInvoice } from "@/hooks/use-invoice";
+import { useCreateTransmittal } from "@/hooks/use-transmittal";
 import { toast } from "sonner";
-import { InvoiceModalProps, PaginatedInvoice } from "@/lib/types";
+import { PaginatedTransmittal, TransmittalModalProps } from "@/lib/types";
 import {
   Select,
   SelectContent,
@@ -51,14 +51,15 @@ import {
   PaginationPrevious,
   PaginationNext,
 } from "@/components/ui/pagination";
-export function InvoiceList({
+
+export function TransmittalList({
   data,
   page,
   setPage,
   limit,
   total,
 }: {
-  data: PaginatedInvoice["items"]; // just the inner item, not the wrapper
+  data: PaginatedTransmittal["items"];
   page: number;
   setPage: (page: number) => void;
   limit: number;
@@ -85,22 +86,24 @@ export function InvoiceList({
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Invoice Number</TableHead>
+            <TableHead>Transmittal Number</TableHead>
             <TableHead>Date</TableHead>
             <TableHead>Status</TableHead>
             <TableHead className="text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {data.map((invoice) => (
-            <TableRow key={invoice.id}>
+          {data.map((transmittal) => (
+            <TableRow key={transmittal.id}>
               <TableCell className="font-medium">
-                {invoice.invoice_number}
+                {transmittal.transmittal_number}
               </TableCell>
-              <TableCell>{invoice.invoice_date}</TableCell>
-              <TableCell>{getStatusBadge(invoice.status)}</TableCell>
+              <TableCell>{transmittal.transmittal_date}</TableCell>
+              <TableCell>{getStatusBadge(transmittal.status)}</TableCell>
               <TableCell className="text-right">
-                <Link href={`/client/bill-management/invoice/${invoice.id}`}>
+                <Link
+                  href={`/client/bill-management/transmittal/${transmittal.id}`}
+                >
                   <Button variant="ghost" size="sm">
                     <Eye className="w-4 h-4 mr-2" />
                     View
@@ -151,16 +154,16 @@ export function InvoiceList({
   );
 }
 
-export function InvoiceModal({
+export function TransmittalModal({
   client_id,
   open,
   onOpenChange,
   onSubmit,
-}: InvoiceModalProps) {
-  const { execute } = useCreateInvoice();
+}: TransmittalModalProps) {
+  const { execute } = useCreateTransmittal();
 
   const formSchema = z.object({
-    invoice_number: z.string().min(1, "Invoice Number is required"),
+    transmittal_number: z.string().min(1, "Transmittal Number is required"),
     client_id: z.number().min(1, "client id required"),
     status: z.string().optional(),
   });
@@ -168,7 +171,7 @@ export function InvoiceModal({
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      invoice_number: "",
+      transmittal_number: "",
       client_id: client_id,
       status: "Draft",
     },
@@ -183,7 +186,7 @@ export function InvoiceModal({
   async function handleSubmit(data: z.infer<typeof formSchema>) {
     const { error } = await execute({
       body: {
-        invoice_number: data.invoice_number,
+        transmittal_number: data.transmittal_number,
         status: "Draft",
         client_id: data.client_id,
       },
@@ -191,7 +194,7 @@ export function InvoiceModal({
     if (!error) {
       onOpenChange(false);
       onSubmit();
-      toast.success("Invoice Created Successfully!");
+      toast.success("Transmittal Created Successfully!");
     } else {
       toast.error(`Error: ${error.message}`);
     }
@@ -201,24 +204,24 @@ export function InvoiceModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Invoice Details</DialogTitle>
+          <DialogTitle>Transmittal Details</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={form.handleSubmit(handleSubmit)}>
           <FieldSet>
             <FieldGroup className="grid">
               <Field>
-                <FieldLabel>Invoice Number</FieldLabel>
+                <FieldLabel>Transmittal Number</FieldLabel>
                 <FieldContent>
                   <Input
                     type="text"
                     placeholder="INV-2024-001"
-                    {...form.register("invoice_number")}
+                    {...form.register("transmittal_number")}
                   />
                 </FieldContent>
-                {form.formState.errors.invoice_number && (
+                {form.formState.errors.transmittal_number && (
                   <FieldError>
-                    {form.formState.errors.invoice_number.message}
+                    {form.formState.errors.transmittal_number.message}
                   </FieldError>
                 )}
               </Field>
@@ -234,7 +237,7 @@ export function InvoiceModal({
               >
                 Cancel
               </Button>
-              <Button type="submit">Save Invoice</Button>
+              <Button type="submit">Save Transmittal</Button>
             </div>
           </FieldSet>
         </form>
@@ -243,11 +246,11 @@ export function InvoiceModal({
   );
 }
 
-export function SearchInvoiceComponent({
+export function SearchTransmittalComponent({
   data,
   onFilter,
 }: {
-  data: PaginatedInvoice;
+  data: PaginatedTransmittal;
   onFilter: (params: {
     search?: string;
     status?: string;
@@ -312,7 +315,7 @@ export function SearchInvoiceComponent({
       <div className="flex items-center gap-2">
         <Input
           type="text"
-          placeholder="Search by invoice number or date..."
+          placeholder="Search by transmittal number or date..."
           value={query}
           onChange={handleQueryChange}
           className="max-w-sm"
@@ -337,7 +340,7 @@ export function SearchInvoiceComponent({
           <SelectContent>
             <SelectItem value="recent">Most Recent</SelectItem>
             <SelectItem value="oldest">Oldest</SelectItem>
-            <SelectItem value="invoice_number">Invoice Number</SelectItem>
+            <SelectItem value="transmittal_number">Transmittal Number</SelectItem>
           </SelectContent>
         </Select>
 
@@ -364,7 +367,7 @@ export function SearchInvoiceComponent({
       </div>
 
       {(data?.items?.length ?? 0) > 0 ? (
-        <InvoiceList
+        <TransmittalList
           data={data.items}
           page={page}
           setPage={setPage}
@@ -373,7 +376,7 @@ export function SearchInvoiceComponent({
         />
       ) : (
         <p className="text-sm text-muted-foreground py-4 text-center">
-          No invoices match your search.
+          No transmittals match your search.
         </p>
       )}
     </div>

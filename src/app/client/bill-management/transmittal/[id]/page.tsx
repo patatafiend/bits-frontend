@@ -7,7 +7,6 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { FileText, ArrowLeft, RefreshCw } from "lucide-react";
 import Link from "next/link";
-import { useDeleteInvoiceItem, useFetchInvoice } from "@/hooks/use-invoice";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useGetPresignedUrl, useDeleteS3Object } from "@/hooks/use-media";
@@ -20,10 +19,14 @@ import {
   UploadFile,
   RejectionReasonDialog,
 } from "./dialogs";
+import {
+  useDeleteTransmittalItem,
+  useFetchTransmittal,
+} from "@/hooks/use-transmittal";
 
-export default function InvoiceDetailPage() {
+export default function TransmittalDetailPage() {
   const params = useParams();
-  const invoiceId = params.id;
+  const transmittalId = params.id;
   const [viewingFile, setViewingFile] = useState<{
     url: string;
     name: string;
@@ -31,19 +34,26 @@ export default function InvoiceDetailPage() {
   } | null>(null);
   const user = useCurrentUser();
   const {
-    data: invoiceData,
-    refetch: refetchInvoice,
-    loading: invoiceLoading,
-  } = useFetchInvoice();
+    data: transmittalData,
+    refetch: refetchTransmittal,
+    loading: transmittalLoading,
+  } = useFetchTransmittal();
   const { data: receiverData, refetch: refetchReceiver } = useFetchReceivers();
   const { execute: getPresignedUrl, loading: loadingUrl } =
     useGetPresignedUrl();
-  const { execute: deleteInvoiceItem } = useDeleteInvoiceItem();
+  const { execute: deleteTransmittalItem } = useDeleteTransmittalItem();
   const { deleteObject: deleteS3Object, loading: deletingFile } =
     useDeleteS3Object();
   const [urlCache, setUrlCache] = useState<
     Map<string, { url: string; expires: number }>
   >(new Map());
+
+  function refetchTransmittals() {
+    refetchTransmittal({
+      params: `${transmittalId}`,
+      query: { include_items: true },
+    });
+  }
 
   async function handleDeleteItem(itemId: number, fileKey: string) {
     const { error: s3Error } = await deleteS3Object(fileKey);
@@ -52,31 +62,24 @@ export default function InvoiceDetailPage() {
       return;
     }
 
-    const { error: dbError } = await deleteInvoiceItem({
-      params: `/${invoiceId}/items/${itemId}`,
+    const { error: dbError } = await deleteTransmittalItem({
+      params: `/${transmittalId}/items/${itemId}`,
     });
     if (dbError) {
       toast.error("File removed from storage but failed to delete record");
       return;
     }
 
-    refetchInvoices();
+    refetchTransmittals();
     toast.success("File deleted successfully");
   }
 
-  function refetchInvoices() {
-    refetchInvoice({
-      params: `${invoiceId}`,
-      query: { include_items: true },
-    });
-  }
-
   useEffect(() => {
-    if (!invoiceId && user?.client.id) {
+    if (!transmittalId && user?.client.id) {
       return;
     }
-    refetchInvoice({
-      params: `${invoiceId}`,
+    refetchTransmittal({
+      params: `${transmittalId}`,
       query: { include_items: true },
     });
     refetchReceiver({
@@ -84,7 +87,7 @@ export default function InvoiceDetailPage() {
     });
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [invoiceId]);
+  }, [transmittalId]);
 
   async function handleViewFile(
     filekey: string,
@@ -134,23 +137,23 @@ export default function InvoiceDetailPage() {
 
   return (
     <div className="container mx-auto py-8 max-w-4xl">
-      <Link href="/client/bill-management/invoice">
+      <Link href="/client/bill-management/transmittal">
         <Button variant="ghost" className="mb-4">
           <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to Invoices
+          Back to Transmittals
         </Button>
       </Link>
 
       <div className="grid gap-6">
-        {invoiceData && (
+        {transmittalData && (
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
-                <CardTitle>Invoice Details</CardTitle>
+                <CardTitle>Transmittal Details</CardTitle>
                 <div className="flex items-center gap-2">
-                  <RejectionReasonDialog invoiceData={invoiceData} />
+                  <RejectionReasonDialog transmittalData={transmittalData} />
                   <EditModal
-                    invoiceData={invoiceData}
+                    transmittalData={transmittalData}
                     receiverData={receiverData}
                     onSubmit={() =>
                       refetchReceiver({
@@ -159,9 +162,9 @@ export default function InvoiceDetailPage() {
                     }
                   />
                   <SendInvoiceComponent
-                    invoiceData={invoiceData}
+                    transmittalData={transmittalData}
                     onSend={() => {
-                      refetchInvoices();
+                      refetchTransmittals();
                     }}
                   />
                 </div>
@@ -173,28 +176,30 @@ export default function InvoiceDetailPage() {
                   <p className="text-sm text-muted-foreground">
                     Invoice Number
                   </p>
-                  <p className="font-medium">{invoiceData.invoice_number}</p>
+                  <p className="font-medium">
+                    {transmittalData.transmittal_number}
+                  </p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Date</p>
-                  <p className="font-medium">{invoiceData.invoice_date}</p>
+                  <p className="font-medium">{transmittalData.transmittal_date}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Receiver</p>
                   <p className="font-medium">
-                    {invoiceData.billing_receiver?.receiver_name ??
+                    {transmittalData.billing_receiver?.receiver_name ??
                       "No receiver assigned"}
                   </p>
-                  {invoiceData.billing_receiver?.receiver_email && (
+                  {transmittalData.billing_receiver?.receiver_email && (
                     <p className="text-sm text-muted-foreground">
-                      {invoiceData.billing_receiver.receiver_email}
+                      {transmittalData.billing_receiver.receiver_email}
                     </p>
                   )}
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Status</p>
                   <p className="font-medium">
-                    {getStatusBadge(invoiceData?.status)}
+                    {getStatusBadge(transmittalData?.status)}
                   </p>
                 </div>
               </div>
@@ -203,31 +208,31 @@ export default function InvoiceDetailPage() {
                   variant="outline"
                   size="sm"
                   onClick={() => {
-                    refetchInvoices();
+                    refetchTransmittals();
                     refetchReceiver({
                       params: `${user?.client.id}`,
                     });
                     toast.info("Refreshing invoice data...");
                   }}
-                  disabled={invoiceLoading}
+                  disabled={transmittalLoading}
                 >
                   <RefreshCw
-                    className={`w-4 h-4 ${invoiceLoading ? "animate-spin" : ""}`}
+                    className={`w-4 h-4 ${transmittalLoading ? "animate-spin" : ""}`}
                   />
                 </Button>
               </div>
 
               <Separator />
 
-              {invoiceData?.invoice_items &&
-                invoiceData.invoice_items.length > 0 && (
+              {transmittalData?.transmittal_items &&
+                transmittalData.transmittal_items.length > 0 && (
                   <div className="space-y-2">
                     <div className="flex items-center justify-between mb-2">
                       <h3 className="text-sm font-medium">Uploaded Files</h3>
                     </div>
 
                     <div className="divide-y rounded-lg border">
-                      {invoiceData.invoice_items.map((item) => (
+                      {transmittalData.transmittal_items.map((item) => (
                         <div
                           key={item.id}
                           className="flex items-center justify-between p-3"
@@ -288,8 +293,8 @@ export default function InvoiceDetailPage() {
                   </div>
                 )}
 
-              {(!invoiceData?.invoice_items ||
-                invoiceData.invoice_items.length === 0) && (
+              {(!transmittalData?.transmittal_items ||
+                transmittalData.transmittal_items.length === 0) && (
                 <div className="text-center py-8 text-muted-foreground">
                   <FileText className="w-12 h-12 mx-auto mb-2 opacity-50" />
                   <p className="text-sm">No files uploaded yet</p>
@@ -299,9 +304,9 @@ export default function InvoiceDetailPage() {
           </Card>
         )}
         <UploadFile
-          invoiceData={invoiceData}
-          invoiceId={invoiceId ? Number(invoiceId) : undefined}
-          refetchInvoice={refetchInvoice}
+          transmittalData={transmittalData}
+          transmittalId={transmittalId ? Number(transmittalId) : undefined}
+          refetchTransmittal={refetchTransmittal}
         />
       </div>
     </div>

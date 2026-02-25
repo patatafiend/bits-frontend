@@ -22,7 +22,7 @@ export default function MfaSignin() {
             const result = await execute({ body: { mfa_code: data.code } });
             if (!result.error) {
               await refetchUser();
-              router.push("/client/bill-management/invoice");
+              router.push("/client/bill-management/");
               return;
             }
           }}

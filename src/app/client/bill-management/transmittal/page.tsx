@@ -5,15 +5,15 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FileText, Plus } from "lucide-react";
 import { useGetCurrentUser } from "@/components/providers/auth-provider";
-import { useFetchInvoices } from "@/hooks/use-invoice";
-import { SearchInvoiceComponent, InvoiceModal } from "./dialogs";
+import { useFetchTransmittals } from "@/hooks/use-transmittal";
+import { SearchTransmittalComponent, TransmittalModal } from "./dialogs";
 
-export default function InvoiceListPage() {
+export default function TransmittalListPage() {
   const [modalOpen, setModalOpen] = useState(false);
-  const { data: invoices, refetch } = useFetchInvoices();
+  const { data: transmittals, refetch } = useFetchTransmittals();
   const { data: user } = useGetCurrentUser();
 
-  function refetchInvoices(params: {
+  function refetchTransmittals(params: {
     search?: string;
     status?: string;
     skip?: number;
@@ -34,7 +34,7 @@ export default function InvoiceListPage() {
   }
 
   useEffect(() => {
-    refetchInvoices({});
+    refetchTransmittals({});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
@@ -45,32 +45,30 @@ export default function InvoiceListPage() {
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2">
               <FileText className="w-5 h-5" />
-              Invoices
+              Transmittals
             </CardTitle>
             <Button onClick={() => setModalOpen(true)}>
               <Plus className="w-4 h-4 mr-2" />
-              New Invoice
+              New Transmittal
             </Button>
           </div>
         </CardHeader>
         <CardContent>
-          {invoices && (
-            <SearchInvoiceComponent
-              data={invoices}
-              onFilter={refetchInvoices}
+          {transmittals && (
+            <SearchTransmittalComponent
+              data={transmittals}
+              onFilter={refetchTransmittals}
             />
           )}
         </CardContent>
       </Card>
 
-      <InvoiceModal
+      <TransmittalModal
         client_id={user?.client.id}
         open={modalOpen}
         onOpenChange={setModalOpen}
-        onSubmit={() => refetchInvoices({})}
+        onSubmit={() => refetchTransmittals({})}
       />
     </div>
   );
 }
-
-

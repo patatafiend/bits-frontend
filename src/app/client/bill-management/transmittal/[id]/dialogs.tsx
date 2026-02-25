@@ -10,11 +10,6 @@ import {
   CheckCircle,
   AlertCircle,
 } from "lucide-react";
-import {
-  useAddItemToInvoice,
-  useSendInvoice,
-  useUpdateInvoice,
-} from "@/hooks/use-invoice";
 import { useState } from "react";
 import { toast } from "sonner";
 import {
@@ -25,10 +20,10 @@ import {
 } from "@/components/ui/dialog";
 import { Download } from "lucide-react";
 import {
-  UploadFileProps,
+  UploadInvoiceFileProps,
   FileViewerModalProps,
-  InvoiceWithItems,
   Receiver,
+  TransmittalWithItems,
 } from "@/lib/types";
 import { useDropzone } from "react-dropzone";
 import { Edit } from "lucide-react";
@@ -46,6 +41,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import ReceiverComboBox from "@/components/receiver-combobox";
+import { useAddItemToTransmittal, useSendTransmittal, useUpdateTransmittal } from "@/hooks/use-transmittal";
 
 export function FileViewerModal({ file, onClose }: FileViewerModalProps) {
   if (!file) return null;
@@ -133,12 +129,12 @@ export function FileViewerModal({ file, onClose }: FileViewerModalProps) {
 }
 
 export function UploadFile({
-  invoiceData,
-  invoiceId,
-  refetchInvoice,
-}: UploadFileProps) {
-  const { execute: addItemToInvoice, loading: addingItem } =
-    useAddItemToInvoice();
+  transmittalData,
+  transmittalId,
+  refetchTransmittal,
+}: UploadInvoiceFileProps) {
+  const { execute: addItemToTransmittal, loading: addingItem } =
+    useAddItemToTransmittal();
 
   const {
     files,
@@ -170,7 +166,7 @@ export function UploadFile({
   });
 
   async function handleAddItems() {
-    if (files.length === 0 || !invoiceData) return;
+    if (files.length === 0 || !transmittalData) return;
 
     try {
       const urls = await uploadAll("billing-statements");
@@ -186,7 +182,7 @@ export function UploadFile({
         const file = files[index].file;
 
         return {
-          invoice_id: invoiceData.id,
+          transmittal_id: transmittalData.id,
           file_name: file.name,
           file_key: s3Key,
           file_size: file.size.toString(),
@@ -195,9 +191,9 @@ export function UploadFile({
         };
       });
 
-      const { error: dbError } = await addItemToInvoice({
+      const { error: dbError } = await addItemToTransmittal({
         body: items,
-        params: `/${invoiceId}/items`,
+        params: `/${transmittalId}/items`,
       });
 
       if (dbError) {
@@ -207,8 +203,8 @@ export function UploadFile({
         return;
       }
 
-      await refetchInvoice({
-        params: `${invoiceId}`,
+      await refetchTransmittal({
+        params: `${transmittalId}`,
         query: { include_items: true },
       });
       reset();
@@ -347,29 +343,29 @@ export function UploadFile({
 }
 
 export function SendInvoiceComponent({
-  invoiceData,
+  transmittalData,
   onSend,
 }: {
-  invoiceData: InvoiceWithItems;
+  transmittalData: TransmittalWithItems;
   onSend: () => void;
 }) {
-  const { execute: sendInvoice, loading } = useSendInvoice();
+  const { execute: sendTransmittal, loading } = useSendTransmittal();
   const [open, setOpen] = useState(false);
-  const isDisabled = invoiceData.status === "sent" || invoiceData.status === "accepted";
-  const hasItems = (invoiceData.invoice_items?.length ?? 0) > 0;
+  const isDisabled = transmittalData.status === "sent" || transmittalData.status === "accepted";
+  const hasItems = (transmittalData.transmittal_items?.length ?? 0) > 0;
 
   const handleSend = async () => {
-    const { error } = await sendInvoice({
-      body: invoiceData,
-      params: `/${invoiceData.id}/send`,
+    const { error } = await sendTransmittal({
+      body: transmittalData,
+      params: `/${transmittalData.id}/send`,
     });
     if (error) {
-      toast.error(error.message || "Failed to send invoice");
+      toast.error(error.message || "Failed to send transmittal");
       return;
     }
     setOpen(false);
     onSend();
-    toast.success("Invoice sent successfully!");
+    toast.success("Transmittal sent successfully!");
   };
 
   return (
@@ -391,17 +387,17 @@ export function SendInvoiceComponent({
               <div className="rounded-lg border p-3 space-y-1 text-sm">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Invoice</span>
-                  <span className="font-medium">{invoiceData.invoice_number}</span>
+                  <span className="font-medium">{transmittalData.transmittal_number}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Date</span>
                   <span className="font-medium">
-                    {new Date(invoiceData.invoice_date).toLocaleDateString()}
+                    {new Date(transmittalData.transmittal_date).toLocaleDateString()}
                   </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Files</span>
-                  <span className="font-medium">{invoiceData.invoice_items.length} attached</span>
+                  <span className="font-medium">{transmittalData.transmittal_items.length} attached</span>
                 </div>
               </div>
 
@@ -436,24 +432,24 @@ export function SendInvoiceComponent({
 }
 
 export function EditModal({
-  invoiceData,
+  transmittalData,
   receiverData,
   onSubmit,
 }: {
-  invoiceData: InvoiceWithItems;
+  transmittalData: TransmittalWithItems;
   receiverData: Receiver[] | null;
   onSubmit: () => void;
 }) {
-  const { execute, loading } = useUpdateInvoice();
+  const { execute, loading } = useUpdateTransmittal();
   const formSchema = z.object({
-    invoice_date: z.string().default(new Date().toISOString().split("T")[0]),
+    transmittal_date: z.string().default(new Date().toISOString().split("T")[0]),
     billing_receiver_id: z.number().min(1, "no biller id"),
   });
   const form = useForm({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      invoice_date: invoiceData.invoice_date,
-      billing_receiver_id: invoiceData.billing_receiver_id ?? "",
+      transmittal_date: transmittalData.transmittal_date,
+      billing_receiver_id: transmittalData.billing_receiver_id ?? "",
     },
   });
 
@@ -462,10 +458,10 @@ export function EditModal({
     close: () => void,
   ) {
     const { error } = await execute({
-      params: `/${invoiceData.id}`,
+      params: `/${transmittalData.id}`,
       body: {
-        id: invoiceData.id,
-        invoice_date: data.invoice_date,
+        id: transmittalData.id,
+        transmittal_date: data.transmittal_date,
         billing_receiver_id: data.billing_receiver_id,
       },
     });
@@ -473,7 +469,7 @@ export function EditModal({
       toast.error(error.message);
       return;
     }
-    toast.success("Invoice updated successfully");
+    toast.success("Transmittal updated successfully");
     close();
     onSubmit();
   }
@@ -481,8 +477,8 @@ export function EditModal({
   return (
     <div>
       <DrawerDialog
-        title="Edit Invoice"
-        description="Edit invoice details"
+        title="Edit Transmittal"
+        description="Edit Transmittal details"
         renderTrigger={
           <Button variant="outline">
             <Edit className="h-4 w-4 mr-2" />
@@ -500,10 +496,10 @@ export function EditModal({
             <Form {...form}>
               <FormField
                 control={form.control}
-                name="invoice_date"
+                name="transmittal_date"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Invoice Date</FormLabel>
+                    <FormLabel>Transmittal Date</FormLabel>
                     <FormControl>
                       <DatePicker {...field} />
                     </FormControl>
@@ -531,7 +527,7 @@ export function EditModal({
                 )}
               />
               <Button type="submit" loading={loading} className="w-full">
-                Update Invoice
+                Update Transmittal
               </Button>
             </Form>
           </form>
@@ -541,14 +537,14 @@ export function EditModal({
   );
 }
 
-export function RejectionReasonDialog({ invoiceData }: { invoiceData: InvoiceWithItems }) {
-  if (invoiceData.status !== "rejected" || !invoiceData.rejection_reason) {
+export function RejectionReasonDialog({ transmittalData }: { transmittalData: TransmittalWithItems }) {
+  if (transmittalData.status !== "rejected" || !transmittalData.rejection_reason) {
     return null;
   }
 
   return (
     <DrawerDialog
-      title="Invoice Rejected"
+      title="Transmittal Rejected"
       description=""
       responsive
       className="max-w-md"
@@ -564,10 +560,10 @@ export function RejectionReasonDialog({ invoiceData }: { invoiceData: InvoiceWit
       }
     >
       <div className="space-y-3 px-4 sm:px-0 pb-4">
-        <p className="text-sm text-muted-foreground break-all">{invoiceData.rejection_reason}</p>
-        {invoiceData.response_date && (
+        <p className="text-sm text-muted-foreground break-all">{transmittalData.rejection_reason}</p>
+        {transmittalData.response_date && (
           <p className="text-xs text-muted-foreground">
-            Rejected on {new Date(invoiceData.response_date).toLocaleDateString()}
+            Rejected on {new Date(transmittalData.response_date).toLocaleDateString()}
           </p>
         )}
       </div>

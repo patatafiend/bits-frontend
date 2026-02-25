@@ -220,3 +220,92 @@ export type InvoiceModalProps = {
   onOpenChange: (open: boolean) => void;
   onSubmit: () => void;
 };
+
+export type Transmittal = {
+  id: number;
+  transmittal_number: string;
+  client_id: number;
+  billing_receiver_id: number;
+  status: string;
+  transmittal_date: string;
+  sent_date: string;
+  received_date: string;
+  response_date: string;
+  notes: string;
+  rejection_reason: string;
+  created_by: string;
+  created_at: string;
+  transmittal_items: TransmittalItems[];
+};
+
+export type TransmittalWithItems = {
+  id: number;
+  transmittal_number: string;
+  client_id: number;
+  billing_receiver_id: number;
+  status: string;
+  transmittal_date: string;
+  sent_date: string;
+  received_date: string;
+  response_date: string;
+  notes: string;
+  rejection_reason: string;
+  created_by: string;
+  created_at: string;
+  
+  transmittal_items: TransmittalItems[];
+  billing_receiver: Receiver | null;
+};
+
+export type TransmittalItems = {
+  id: number;
+  transmittal_id: number;
+  file_name: string;
+  file_key: string;
+  file_size: string;
+  file_type: string;
+  s3_bucket: string;
+  uploaded_by: string;
+  uploaded_at: string;
+};
+
+export type CreateTransmittal = {
+  transmittal_number: string;
+  client_id: number;
+  status: string;
+};
+
+export type UpdateTransmittal = Partial<Transmittal> & { id: number };
+
+export type AddTransmittalItemPayload = {
+  transmittal_id: number;
+  file_name: string;
+  file_key: string;
+  file_size: string;
+  file_type: string;
+  s3_bucket: string;
+};
+
+export type UploadInvoiceFileProps = {
+  transmittalData: TransmittalWithItems | null;
+  transmittalId?: number;
+  refetchTransmittal: ({
+    params,
+    query,
+  }: {
+    params: string;
+    query: { include_items: boolean };
+  }) => void;
+};
+
+export type PaginatedTransmittal = {
+  items: Transmittal[];
+  total: number;
+};
+
+export type TransmittalModalProps = {
+  client_id?: number;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSubmit: () => void;
+};

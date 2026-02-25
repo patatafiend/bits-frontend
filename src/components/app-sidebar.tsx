@@ -67,17 +67,12 @@ const clientData: { navMain: NavItem[]; adminMain: NavItem[] } = {
       items: [
         {
           title: "Transmittals",
-          url: "/client/bill-management/transmittals",
+          url: "/client/bill-management/transmittal",
           permission: "billing:read",
         },
         {
           title: "Assigned Transmittals",
           url: "/client/bill-management/billing-admin",
-          permission: "billing:read",
-        },
-        {
-          title: "My Deliveries",
-          url: "/client/bill-management/billing-officer",
           permission: "billing:read",
         },
         {

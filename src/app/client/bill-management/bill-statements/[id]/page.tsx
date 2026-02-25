@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { FileText } from "lucide-react";
 import { useGetPresignedUrl } from "@/hooks/use-media";
-import { FileViewerModal } from "../../transmittals/[id]/dialogs";
+import { FileViewerModal } from "../../transmittal/[id]/dialogs";
 import {
   Dialog,
   DialogContent,
