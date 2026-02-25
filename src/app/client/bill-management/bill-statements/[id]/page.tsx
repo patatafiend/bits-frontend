@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { FileText } from "lucide-react";
 import { useGetPresignedUrl } from "@/hooks/use-media";
-import { FileViewerModal } from "../../invoice/[id]/dialogs";
+import { FileViewerModal } from "../../transmittals/[id]/dialogs";
 import {
   Dialog,
   DialogContent,
@@ -380,8 +380,8 @@ export function RejectInvoiceDialog({
             >
               <div className="rounded-md border border-yellow-300 bg-yellow-50 p-3">
                 <p className="text-sm text-yellow-800">
-                  This action cannot be undone. The sender will be notified
-                  with your rejection reason.
+                  This action cannot be undone. The sender will be notified with
+                  your rejection reason.
                 </p>
               </div>
 
