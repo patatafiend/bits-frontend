@@ -60,7 +60,7 @@ function canAccess(
 const clientData: { navMain: NavItem[]; adminMain: NavItem[] } = {
   navMain: [
     {
-      title: "Bill Management",
+      title: "Transmittal Management",
       url: "/client/bill-management",
       icon: ReceiptText,
       isActive: true,
@@ -71,13 +71,21 @@ const clientData: { navMain: NavItem[]; adminMain: NavItem[] } = {
           permission: "billing:read",
         },
         {
-          title: "Assigned Transmittals",
-          url: "/client/bill-management/billing-admin",
-          permission: "billing:read",
-        },
-        {
           title: "Bill Statements",
           url: "/client/bill-management/bill-statements",
+          permission: "billing:read",
+        },
+      ],
+    },
+    {
+      title: "Deliver",
+      url: "/client/outbound",
+      icon: ReceiptText,
+      isActive: true,
+      items: [
+        {
+          title: "Transmittals",
+          url: "/client/outbound/transmittals",
           permission: "billing:read",
         },
       ],
