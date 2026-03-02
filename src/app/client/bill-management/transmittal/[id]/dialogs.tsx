@@ -378,7 +378,7 @@ export function SendInvoiceComponent({
         <DialogContent className="w-[calc(100%-2rem)] sm:max-w-lg rounded-lg">
           <DialogHeader>
             <DialogTitle>
-              {hasItems ? "Confirm Send Invoice" : "Cannot Send Invoice"}
+              {hasItems ? "Confirm Send Transmittal" : "Cannot Send Transmittal"}
             </DialogTitle>
           </DialogHeader>
 
@@ -386,7 +386,7 @@ export function SendInvoiceComponent({
             <div className="space-y-4">
               <div className="rounded-lg border p-3 space-y-1 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Invoice</span>
+                  <span className="text-muted-foreground">Transmittal</span>
                   <span className="font-medium">{transmittalData.transmittal_number}</span>
                 </div>
                 <div className="flex justify-between">

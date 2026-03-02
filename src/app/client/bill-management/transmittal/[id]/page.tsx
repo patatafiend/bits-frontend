@@ -174,7 +174,7 @@ export default function TransmittalDetailPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-sm text-muted-foreground">
-                    Invoice Number
+                    Transmittal Number
                   </p>
                   <p className="font-medium">
                     {transmittalData.transmittal_number}
@@ -214,7 +214,7 @@ export default function TransmittalDetailPage() {
                     refetchUsers({
                       query: { client_id: user?.client.id },
                     });
-                    toast.info("Refreshing invoice data...");
+                    toast.info("Refreshing transmittal data...");
                   }}
                   disabled={transmittalLoading}
                 >
