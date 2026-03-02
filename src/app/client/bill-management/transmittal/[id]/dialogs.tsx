@@ -4,19 +4,14 @@ import { useMultiFileUpload } from "@/hooks/use-multi-file-upload";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import {
-  Upload,
-  FileText,
-  CheckCircle,
-  AlertCircle,
-} from "lucide-react";
+import { Upload, FileText, CheckCircle, AlertCircle } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
-  DialogTitle
+  DialogTitle,
 } from "@/components/ui/dialog";
 import { Download } from "lucide-react";
 import {
@@ -24,6 +19,7 @@ import {
   FileViewerModalProps,
   TransmittalWithItems,
   User,
+  Transmittal,
 } from "@/lib/types";
 import { useDropzone } from "react-dropzone";
 import { Edit } from "lucide-react";
@@ -41,7 +37,11 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import UserComboBox from "@/components/user-combobox";
-import { useAddItemToTransmittal, useSendTransmittal, useUpdateTransmittal } from "@/hooks/use-transmittal";
+import {
+  useAddItemToTransmittal,
+  useSendTransmittal,
+  useUpdateTransmittal,
+} from "@/hooks/use-transmittal";
 
 export function FileViewerModal({ file, onClose }: FileViewerModalProps) {
   if (!file) return null;
@@ -351,7 +351,8 @@ export function SendInvoiceComponent({
 }) {
   const { execute: sendTransmittal, loading } = useSendTransmittal();
   const [open, setOpen] = useState(false);
-  const isDisabled = transmittalData.status === "sent" || transmittalData.status === "accepted";
+  const isDisabled =
+    transmittalData.status === "sent" || transmittalData.status === "accepted";
   const hasItems = (transmittalData.transmittal_items?.length ?? 0) > 0;
 
   const handleSend = async () => {
@@ -370,7 +371,11 @@ export function SendInvoiceComponent({
 
   return (
     <>
-      <Button variant="default" onClick={() => setOpen(true)} disabled={isDisabled}>
+      <Button
+        variant="default"
+        onClick={() => setOpen(true)}
+        disabled={isDisabled}
+      >
         {isDisabled ? "Sent" : "Send"}
       </Button>
 
@@ -378,7 +383,9 @@ export function SendInvoiceComponent({
         <DialogContent className="w-[calc(100%-2rem)] sm:max-w-lg rounded-lg">
           <DialogHeader>
             <DialogTitle>
-              {hasItems ? "Confirm Send Transmittal" : "Cannot Send Transmittal"}
+              {hasItems
+                ? "Confirm Send Transmittal"
+                : "Cannot Send Transmittal"}
             </DialogTitle>
           </DialogHeader>
 
@@ -387,25 +394,39 @@ export function SendInvoiceComponent({
               <div className="rounded-lg border p-3 space-y-1 text-sm">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Transmittal</span>
-                  <span className="font-medium">{transmittalData.transmittal_number}</span>
+                  <span className="font-medium">
+                    {transmittalData.transmittal_number}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Date</span>
                   <span className="font-medium">
-                    {new Date(transmittalData.transmittal_date).toLocaleDateString()}
+                    {new Date(
+                      transmittalData.transmittal_date,
+                    ).toLocaleDateString()}
                   </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Files</span>
-                  <span className="font-medium">{transmittalData.transmittal_items.length} attached</span>
+                  <span className="font-medium">
+                    {transmittalData.transmittal_items.length} attached
+                  </span>
                 </div>
               </div>
 
               <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
-                <Button variant="outline" onClick={() => setOpen(false)} className="w-full sm:w-auto">
+                <Button
+                  variant="outline"
+                  onClick={() => setOpen(false)}
+                  className="w-full sm:w-auto"
+                >
                   Cancel
                 </Button>
-                <Button onClick={handleSend} disabled={loading} className="w-full sm:w-auto">
+                <Button
+                  onClick={handleSend}
+                  disabled={loading}
+                  className="w-full sm:w-auto"
+                >
                   {loading ? "Sending..." : "Confirm Send"}
                 </Button>
               </div>
@@ -415,11 +436,131 @@ export function SendInvoiceComponent({
               <div className="flex items-start gap-3 p-3 bg-yellow-50 text-yellow-700 rounded-lg border border-yellow-200">
                 <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
                 <p className="text-sm">
-                  No files attached. Please upload at least one billing statement before sending.
+                  No files attached. Please upload at least one billing
+                  statement before sending.
                 </p>
               </div>
               <div className="flex justify-end">
-                <Button variant="outline" onClick={() => setOpen(false)} className="w-full sm:w-auto">
+                <Button
+                  variant="outline"
+                  onClick={() => setOpen(false)}
+                  className="w-full sm:w-auto"
+                >
+                  Close
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
+export function PostTransmittalComponent({
+  transmittalData,
+  onPost,
+}: {
+  transmittalData: Transmittal;
+  onPost: () => void;
+}) {
+  const { execute: postTransmittal, loading } = useUpdateTransmittal();
+  const [open, setOpen] = useState(false);
+  const isDisabled =
+    transmittalData.status === "posted" ||
+    transmittalData.status === "accepted";
+  const hasItems = (transmittalData.transmittal_items?.length ?? 0) > 0;
+
+  const handlePost = async () => {
+    const { error } = await postTransmittal({
+      body: transmittalData,
+      params: `/${transmittalData.id}`,
+    });
+    if (error) {
+      toast.error(error.message || "Failed to post transmittal");
+      return;
+    }
+    setOpen(false);
+    onPost();
+    toast.success("Transmittal posted successfully!");
+  };
+  return (
+    <>
+      <Button
+        variant="default"
+        onClick={() => setOpen(true)}
+        disabled={isDisabled}
+      >
+        {isDisabled ? "Posted" : "Post"}
+      </Button>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="w-[calc(100%-2rem)] sm:max-w-lg rounded-lg">
+          <DialogHeader>
+            <DialogTitle>
+              {hasItems
+                ? "Confirm Post Transmittal"
+                : "Cannot Post Transmittal"}
+            </DialogTitle>
+          </DialogHeader>
+
+          {hasItems ? (
+            <div className="space-y-4">
+              <div className="rounded-lg border p-3 space-y-1 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Transmittal</span>
+                  <span className="font-medium">
+                    {transmittalData.transmittal_number}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Date</span>
+                  <span className="font-medium">
+                    {new Date(
+                      transmittalData.transmittal_date,
+                    ).toLocaleDateString()}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Files</span>
+                  <span className="font-medium">
+                    {transmittalData.transmittal_items.length} attached
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setOpen(false)}
+                  className="w-full sm:w-auto"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handlePost}
+                  disabled={loading}
+                  className="w-full sm:w-auto"
+                >
+                  {loading ? "Posting..." : "Confirm Post"}
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="flex items-start gap-3 p-3 bg-yellow-50 text-yellow-700 rounded-lg border border-yellow-200">
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                <p className="text-sm">
+                  No files attached. Please upload at least one billing
+                  statement before posting.
+                </p>
+              </div>
+              <div className="flex justify-end">
+                <Button
+                  variant="outline"
+                  onClick={() => setOpen(false)}
+                  className="w-full sm:w-auto"
+                >
                   Close
                 </Button>
               </div>
@@ -442,7 +583,9 @@ export function EditModal({
 }) {
   const { execute, loading } = useUpdateTransmittal();
   const formSchema = z.object({
-    transmittal_date: z.string().default(new Date().toISOString().split("T")[0]),
+    transmittal_date: z
+      .string()
+      .default(new Date().toISOString().split("T")[0]),
     billing_receiver_id: z.number().optional(),
     assigned_user: z.number().optional(),
   });
@@ -465,7 +608,7 @@ export function EditModal({
         id: transmittalData.id,
         transmittal_date: data.transmittal_date,
         billing_receiver_id: data.billing_receiver_id,
-        assigned_user: data.assigned_user
+        assigned_user: data.assigned_user,
       },
     });
     if (error) {
@@ -542,8 +685,15 @@ export function EditModal({
   );
 }
 
-export function RejectionReasonDialog({ transmittalData }: { transmittalData: TransmittalWithItems }) {
-  if (transmittalData.status !== "rejected" || !transmittalData.rejection_reason) {
+export function RejectionReasonDialog({
+  transmittalData,
+}: {
+  transmittalData: TransmittalWithItems;
+}) {
+  if (
+    transmittalData.status !== "rejected" ||
+    !transmittalData.rejection_reason
+  ) {
     return null;
   }
 
@@ -565,10 +715,13 @@ export function RejectionReasonDialog({ transmittalData }: { transmittalData: Tr
       }
     >
       <div className="space-y-3 px-4 sm:px-0 pb-4">
-        <p className="text-sm text-muted-foreground break-all">{transmittalData.rejection_reason}</p>
+        <p className="text-sm text-muted-foreground break-all">
+          {transmittalData.rejection_reason}
+        </p>
         {transmittalData.response_date && (
           <p className="text-xs text-muted-foreground">
-            Rejected on {new Date(transmittalData.response_date).toLocaleDateString()}
+            Rejected on{" "}
+            {new Date(transmittalData.response_date).toLocaleDateString()}
           </p>
         )}
       </div>
