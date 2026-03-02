@@ -13,10 +13,10 @@ import { useGetPresignedUrl, useDeleteS3Object } from "@/hooks/use-media";
 import { useCurrentUser } from "@/components/providers/auth-provider";
 import {
   EditModal,
-  SendInvoiceComponent,
   FileViewerModal,
   UploadFile,
   RejectionReasonDialog,
+  PostTransmittalComponent,
 } from "./dialogs";
 import {
   useDeleteTransmittalItem,
@@ -161,11 +161,9 @@ export default function TransmittalDetailPage() {
                       })
                     }
                   />
-                  <SendInvoiceComponent
+                  <PostTransmittalComponent
                     transmittalData={transmittalData}
-                    onSend={() => {
-                      refetchTransmittals();
-                    }}
+                    onPost={refetchTransmittals}
                   />
                 </div>
               </div>
@@ -187,7 +185,9 @@ export default function TransmittalDetailPage() {
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Billing Officer</p>
+                  <p className="text-sm text-muted-foreground">
+                    Billing Officer
+                  </p>
                   <p className="font-medium">
                     {transmittalData.billing_receiver?.receiver_name ??
                       "No officer assigned"}
