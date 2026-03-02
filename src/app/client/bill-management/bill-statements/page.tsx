@@ -21,15 +21,14 @@ export default function InvoiceViewPage() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle className="text-2xl">Invoice #</CardTitle>
-              <p className="text-sm text-muted-foreground mt-1">Client:</p>
+              <CardTitle className="text-2xl">Transmittal #</CardTitle>
             </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <p className="text-sm text-muted-foreground">Invoice Date</p>
+              <p className="text-sm text-muted-foreground">Transmittal Date: </p>
             </div>
           </div>
           <Separator />
@@ -46,10 +45,10 @@ export default function InvoiceViewPage() {
               variant="outline"
               className="border-red-600 text-red-600 hover:bg-red-50 hover:text-red-700"
             >
-              Reject Invoice
+              Reject Invoices
             </Button>
             <Button className="bg-green-600 hover:bg-green-700">
-              Accept Invoice
+              Accept Invoices
             </Button>
           </div>
         </CardContent>

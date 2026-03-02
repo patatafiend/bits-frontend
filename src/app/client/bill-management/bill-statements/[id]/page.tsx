@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
-import { useFetchInvoice, useReceiverAction } from "@/hooks/use-invoice";
+import { useReceiverAction } from "@/hooks/use-invoice";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -30,6 +30,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { useFetchTransmittal } from "@/hooks/use-transmittal";
 
 export default function InvoiceViewPage() {
   const params = useParams();
@@ -37,11 +38,11 @@ export default function InvoiceViewPage() {
   const invoiceId = params.id;
   const token = searchParams.get("token");
   const {
-    data: invoiceData,
+    data: transmittalData,
     loading,
     error,
-    refetch: refetchInvoice,
-  } = useFetchInvoice();
+    refetch: refetchTransmittal,
+  } = useFetchTransmittal();
   const [viewingFile, setViewingFile] = useState<{
     url: string;
     name: string;
@@ -90,7 +91,7 @@ export default function InvoiceViewPage() {
     if (invoiceId) {
       const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
 
-      refetchInvoice({
+      refetchTransmittal({
         params: `/receiver/${invoiceId}`,
         query: { include_items: true },
         headers,
@@ -111,7 +112,7 @@ export default function InvoiceViewPage() {
       return;
     }
     toast.success("Invoice accepted successfully");
-    refetchInvoice({
+    refetchTransmittal({
       params: `/receiver/${invoiceId}`,
       query: { include_items: true },
       headers: token ? { Authorization: `Bearer ${token}` } : undefined,
@@ -130,7 +131,7 @@ export default function InvoiceViewPage() {
       return;
     }
     toast.success("Invoice rejected successfully");
-    refetchInvoice({
+    refetchTransmittal({
       params: `/receiver/${invoiceId}`,
       query: { include_items: true },
       headers: token ? { Authorization: `Bearer ${token}` } : undefined,
@@ -153,7 +154,7 @@ export default function InvoiceViewPage() {
     );
   }
 
-  if (!invoiceData) {
+  if (!transmittalData) {
     return (
       <div className="flex justify-center items-center min-h-screen">
         Invoice not found
@@ -162,7 +163,7 @@ export default function InvoiceViewPage() {
   }
 
   const isActionDisabled =
-    invoiceData.status === "accepted" || invoiceData.status === "rejected";
+    transmittalData.status === "accepted" || transmittalData.status === "rejected";
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
@@ -171,7 +172,7 @@ export default function InvoiceViewPage() {
           <div className="flex items-center justify-between">
             <div>
               <CardTitle className="text-2xl">
-                Invoice #{invoiceData.invoice_number}
+                Invoice #{transmittalData.transmittal_number}
               </CardTitle>
             </div>
           </div>
@@ -179,15 +180,9 @@ export default function InvoiceViewPage() {
         <CardContent className="space-y-6">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <p className="text-sm text-muted-foreground">Issue Date</p>
+              <p className="text-sm text-muted-foreground">Transmittal Date</p>
               <p className="font-semibold">
-                {new Date(invoiceData.invoice_date).toLocaleDateString()}
-              </p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Due Date</p>
-              <p className="font-semibold">
-                {new Date(invoiceData.invoice_date).toLocaleDateString()}
+                {new Date(transmittalData.transmittal_date).toLocaleDateString()}
               </p>
             </div>
           </div>
@@ -196,10 +191,10 @@ export default function InvoiceViewPage() {
 
           <div>
             <h3 className="text-lg font-semibold mb-3">Attached Documents</h3>
-            {invoiceData.invoice_items &&
-            invoiceData.invoice_items.length > 0 ? (
+            {transmittalData.transmittal_items &&
+            transmittalData.transmittal_items.length > 0 ? (
               <div className="divide-y rounded-lg border">
-                {invoiceData.invoice_items.map((item) => (
+                {transmittalData.transmittal_items.map((item) => (
                   <div
                     key={item.id}
                     className="flex items-center justify-between p-4 hover:bg-muted/50 transition-colors"
@@ -296,7 +291,7 @@ export function AcceptInvoiceDialog({
             </DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground">
-            Are you sure you want to accept this invoice? This action cannot be
+            Are you sure you want to accept these invoices? This action cannot be
             undone.
           </p>
           <DialogFooter>
