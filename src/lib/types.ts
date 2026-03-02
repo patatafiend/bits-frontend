@@ -253,7 +253,8 @@ export type TransmittalWithItems = {
   rejection_reason: string;
   created_by: string;
   created_at: string;
-  assigned_user?:number;
+  assigned_user?: number;
+  billing_receiver_email: string;
   transmittal_items: TransmittalItems[];
   billing_receiver: Receiver | null;
 };
