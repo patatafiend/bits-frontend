@@ -10,7 +10,6 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useGetPresignedUrl, useDeleteS3Object } from "@/hooks/use-media";
-import { useFetchReceivers } from "@/hooks/use-receiver";
 import { useCurrentUser } from "@/components/providers/auth-provider";
 import {
   EditModal,
@@ -23,6 +22,7 @@ import {
   useDeleteTransmittalItem,
   useFetchTransmittal,
 } from "@/hooks/use-transmittal";
+import { useFetchUsers } from "@/hooks/use-user";
 
 export default function TransmittalDetailPage() {
   const params = useParams();
@@ -38,7 +38,7 @@ export default function TransmittalDetailPage() {
     refetch: refetchTransmittal,
     loading: transmittalLoading,
   } = useFetchTransmittal();
-  const { data: receiverData, refetch: refetchReceiver } = useFetchReceivers();
+  const { data: userData, refetch: refetchUsers } = useFetchUsers();
   const { execute: getPresignedUrl, loading: loadingUrl } =
     useGetPresignedUrl();
   const { execute: deleteTransmittalItem } = useDeleteTransmittalItem();
@@ -82,8 +82,8 @@ export default function TransmittalDetailPage() {
       params: `${transmittalId}`,
       query: { include_items: true },
     });
-    refetchReceiver({
-      params: `${user?.client.id}`,
+    refetchUsers({
+      query: { client_id: user?.client.id },
     });
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -154,10 +154,10 @@ export default function TransmittalDetailPage() {
                   <RejectionReasonDialog transmittalData={transmittalData} />
                   <EditModal
                     transmittalData={transmittalData}
-                    receiverData={receiverData}
+                    userData={userData}
                     onSubmit={() =>
-                      refetchReceiver({
-                        params: `${user?.client.id}`,
+                      refetchUsers({
+                        query: { client_id: user?.client.id },
                       })
                     }
                   />
@@ -182,13 +182,15 @@ export default function TransmittalDetailPage() {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Date</p>
-                  <p className="font-medium">{transmittalData.transmittal_date}</p>
+                  <p className="font-medium">
+                    {transmittalData.transmittal_date}
+                  </p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Receiver</p>
+                  <p className="text-sm text-muted-foreground">Billing Officer</p>
                   <p className="font-medium">
                     {transmittalData.billing_receiver?.receiver_name ??
-                      "No receiver assigned"}
+                      "No officer assigned"}
                   </p>
                   {transmittalData.billing_receiver?.receiver_email && (
                     <p className="text-sm text-muted-foreground">
@@ -209,8 +211,8 @@ export default function TransmittalDetailPage() {
                   size="sm"
                   onClick={() => {
                     refetchTransmittals();
-                    refetchReceiver({
-                      params: `${user?.client.id}`,
+                    refetchUsers({
+                      query: { client_id: user?.client.id },
                     });
                     toast.info("Refreshing invoice data...");
                   }}

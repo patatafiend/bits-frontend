@@ -3,7 +3,6 @@ import { useEffect } from "react";
 import { ComboBox } from "./combo-box";
 import { ComboBoxProps } from "@/lib/types";
 
-
 export default function ReceiverComboBox({
   value = "",
   onValueChange,

@@ -22,8 +22,8 @@ import { Download } from "lucide-react";
 import {
   UploadInvoiceFileProps,
   FileViewerModalProps,
-  Receiver,
   TransmittalWithItems,
+  User,
 } from "@/lib/types";
 import { useDropzone } from "react-dropzone";
 import { Edit } from "lucide-react";
@@ -40,7 +40,7 @@ import {
   FormControl,
   FormMessage,
 } from "@/components/ui/form";
-import ReceiverComboBox from "@/components/receiver-combobox";
+import UserComboBox from "@/components/user-combobox";
 import { useAddItemToTransmittal, useSendTransmittal, useUpdateTransmittal } from "@/hooks/use-transmittal";
 
 export function FileViewerModal({ file, onClose }: FileViewerModalProps) {
@@ -433,11 +433,11 @@ export function SendInvoiceComponent({
 
 export function EditModal({
   transmittalData,
-  receiverData,
+  userData,
   onSubmit,
 }: {
   transmittalData: TransmittalWithItems;
-  receiverData: Receiver[] | null;
+  userData: User[] | null;
   onSubmit: () => void;
 }) {
   const { execute, loading } = useUpdateTransmittal();
@@ -515,14 +515,14 @@ export function EditModal({
                 name="billing_receiver_id"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Receiver</FormLabel>
+                    <FormLabel>Billing Officer</FormLabel>
                     <FormControl>
-                      <ReceiverComboBox
+                      <UserComboBox
                         value={field.value ? String(field.value) : ""}
                         onValueChange={(val: string) => {
                           field.onChange(val !== "" ? Number(val) : undefined);
                         }}
-                        receiverData={receiverData ?? []}
+                        userData={userData ?? []}
                         allowEmpty={true}
                         showClear={true}
                       />
