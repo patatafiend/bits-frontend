@@ -22,7 +22,6 @@ import { Download } from "lucide-react";
 import {
   UploadInvoiceFileProps,
   FileViewerModalProps,
-  Receiver,
   TransmittalWithItems,
 } from "@/lib/types";
 import { useDropzone } from "react-dropzone";
@@ -40,7 +39,6 @@ import {
   FormControl,
   FormMessage,
 } from "@/components/ui/form";
-import ReceiverComboBox from "@/components/receiver-combobox";
 import { useAddItemToTransmittal, useSendTransmittal, useUpdateTransmittal } from "@/hooks/use-transmittal";
 
 export function FileViewerModal({ file, onClose }: FileViewerModalProps) {
@@ -433,23 +431,19 @@ export function SendInvoiceComponent({
 
 export function EditModal({
   transmittalData,
-  receiverData,
   onSubmit,
 }: {
   transmittalData: TransmittalWithItems;
-  receiverData: Receiver[] | null;
   onSubmit: () => void;
 }) {
   const { execute, loading } = useUpdateTransmittal();
   const formSchema = z.object({
     transmittal_date: z.string().default(new Date().toISOString().split("T")[0]),
-    billing_receiver_id: z.number().min(1, "no biller id"),
   });
   const form = useForm({
     resolver: zodResolver(formSchema),
     defaultValues: {
       transmittal_date: transmittalData.transmittal_date,
-      billing_receiver_id: transmittalData.billing_receiver_id ?? "",
     },
   });
 
@@ -462,7 +456,6 @@ export function EditModal({
       body: {
         id: transmittalData.id,
         transmittal_date: data.transmittal_date,
-        billing_receiver_id: data.billing_receiver_id,
       },
     });
     if (error) {
@@ -502,25 +495,6 @@ export function EditModal({
                     <FormLabel>Transmittal Date</FormLabel>
                     <FormControl>
                       <DatePicker {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="billing_receiver_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Receiver</FormLabel>
-                    <FormControl>
-                      <ReceiverComboBox
-                        value={field.value ? String(field.value) : ""}
-                        onValueChange={(val: string) => {
-                          field.onChange(val !== "" ? Number(val) : undefined);
-                        }}
-                        receiverData={receiverData ?? []}
-                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
