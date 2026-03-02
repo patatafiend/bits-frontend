@@ -9,17 +9,12 @@ import { FileText, ArrowLeft, RefreshCw } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { useGetPresignedUrl, useDeleteS3Object } from "@/hooks/use-media";
-import { useFetchReceivers } from "@/hooks/use-receiver";
+import { useGetPresignedUrl } from "@/hooks/use-media";
 import { useCurrentUser } from "@/components/providers/auth-provider";
 import {
-  EditModal,
-  SendInvoiceComponent,
   FileViewerModal,
-  RejectionReasonDialog,
 } from "./dialogs";
 import {
-  useDeleteTransmittalItem,
   useFetchTransmittal,
 } from "@/hooks/use-transmittal";
 
@@ -37,12 +32,8 @@ export default function TransmittalDetailPage() {
     refetch: refetchTransmittal,
     loading: transmittalLoading,
   } = useFetchTransmittal();
-  const { data: receiverData, refetch: refetchReceiver } = useFetchReceivers();
   const { execute: getPresignedUrl, loading: loadingUrl } =
     useGetPresignedUrl();
-  const { execute: deleteTransmittalItem } = useDeleteTransmittalItem();
-  const { deleteObject: deleteS3Object, loading: deletingFile } =
-    useDeleteS3Object();
   const [urlCache, setUrlCache] = useState<
     Map<string, { url: string; expires: number }>
   >(new Map());
@@ -54,25 +45,6 @@ export default function TransmittalDetailPage() {
     });
   }
 
-  async function handleDeleteItem(itemId: number, fileKey: string) {
-    const { error: s3Error } = await deleteS3Object(fileKey);
-    if (s3Error) {
-      toast.error("Failed to delete file from storage");
-      return;
-    }
-
-    const { error: dbError } = await deleteTransmittalItem({
-      params: `/${transmittalId}/items/${itemId}`,
-    });
-    if (dbError) {
-      toast.error("File removed from storage but failed to delete record");
-      return;
-    }
-
-    refetchTransmittals();
-    toast.success("File deleted successfully");
-  }
-
   useEffect(() => {
     if (!transmittalId && user?.client.id) {
       return;
@@ -80,9 +52,6 @@ export default function TransmittalDetailPage() {
     refetchTransmittal({
       params: `${transmittalId}`,
       query: { include_items: true },
-    });
-    refetchReceiver({
-      params: `${user?.client.id}`,
     });
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -136,7 +105,7 @@ export default function TransmittalDetailPage() {
 
   return (
     <div className="container mx-auto py-8 max-w-4xl">
-      <Link href="/client/bill-management/transmittal">
+      <Link href="/client/outbound/transmittals">
         <Button variant="ghost" className="mb-4">
           <ArrowLeft className="w-4 h-4 mr-2" />
           Back to Transmittals
@@ -150,14 +119,11 @@ export default function TransmittalDetailPage() {
               <div className="flex items-center justify-between">
                 <CardTitle>Transmittal Details</CardTitle>
                 <div className="flex items-center gap-2">
-                  <RejectionReasonDialog transmittalData={transmittalData} />
+                  {/* <RejectionReasonDialog transmittalData={transmittalData} />
                   <EditModal
                     transmittalData={transmittalData}
-                    receiverData={receiverData}
                     onSubmit={() =>
-                      refetchReceiver({
-                        params: `${user?.client.id}`,
-                      })
+                      refetchTransmittals()
                     }
                   />
                   <SendInvoiceComponent
@@ -165,7 +131,7 @@ export default function TransmittalDetailPage() {
                     onSend={() => {
                       refetchTransmittals();
                     }}
-                  />
+                  /> */}
                 </div>
               </div>
             </CardHeader>
@@ -184,18 +150,6 @@ export default function TransmittalDetailPage() {
                   <p className="font-medium">{transmittalData.transmittal_date}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Receiver</p>
-                  <p className="font-medium">
-                    {transmittalData.billing_receiver?.receiver_name ??
-                      "No receiver assigned"}
-                  </p>
-                  {transmittalData.billing_receiver?.receiver_email && (
-                    <p className="text-sm text-muted-foreground">
-                      {transmittalData.billing_receiver.receiver_email}
-                    </p>
-                  )}
-                </div>
-                <div>
                   <p className="text-sm text-muted-foreground">Status</p>
                   <p className="font-medium">
                     {getStatusBadge(transmittalData?.status)}
@@ -208,10 +162,6 @@ export default function TransmittalDetailPage() {
                   size="sm"
                   onClick={() => {
                     refetchTransmittals();
-                    refetchReceiver({
-                      params: `${user?.client.id}`,
-                    });
-                    toast.info("Refreshing invoice data...");
                   }}
                   disabled={transmittalLoading}
                 >
@@ -269,7 +219,7 @@ export default function TransmittalDetailPage() {
                             >
                               {loadingUrl ? "Loading..." : "View"}
                             </Button>
-                            <Button
+                            {/* <Button
                               variant="ghost"
                               size="sm"
                               className="text-destructive hover:text-destructive"
@@ -279,7 +229,7 @@ export default function TransmittalDetailPage() {
                               disabled={deletingFile}
                             >
                               Delete
-                            </Button>
+                            </Button> */}
                           </div>
 
                           <FileViewerModal
