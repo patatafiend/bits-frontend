@@ -443,13 +443,15 @@ export function EditModal({
   const { execute, loading } = useUpdateTransmittal();
   const formSchema = z.object({
     transmittal_date: z.string().default(new Date().toISOString().split("T")[0]),
-    billing_receiver_id: z.number().min(1, "no biller id"),
+    billing_receiver_id: z.number().optional(),
+    assigned_user: z.number().optional(),
   });
   const form = useForm({
     resolver: zodResolver(formSchema),
     defaultValues: {
       transmittal_date: transmittalData.transmittal_date,
-      billing_receiver_id: transmittalData.billing_receiver_id ?? "",
+      billing_receiver_id: transmittalData.billing_receiver_id ?? null,
+      assigned_user: transmittalData.assigned_user,
     },
   });
 
@@ -463,6 +465,7 @@ export function EditModal({
         id: transmittalData.id,
         transmittal_date: data.transmittal_date,
         billing_receiver_id: data.billing_receiver_id,
+        assigned_user: data.assigned_user
       },
     });
     if (error) {
@@ -520,6 +523,8 @@ export function EditModal({
                           field.onChange(val !== "" ? Number(val) : undefined);
                         }}
                         receiverData={receiverData ?? []}
+                        allowEmpty={true}
+                        showClear={true}
                       />
                     </FormControl>
                     <FormMessage />

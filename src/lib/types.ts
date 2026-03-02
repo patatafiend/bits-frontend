@@ -235,6 +235,7 @@ export type Transmittal = {
   rejection_reason: string;
   created_by: string;
   created_at: string;
+  assigned_user?: number;
   transmittal_items: TransmittalItems[];
 };
 
@@ -252,7 +253,7 @@ export type TransmittalWithItems = {
   rejection_reason: string;
   created_by: string;
   created_at: string;
-  
+  assigned_user?:number;
   transmittal_items: TransmittalItems[];
   billing_receiver: Receiver | null;
 };
