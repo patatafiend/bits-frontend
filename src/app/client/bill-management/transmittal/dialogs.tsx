@@ -88,6 +88,7 @@ export function TransmittalList({
           <TableRow>
             <TableHead>Transmittal Number</TableHead>
             <TableHead>Date</TableHead>
+            <TableHead>Created By</TableHead>
             <TableHead>Status</TableHead>
             <TableHead className="text-right">Actions</TableHead>
           </TableRow>
@@ -99,6 +100,7 @@ export function TransmittalList({
                 {transmittal.transmittal_number}
               </TableCell>
               <TableCell>{transmittal.transmittal_date}</TableCell>
+              <TableCell>{transmittal.created_by}</TableCell>
               <TableCell>{getStatusBadge(transmittal.status)}</TableCell>
               <TableCell className="text-right">
                 <Link
@@ -340,7 +342,9 @@ export function SearchTransmittalComponent({
           <SelectContent>
             <SelectItem value="recent">Most Recent</SelectItem>
             <SelectItem value="oldest">Oldest</SelectItem>
-            <SelectItem value="transmittal_number">Transmittal Number</SelectItem>
+            <SelectItem value="transmittal_number">
+              Transmittal Number
+            </SelectItem>
           </SelectContent>
         </Select>
 
