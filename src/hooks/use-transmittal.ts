@@ -26,18 +26,21 @@ export function useUpdateTransmittal() {
 
 export function useFetchTransmittals() {
   return useServerFetch<PaginatedTransmittal>(`/transmittals`, {
+    fetchImmediately: false,
     method: "GET",
   });
 }
 
 export function useFetchTransmittal() {
   return useServerFetch<TransmittalWithItems>(`/transmittals`, {
+    fetchImmediately: false,
     method: "GET",
   });
 }
 
 export function useFetchTransmittalItems() {
   return useServerFetch<TransmittalWithItems>(`/transmittals`, {
+    fetchImmediately: false,
     method: "GET",
   });
 }

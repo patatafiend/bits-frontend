@@ -4,14 +4,13 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FileText, Plus } from "lucide-react";
-import { useGetCurrentUser } from "@/components/providers/auth-provider";
 import { useFetchTransmittals } from "@/hooks/use-transmittal";
 import { SearchTransmittalComponent, TransmittalModal } from "./dialogs";
-
+import { useCurrentUser } from "@/components/providers/auth-provider";
 export default function TransmittalListPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const { data: transmittals, refetch } = useFetchTransmittals();
-  const { data: user } = useGetCurrentUser();
+  const user = useCurrentUser();
 
   function refetchTransmittals(params: {
     search?: string;
@@ -21,7 +20,7 @@ export default function TransmittalListPage() {
     order_by?: string;
   }) {
     refetch({
-      params: `client/${user?.client.id}`,
+      params: `client/`,
       query: {
         skip: params.skip ?? 0,
         limit: params.limit ?? 10,
@@ -36,7 +35,7 @@ export default function TransmittalListPage() {
   useEffect(() => {
     refetchTransmittals({});
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
+  }, []);
 
   return (
     <div className="container mx-auto py-8">

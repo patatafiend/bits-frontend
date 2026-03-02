@@ -5,7 +5,10 @@ import { useServerFetch, useServerAction } from "@/hooks/use-server";
 import { ReactNode, useContext, useEffect, createContext } from "react";
 
 export function useGetCurrentUser() {
-  return useServerFetch<UserPayload>("/user/current_user");
+  return useServerFetch<UserPayload>("/user/current_user", {
+    fetchImmediately: false,
+    method: "GET",
+  });
 }
 
 export function useSignIn() {
@@ -56,6 +59,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const { data: user, loading, refetch } = useGetCurrentUser();
 
   useEffect(() => {
+    refetch();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
     if (user?.exp) {
       localStorage.setItem("exp", user.exp.toString());
     } else {
@@ -68,7 +76,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, refetchUser: refetch }}>{children}</AuthContext.Provider>
+    <AuthContext.Provider value={{ user, refetchUser: refetch }}>
+      {children}
+    </AuthContext.Provider>
   );
 }
 

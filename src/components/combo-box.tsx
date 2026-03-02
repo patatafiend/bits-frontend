@@ -84,6 +84,7 @@ const handleSelect = (selectedValue: string) => {
 
         {showClear && currentValue && (
           <Button
+            type="button"
             variant="ghost"
             size="icon"
             className="shrink-0 text-destructive"

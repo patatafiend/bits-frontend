@@ -2,11 +2,17 @@ import { useServerFetch, useServerAction } from "@/hooks/use-server";
 import { User, CreateUser } from "@/lib/types";
 
 export function useFetchUsers() {
-  return useServerFetch<User[]>("/user", { method: "GET" });
+  return useServerFetch<User[]>("/user", {
+    fetchImmediately: false,
+    method: "GET",
+  });
 }
 
 export function useFetchUser(userId: string) {
-  return useServerFetch<User>(`/user/${userId}`, { method: "GET" });
+  return useServerFetch<User>(`/user/${userId}`, {
+    fetchImmediately: false,
+    method: "GET",
+  });
 }
 
 export function useUpdateUser() {
