@@ -219,17 +219,6 @@ export default function TransmittalDetailPage() {
                             >
                               {loadingUrl ? "Loading..." : "View"}
                             </Button>
-                            {/* <Button
-                              variant="ghost"
-                              size="sm"
-                              className="text-destructive hover:text-destructive"
-                              onClick={() =>
-                                handleDeleteItem(item.id, item.file_key)
-                              }
-                              disabled={deletingFile}
-                            >
-                              Delete
-                            </Button> */}
                           </div>
 
                           <FileViewerModal
@@ -252,11 +241,6 @@ export default function TransmittalDetailPage() {
             </CardContent>
           </Card>
         )}
-        {/* <UploadFile
-          transmittalData={transmittalData}
-          transmittalId={transmittalId ? Number(transmittalId) : undefined}
-          refetchTransmittal={refetchTransmittal}
-        /> */}
       </div>
     </div>
   );
