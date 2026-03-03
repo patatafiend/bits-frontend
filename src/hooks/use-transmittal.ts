@@ -81,3 +81,10 @@ export function useReceiverAction() {
     method: "PUT",
   });
 }
+
+export function useGenerateTMN() {
+  return useServerAction<{ transmittal_number: string }>(
+    `/transmittals/generate_tm_no`,
+    { method: "GET" },
+  );
+}

@@ -11,7 +11,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Eye } from "lucide-react";
+import { Eye, RefreshCcw } from "lucide-react";
 import Link from "next/link";
 import {
   Dialog,
@@ -33,7 +33,7 @@ import {
 import z from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useCreateTransmittal } from "@/hooks/use-transmittal";
+import { useCreateTransmittal, useGenerateTMN } from "@/hooks/use-transmittal";
 import { toast } from "sonner";
 import { PaginatedTransmittal, TransmittalModalProps } from "@/lib/types";
 import {
@@ -163,6 +163,7 @@ export function TransmittalModal({
   onSubmit,
 }: TransmittalModalProps) {
   const { execute } = useCreateTransmittal();
+  const { execute: generateTMN } = useGenerateTMN();
 
   const formSchema = z.object({
     transmittal_number: z.string().min(1, "Transmittal Number is required"),
@@ -215,11 +216,32 @@ export function TransmittalModal({
               <Field>
                 <FieldLabel>Transmittal Number</FieldLabel>
                 <FieldContent>
-                  <Input
-                    type="text"
-                    placeholder="INV-2024-001"
-                    {...form.register("transmittal_number")}
-                  />
+                  <div className="flex gap-2">
+                    {" "}
+                    <Input
+                      type="text"
+                      placeholder="INV-2024-001"
+                      {...form.register("transmittal_number")}
+                    />
+                    <Button
+                      type="button"
+                      onClick={async () => {
+                        const { data, error } = await generateTMN();
+                        if (error) {
+                          toast.error(error.message);
+                        }
+                        if (data) {
+                          form.setValue(
+                            "transmittal_number",
+                            data.transmittal_number,
+                          );
+                        }
+                      }}
+                    >
+                      <RefreshCcw />
+                      Autogenerate
+                    </Button>
+                  </div>
                 </FieldContent>
                 {form.formState.errors.transmittal_number && (
                   <FieldError>
@@ -228,7 +250,6 @@ export function TransmittalModal({
                 )}
               </Field>
             </FieldGroup>
-
             <FieldSeparator />
 
             <div className="flex justify-end gap-2">
