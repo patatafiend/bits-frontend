@@ -47,6 +47,7 @@ export type User = {
   role?: string | undefined;
   role_id?: number | undefined;
   mfa_enabled: boolean;
+  client: Client;
 };
 
 export type CreateUser = {
@@ -235,7 +236,8 @@ export type Transmittal = {
   rejection_reason: string;
   created_by: string;
   created_at: string;
-  assigned_user?: number;
+  assigned_user?: number | null;
+  billing_receiver_email: string | null;
   transmittal_items: TransmittalItems[];
 };
 
@@ -253,10 +255,11 @@ export type TransmittalWithItems = {
   rejection_reason: string;
   created_by: string;
   created_at: string;
-  assigned_user?: number;
-  billing_receiver_email: string;
+  assigned_user?: number | null;
+  billing_receiver_email: string | null;
   transmittal_items: TransmittalItems[];
   billing_receiver: Receiver | null;
+  user_assigned: User;
 };
 
 export type TransmittalItems = {
