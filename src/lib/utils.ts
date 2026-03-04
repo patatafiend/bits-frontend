@@ -186,13 +186,6 @@ async function createService<T>(
     loadingState?.(true);
 
     await tokenRefreshManager.ensureValidToken();
-    // Make the actual API request
-
-    console.log("Request:", {
-      url: baseUrl + route,
-      credentials: "include",
-      cookies: document.cookie,
-    });
 
     const res = await fetch(baseUrl + route, {
       credentials: "include",
@@ -201,12 +194,6 @@ async function createService<T>(
         "Content-type": "application/json",
       },
       ...options,
-    });
-
-    console.log("Response:", {
-      status: res.status,
-      headers: Object.fromEntries(res.headers.entries()),
-      cookies: document.cookie,
     });
 
     const data = await res.json();
