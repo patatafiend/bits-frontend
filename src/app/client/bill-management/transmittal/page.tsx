@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { FileText, Plus } from "lucide-react";
+import { FileText, Plus, RefreshCw } from "lucide-react";
 import { useFetchTransmittals } from "@/hooks/use-transmittal";
 import { SearchTransmittalComponent, TransmittalModal } from "./dialogs";
 import { useCurrentUser } from "@/components/providers/auth-provider";
+
 export default function TransmittalListPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const { data: transmittals, refetch } = useFetchTransmittals();
@@ -32,11 +33,6 @@ export default function TransmittalListPage() {
     });
   }
 
-  useEffect(() => {
-    refetchTransmittals({});
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   return (
     <div className="container mx-auto py-8">
       <Card>
@@ -46,16 +42,25 @@ export default function TransmittalListPage() {
               <FileText className="w-5 h-5" />
               Transmittals
             </CardTitle>
-            <Button onClick={() => setModalOpen(true)}>
-              <Plus className="w-4 h-4 mr-2" />
-              New Transmittal
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => refetchTransmittals({})}
+              >
+                <RefreshCw className="w-4 h-4" />
+              </Button>
+              <Button onClick={() => setModalOpen(true)}>
+                <Plus className="w-4 h-4 mr-2" />
+                New Transmittal
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
-          {transmittals && (
+          {user && (
             <SearchTransmittalComponent
-              data={transmittals}
+              data={transmittals ?? { items: [], total: 0 }}
               onFilter={refetchTransmittals}
             />
           )}
