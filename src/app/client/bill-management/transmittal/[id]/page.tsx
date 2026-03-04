@@ -17,6 +17,7 @@ import {
   UploadFile,
   RejectionReasonDialog,
   PostTransmittalComponent,
+  SendTransmittalComponent,
 } from "./dialogs";
 import {
   useDeleteTransmittalItem,
@@ -155,16 +156,24 @@ export default function TransmittalDetailPage() {
                   <EditModal
                     transmittalData={transmittalData}
                     userData={userData}
-                    onSubmit={() =>
+                    onSubmit={() => {
                       refetchUsers({
                         query: { client_id: user?.client.id },
-                      })
-                    }
+                      });
+                      refetchTransmittals();
+                    }}
                   />
-                  <PostTransmittalComponent
-                    transmittalData={transmittalData}
-                    onPost={refetchTransmittals}
-                  />
+                  {transmittalData.billing_receiver_email ? (
+                    <SendTransmittalComponent
+                      transmittalData={transmittalData}
+                      onSend={refetchTransmittals}
+                    />
+                  ) : (
+                    <PostTransmittalComponent
+                      transmittalData={transmittalData}
+                      onPost={refetchTransmittals}
+                    />
+                  )}
                 </div>
               </div>
             </CardHeader>
@@ -184,20 +193,25 @@ export default function TransmittalDetailPage() {
                     {transmittalData.transmittal_date}
                   </p>
                 </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">
-                    Billing Officer
-                  </p>
-                  <p className="font-medium">
-                    {transmittalData.billing_receiver?.receiver_name ??
-                      "No officer assigned"}
-                  </p>
-                  {transmittalData.billing_receiver?.receiver_email && (
-                    <p className="text-sm text-muted-foreground">
-                      {transmittalData.billing_receiver.receiver_email}
+                {transmittalData.billing_receiver_email ? (
+                  <div>
+                    <p className="text-sm text-muted-foreground">Receiver</p>
+                    <p className="font-medium">
+                      {transmittalData.billing_receiver_email ??
+                        "No officer assigned"}
                     </p>
-                  )}
-                </div>
+                  </div>
+                ) : (
+                  <div>
+                    <p className="text-sm text-muted-foreground">
+                      Billing Officer
+                    </p>
+                    <p className="font-medium">
+                      {transmittalData.user_assigned?.username ??
+                        "No officer assigned"}
+                    </p>
+                  </div>
+                )}
                 <div>
                   <p className="text-sm text-muted-foreground">Status</p>
                   <p className="font-medium">

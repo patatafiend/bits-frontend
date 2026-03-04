@@ -28,6 +28,9 @@ import { DatePicker } from "@/components/date-picker";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { DrawerDialog } from "@/components/drawer-dialog";
+import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import {
   Form,
   FormField,
@@ -342,7 +345,7 @@ export function UploadFile({
   );
 }
 
-export function SendInvoiceComponent({
+export function SendTransmittalComponent({
   transmittalData,
   onSend,
 }: {
@@ -581,6 +584,9 @@ export function EditModal({
   userData: User[] | null;
   onSubmit: () => void;
 }) {
+  const [isEmailMode, setIsEmailMode] = useState(
+    !!transmittalData.billing_receiver_email,
+  );
   const { execute, loading } = useUpdateTransmittal();
   const formSchema = z.object({
     transmittal_date: z
@@ -588,13 +594,19 @@ export function EditModal({
       .default(new Date().toISOString().split("T")[0]),
     billing_receiver_id: z.number().optional(),
     assigned_user: z.number().optional(),
+    billing_receiver_email: z
+      .string()
+      .email("Invalid email")
+      .optional()
+      .or(z.literal("")),
   });
   const form = useForm({
     resolver: zodResolver(formSchema),
     defaultValues: {
       transmittal_date: transmittalData.transmittal_date,
-      billing_receiver_id: transmittalData.billing_receiver_id ?? null,
-      assigned_user: transmittalData.assigned_user,
+      //billing_receiver_id: transmittalData.billing_receiver_id ?? null,
+      assigned_user: transmittalData.assigned_user ?? undefined,
+      billing_receiver_email: transmittalData.billing_receiver_email ?? "",
     },
   });
 
@@ -607,8 +619,10 @@ export function EditModal({
       body: {
         id: transmittalData.id,
         transmittal_date: data.transmittal_date,
-        billing_receiver_id: data.billing_receiver_id,
-        assigned_user: data.assigned_user,
+        assigned_user: isEmailMode ? null : data.assigned_user,
+        billing_receiver_email: isEmailMode
+          ? data.billing_receiver_email || null
+          : null,
       },
     });
     if (error) {
@@ -653,27 +667,60 @@ export function EditModal({
                   </FormItem>
                 )}
               />
-              <FormField
-                control={form.control}
-                name="billing_receiver_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Billing Officer</FormLabel>
-                    <FormControl>
-                      <UserComboBox
-                        value={field.value ? String(field.value) : ""}
-                        onValueChange={(val: string) => {
-                          field.onChange(val !== "" ? Number(val) : undefined);
-                        }}
-                        userData={userData ?? []}
-                        allowEmpty={true}
-                        showClear={true}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <div className="flex items-center gap-2">
+                <Switch
+                  id="email-mode"
+                  checked={isEmailMode}
+                  onCheckedChange={setIsEmailMode}
+                />
+                <Label htmlFor="email-mode" className="cursor-pointer">
+                  Send to external receiver
+                </Label>
+              </div>
+
+              {!isEmailMode ? (
+                <FormField
+                  control={form.control}
+                  name="assigned_user"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Billing Officer</FormLabel>
+                      <FormControl>
+                        <UserComboBox
+                          value={field.value ? String(field.value) : ""}
+                          onValueChange={(val: string) => {
+                            field.onChange(
+                              val !== "" ? Number(val) : undefined,
+                            );
+                          }}
+                          userData={userData ?? []}
+                          allowEmpty={true}
+                          showClear={true}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              ) : (
+                <FormField
+                  control={form.control}
+                  name="billing_receiver_email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Billing Receiver Email</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="email"
+                          placeholder="receiver@example.com"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
               <Button type="submit" loading={loading} className="w-full">
                 Update Transmittal
               </Button>
