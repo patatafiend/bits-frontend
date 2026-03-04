@@ -101,9 +101,7 @@ export function TransmittalList({
               <TableCell>{transmittal.transmittal_date}</TableCell>
               <TableCell>{getStatusBadge(transmittal.status)}</TableCell>
               <TableCell className="text-right">
-                <Link
-                  href={`/client/outbound/transmittals/${transmittal.id}`}
-                >
+                <Link href={`/client/outbound/transmittals/${transmittal.id}`}>
                   <Button variant="ghost" size="sm">
                     <Eye className="w-4 h-4 mr-2" />
                     View
@@ -260,7 +258,7 @@ export function SearchTransmittalComponent({
   }) => void;
 }) {
   const [query, setQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("posted");
   const [orderBy, setOrderBy] = useState("recent");
   const [limit, setLimit] = useState(10);
   const [page, setPage] = useState(1);
@@ -301,14 +299,14 @@ export function SearchTransmittalComponent({
 
   function handleClear() {
     setQuery("");
-    setStatusFilter("all");
+    setStatusFilter("posted");
     setOrderBy("recent");
     setLimit(10);
     setPage(1);
   }
 
   const isDirty =
-    query || statusFilter !== "all" || orderBy !== "recent" || limit !== 10;
+    query || statusFilter !== "posted" || orderBy !== "recent" || limit !== 10;
 
   return (
     <div className="space-y-4">
@@ -325,11 +323,9 @@ export function SearchTransmittalComponent({
             <SelectValue placeholder="Status" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All</SelectItem>
-            <SelectItem value="draft">Draft</SelectItem>
-            <SelectItem value="sent">Sent</SelectItem>
+            <SelectItem value="posted">Posted</SelectItem>
+            <SelectItem value="delivered">Delivered</SelectItem>
             <SelectItem value="accepted">Accepted</SelectItem>
-            <SelectItem value="rejected">Rejected</SelectItem>
           </SelectContent>
         </Select>
 
@@ -340,7 +336,9 @@ export function SearchTransmittalComponent({
           <SelectContent>
             <SelectItem value="recent">Most Recent</SelectItem>
             <SelectItem value="oldest">Oldest</SelectItem>
-            <SelectItem value="transmittal_number">Transmittal Number</SelectItem>
+            <SelectItem value="transmittal_number">
+              Transmittal Number
+            </SelectItem>
           </SelectContent>
         </Select>
 

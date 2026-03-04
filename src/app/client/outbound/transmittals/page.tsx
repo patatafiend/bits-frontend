@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FileText } from "lucide-react";
 import { useFetchTransmittals } from "@/hooks/use-transmittal";
@@ -25,16 +24,11 @@ export default function TransmittalListPage() {
         search: params.search ?? "",
         client_id: user?.client.id,
         order_by: params.order_by ?? "recent",
-        status: params.status === "all" ? undefined : params.status,
+        status: params.status ?? "posted",
         assigned_user: user?.id,
       },
     });
   }
-
-  useEffect(() => {
-    refetchTransmittals({});
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   return (
     <div className="container mx-auto py-8">
@@ -48,9 +42,9 @@ export default function TransmittalListPage() {
           </div>
         </CardHeader>
         <CardContent>
-          {transmittals && (
+          {user && (
             <SearchTransmittalComponent
-              data={transmittals}
+              data={transmittals ?? { items: [], total: 0 }}
               onFilter={refetchTransmittals}
             />
           )}
