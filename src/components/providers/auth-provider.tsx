@@ -48,15 +48,17 @@ export function useRefreshToken() {
 
 export type AuthContextType = {
   user: UserPayload | null;
+  loading: boolean;
   refetchUser: () => Promise<void>;
 };
 const AuthContext = createContext<AuthContextType>({
   user: null,
+  loading: true,
   refetchUser: async () => {},
 });
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const { data: user, loading, refetch } = useGetCurrentUser();
+  const { data: user, refetch, loading } = useGetCurrentUser();
 
   useEffect(() => {
     refetch();
@@ -71,12 +73,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [user]);
 
-  if (loading) {
-    return null;
-  }
-
   return (
-    <AuthContext.Provider value={{ user, refetchUser: refetch }}>
+    <AuthContext.Provider value={{ user, loading, refetchUser: refetch }}>
       {children}
     </AuthContext.Provider>
   );
@@ -89,3 +87,4 @@ export function useCurrentUser() {
 export function useRefetchUser() {
   return useContext(AuthContext).refetchUser;
 }
+
