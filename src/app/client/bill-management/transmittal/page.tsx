@@ -10,7 +10,7 @@ import { useCurrentUser } from "@/components/providers/auth-provider";
 
 export default function TransmittalListPage() {
   const [modalOpen, setModalOpen] = useState(false);
-  const { data: transmittals, refetch } = useFetchTransmittals();
+  const { data: transmittals, refetch, loading } = useFetchTransmittals();
   const user = useCurrentUser();
 
   function refetchTransmittals(params: {
@@ -62,6 +62,7 @@ export default function TransmittalListPage() {
             <SearchTransmittalComponent
               data={transmittals ?? { items: [], total: 0 }}
               onFilter={refetchTransmittals}
+              loading={loading}
             />
           )}
         </CardContent>

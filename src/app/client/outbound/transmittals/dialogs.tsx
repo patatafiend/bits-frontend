@@ -51,6 +51,7 @@ import {
   PaginationPrevious,
   PaginationNext,
 } from "@/components/ui/pagination";
+import Loader from "@/components/ui/loader";
 
 export function TransmittalList({
   data,
@@ -247,8 +248,10 @@ export function TransmittalModal({
 export function SearchTransmittalComponent({
   data,
   onFilter,
+  loading,
 }: {
   data: PaginatedTransmittal;
+  loading: boolean;
   onFilter: (params: {
     search?: string;
     status?: string;
@@ -272,7 +275,7 @@ export function SearchTransmittalComponent({
         skip: (page - 1) * limit,
         order_by: orderBy,
       });
-    }, 450);
+    }, 350);
     return () => clearTimeout(timeout);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query, statusFilter, page, orderBy, limit]);
@@ -364,7 +367,9 @@ export function SearchTransmittalComponent({
         )}
       </div>
 
-      {(data?.items?.length ?? 0) > 0 ? (
+      {loading ? (
+        <Loader loading={loading} />
+      ) : (data?.items?.length ?? 0) > 0 ? (
         <TransmittalList
           data={data.items}
           page={page}

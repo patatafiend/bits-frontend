@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
-import { useReceiverAction } from "@/hooks/use-invoice";
+import { useReceiverAction } from "@/hooks/use-transmittal";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -32,10 +32,10 @@ import {
 } from "@/components/ui/form";
 import { useFetchTransmittal } from "@/hooks/use-transmittal";
 
-export default function InvoiceViewPage() {
+export default function TransmittalViewPage() {
   const params = useParams();
   const searchParams = useSearchParams();
-  const invoiceId = params.id;
+  const transmittalId = params.id;
   const token = searchParams.get("token");
   const {
     data: transmittalData,
@@ -88,11 +88,11 @@ export default function InvoiceViewPage() {
   }
 
   useEffect(() => {
-    if (invoiceId) {
+    if (transmittalId) {
       const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
 
       refetchTransmittal({
-        params: `/receiver/${invoiceId}`,
+        params: `/receiver/${transmittalId}`,
         query: { include_items: true },
         headers,
       });
@@ -102,18 +102,18 @@ export default function InvoiceViewPage() {
 
   async function handleAccept() {
     const { error } = await receiverAction({
-      params: `${invoiceId}/accept`,
+      params: `${transmittalId}/accept`,
       query: { rejection_reason: null },
       headers: token ? { Authorization: `Bearer ${token}` } : undefined,
     });
 
     if (error) {
-      toast.error("Failed to accept invoice");
+      toast.error("Failed to accept transmittal");
       return;
     }
-    toast.success("Invoice accepted successfully");
+    toast.success("Transmittal accepted successfully");
     refetchTransmittal({
-      params: `/receiver/${invoiceId}`,
+      params: `/receiver/${transmittalId}`,
       query: { include_items: true },
       headers: token ? { Authorization: `Bearer ${token}` } : undefined,
     });
@@ -121,18 +121,18 @@ export default function InvoiceViewPage() {
 
   async function handleReject(reason: string) {
     const { error } = await receiverAction({
-      params: `${invoiceId}/reject`,
+      params: `${transmittalId}/reject`,
       query: { rejection_reason: reason },
       headers: token ? { Authorization: `Bearer ${token}` } : undefined,
     });
 
     if (error) {
-      toast.error("Failed to reject invoice");
+      toast.error("Failed to reject transmittal");
       return;
     }
-    toast.success("Invoice rejected successfully");
+    toast.success("Transmittal rejected successfully");
     refetchTransmittal({
-      params: `/receiver/${invoiceId}`,
+      params: `/receiver/${transmittalId}`,
       query: { include_items: true },
       headers: token ? { Authorization: `Bearer ${token}` } : undefined,
     });
@@ -157,7 +157,7 @@ export default function InvoiceViewPage() {
   if (!transmittalData) {
     return (
       <div className="flex justify-center items-center min-h-screen">
-        Invoice not found
+        Transmittal not found
       </div>
     );
   }
@@ -172,7 +172,7 @@ export default function InvoiceViewPage() {
           <div className="flex items-center justify-between">
             <div>
               <CardTitle className="text-2xl">
-                Invoice #{transmittalData.transmittal_number}
+                Transmittal #{transmittalData.transmittal_number}
               </CardTitle>
             </div>
           </div>
@@ -231,7 +231,7 @@ export default function InvoiceViewPage() {
             ) : (
               <div className="text-center py-8 text-muted-foreground">
                 <FileText className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                <p className="text-sm">No documents attached to this invoice</p>
+                <p className="text-sm">No documents attached to this transmittal</p>
               </div>
             )}
           </div>
@@ -239,12 +239,12 @@ export default function InvoiceViewPage() {
           <Separator />
 
           <div className="flex gap-4 justify-end">
-            <RejectInvoiceDialog
+            <RejectTransmittalDialog
               onConfirm={handleReject}
               loading={actionLoading}
               disabled={isActionDisabled}
             />
-            <AcceptInvoiceDialog
+            <AcceptTransmittalDialog
               onConfirm={handleAccept}
               loading={actionLoading}
               disabled={isActionDisabled}
@@ -261,7 +261,7 @@ export default function InvoiceViewPage() {
   );
 }
 
-export function AcceptInvoiceDialog({
+export function AcceptTransmittalDialog({
   onConfirm,
   loading,
   disabled,
@@ -279,7 +279,7 @@ export function AcceptInvoiceDialog({
         onClick={() => setOpen(true)}
         disabled={disabled}
       >
-        Accept Invoice
+        Accept Transmittal
       </Button>
 
       <Dialog open={open} onOpenChange={setOpen}>
@@ -287,7 +287,7 @@ export function AcceptInvoiceDialog({
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-green-600">
               <CheckCircle className="w-5 h-5" />
-              Accept Invoice
+              Accept Transmittal
             </DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground">
@@ -321,7 +321,7 @@ const rejectSchema = z.object({
 
 type RejectFormValues = z.infer<typeof rejectSchema>;
 
-export function RejectInvoiceDialog({
+export function RejectTransmittalDialog({
   onConfirm,
   loading,
   disabled,
@@ -356,7 +356,7 @@ export function RejectInvoiceDialog({
         onClick={() => setOpen(true)}
         disabled={disabled}
       >
-        Reject Invoice
+        Reject Transmittal
       </Button>
 
       <Dialog open={open} onOpenChange={handleClose}>
@@ -364,7 +364,7 @@ export function RejectInvoiceDialog({
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-destructive">
               <AlertTriangle className="w-5 h-5" />
-              Reject Invoice
+              Reject Transmittal
             </DialogTitle>
           </DialogHeader>
 
@@ -391,7 +391,7 @@ export function RejectInvoiceDialog({
                     </FormLabel>
                     <FormControl>
                       <Textarea
-                        placeholder="Please provide a reason for rejecting this invoice..."
+                        placeholder="Please provide a reason for rejecting this transmittal..."
                         rows={4}
                         {...field}
                       />
