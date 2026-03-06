@@ -13,29 +13,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Eye } from "lucide-react";
 import Link from "next/link";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-
-import {
-  Field,
-  FieldContent,
-  FieldError,
-  FieldGroup,
-  FieldLabel,
-  FieldSeparator,
-  FieldSet,
-} from "@/components/ui/field";
-import z from "zod";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useCreateTransmittal } from "@/hooks/use-transmittal";
-import { toast } from "sonner";
-import { PaginatedTransmittal, TransmittalModalProps } from "@/lib/types";
+import { PaginatedTransmittal } from "@/lib/types";
 import {
   Select,
   SelectContent,
@@ -153,98 +132,6 @@ export function TransmittalList({
   );
 }
 
-export function TransmittalModal({
-  client_id,
-  open,
-  onOpenChange,
-  onSubmit,
-}: TransmittalModalProps) {
-  const { execute } = useCreateTransmittal();
-
-  const formSchema = z.object({
-    transmittal_number: z.string().min(1, "Transmittal Number is required"),
-    client_id: z.number().min(1, "client id required"),
-    status: z.string().optional(),
-  });
-
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      transmittal_number: "",
-      client_id: client_id,
-      status: "Draft",
-    },
-  });
-
-  useEffect(() => {
-    if (client_id) {
-      form.setValue("client_id", client_id);
-    }
-  }, [client_id, form]);
-
-  async function handleSubmit(data: z.infer<typeof formSchema>) {
-    const { error } = await execute({
-      body: {
-        transmittal_number: data.transmittal_number,
-        status: "Draft",
-        client_id: data.client_id,
-      },
-    });
-    if (!error) {
-      onOpenChange(false);
-      onSubmit();
-      toast.success("Transmittal Created Successfully!");
-    } else {
-      toast.error(`Error: ${error.message}`);
-    }
-  }
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Transmittal Details</DialogTitle>
-        </DialogHeader>
-
-        <form onSubmit={form.handleSubmit(handleSubmit)}>
-          <FieldSet>
-            <FieldGroup className="grid">
-              <Field>
-                <FieldLabel>Transmittal Number</FieldLabel>
-                <FieldContent>
-                  <Input
-                    type="text"
-                    placeholder="INV-2024-001"
-                    {...form.register("transmittal_number")}
-                  />
-                </FieldContent>
-                {form.formState.errors.transmittal_number && (
-                  <FieldError>
-                    {form.formState.errors.transmittal_number.message}
-                  </FieldError>
-                )}
-              </Field>
-            </FieldGroup>
-
-            <FieldSeparator />
-
-            <div className="flex justify-end gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-              >
-                Cancel
-              </Button>
-              <Button type="submit">Save Transmittal</Button>
-            </div>
-          </FieldSet>
-        </form>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
 export function SearchTransmittalComponent({
   data,
   onFilter,
@@ -329,6 +216,7 @@ export function SearchTransmittalComponent({
             <SelectItem value="posted">Posted</SelectItem>
             <SelectItem value="delivered">Delivered</SelectItem>
             <SelectItem value="accepted">Accepted</SelectItem>
+            <SelectItem value="rejected">Rejected</SelectItem>
           </SelectContent>
         </Select>
 
