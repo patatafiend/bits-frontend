@@ -88,3 +88,9 @@ export function useGenerateTMN() {
     { method: "GET" },
   );
 }
+
+export function usePostTransmittal() {
+  return useServerAction<Transmittal, UpdateTransmittal>(`/transmittals/post`, {
+    method: "POST",
+  });
+}
