@@ -1,33 +1,27 @@
 "use client";
 
-import { useMultiFileUpload } from "@/hooks/use-multi-file-upload";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
 import {
-  Upload,
   FileText,
   CheckCircle,
   AlertCircle,
+  AlertTriangle,
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle
 } from "@/components/ui/dialog";
 import { Download } from "lucide-react";
 import {
-  UploadInvoiceFileProps,
   FileViewerModalProps,
   TransmittalWithItems,
 } from "@/lib/types";
-import { useDropzone } from "react-dropzone";
-import { Edit } from "lucide-react";
 import z from "zod";
-import { DatePicker } from "@/components/date-picker";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { DrawerDialog } from "@/components/drawer-dialog";
@@ -39,7 +33,7 @@ import {
   FormControl,
   FormMessage,
 } from "@/components/ui/form";
-import { useAddItemToTransmittal, useSendTransmittal, useUpdateTransmittal } from "@/hooks/use-transmittal";
+import { Textarea } from "@/components/ui/textarea";
 
 export function FileViewerModal({ file, onClose }: FileViewerModalProps) {
   if (!file) return null;
@@ -126,391 +120,6 @@ export function FileViewerModal({ file, onClose }: FileViewerModalProps) {
   );
 }
 
-export function UploadFile({
-  transmittalData,
-  transmittalId,
-  refetchTransmittal,
-}: UploadInvoiceFileProps) {
-  const { execute: addItemToTransmittal, loading: addingItem } =
-    useAddItemToTransmittal();
-
-  const {
-    files,
-    addFiles,
-    removeFile,
-    reset,
-    uploadAll,
-    isAnyUploading,
-    isAnyCompressing,
-    hasErrors,
-    allCompleted,
-  } = useMultiFileUpload({ concurrency: 3 });
-
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop: (acceptedFiles) => {
-      addFiles(acceptedFiles);
-    },
-    accept: {
-      "image/*": [".png", ".jpg", ".jpeg", ".gif", ".webp"],
-      "application/pdf": [".pdf"],
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": [
-        ".xlsx",
-      ],
-      "application/vnd.ms-excel": [".xls"],
-      "text/csv": [".csv"],
-    },
-    disabled: isAnyUploading || isAnyCompressing,
-    multiple: true,
-  });
-
-  async function handleAddItems() {
-    if (files.length === 0 || !transmittalData) return;
-
-    try {
-      const urls = await uploadAll("billing-statements");
-
-      if (!urls || urls.length === 0) {
-        toast.error("Failed to upload files to S3. Please try again.");
-        return;
-      }
-
-      const items = urls.map((url, index) => {
-        const urlObj = new URL(url);
-        const s3Key = urlObj.pathname.substring(1);
-        const file = files[index].file;
-
-        return {
-          transmittal_id: transmittalData.id,
-          file_name: file.name,
-          file_key: s3Key,
-          file_size: file.size.toString(),
-          file_type: file.type,
-          s3_bucket: `${process.env.NEXT_PUBLIC_AWS_S3_BUCKET}`,
-        };
-      });
-
-      const { error: dbError } = await addItemToTransmittal({
-        body: items,
-        params: `/${transmittalId}/items`,
-      });
-
-      if (dbError) {
-        toast.error(
-          `Files uploaded but failed to save records: ${dbError.message}. Please contact support.`,
-        );
-        return;
-      }
-
-      await refetchTransmittal({
-        params: `${transmittalId}`,
-        query: { include_items: true },
-      });
-      reset();
-      toast.success(`Successfully uploaded ${urls.length} file(s)!`);
-    } catch (err) {
-      console.error("Unexpected error during upload:", err);
-      toast.error(
-        "An unexpected error occurred. Please try again or contact support.",
-      );
-    }
-  }
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Upload className="w-5 h-5" />
-          Upload Billing Statement
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        <div
-          {...getRootProps()}
-          className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
-            isDragActive
-              ? "border-primary bg-primary/5"
-              : "border-muted-foreground/25 hover:border-muted-foreground/50"
-          } ${isAnyUploading || isAnyCompressing ? "opacity-50 cursor-not-allowed" : ""}`}
-        >
-          <input {...getInputProps()} />
-          <Upload className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-          {isDragActive ? (
-            <p className="text-sm font-medium">Drop files here...</p>
-          ) : (
-            <div className="space-y-2">
-              <p className="text-sm font-medium">
-                Drag & drop files here, or click to select
-              </p>
-              <p className="text-xs text-muted-foreground">
-                Supports: Images, PDF, Excel
-              </p>
-            </div>
-          )}
-        </div>
-
-        {files.length > 0 && (
-          <div className="space-y-2">
-            {files.map((item) => (
-              <div
-                key={item.id}
-                className="flex items-center gap-3 p-3 bg-muted rounded-lg"
-              >
-                <FileText className="w-5 h-5 text-muted-foreground" />
-                <div className="flex-1">
-                  <p className="text-sm font-medium">{item.file.name}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {(item.file.size / 1024 / 1024).toFixed(2)} MB
-                  </p>
-                  {item.compressing && (
-                    <p className="text-xs text-blue-600">Compressing...</p>
-                  )}
-                  {item.uploading && (
-                    <div className="mt-1">
-                      <Progress value={item.progress} className="h-1" />
-                    </div>
-                  )}
-                  {item.error && (
-                    <p className="text-xs text-red-600 mt-1">{item.error}</p>
-                  )}
-                  {item.url && (
-                    <p className="text-xs text-green-600 mt-1 flex items-center gap-1">
-                      <CheckCircle className="w-3 h-3" />
-                      Uploaded
-                    </p>
-                  )}
-                </div>
-                {!item.uploading && !item.compressing && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => removeFile(item.id)}
-                  >
-                    Remove
-                  </Button>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-
-        {(isAnyUploading || isAnyCompressing) && (
-          <div className="flex items-center gap-2 text-sm text-blue-600">
-            <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
-            {isAnyCompressing ? "Compressing images..." : "Uploading files..."}
-          </div>
-        )}
-
-        {hasErrors && (
-          <div className="flex items-center gap-2 p-3 bg-red-50 text-red-700 rounded-lg">
-            <AlertCircle className="w-5 h-5" />
-            <span className="text-sm">Some files failed to upload</span>
-          </div>
-        )}
-
-        <div className="flex gap-3">
-          <Button
-            onClick={handleAddItems}
-            disabled={
-              files.length === 0 ||
-              isAnyUploading ||
-              isAnyCompressing ||
-              addingItem ||
-              allCompleted
-            }
-            className="flex-1"
-          >
-            {isAnyUploading
-              ? "Uploading..."
-              : addingItem
-                ? "Saving..."
-                : `Upload ${files.length} File(s)`}
-          </Button>
-          {files.length > 0 && (
-            <Button
-              onClick={reset}
-              variant="outline"
-              disabled={isAnyUploading || isAnyCompressing || addingItem}
-            >
-              Reset
-            </Button>
-          )}
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-export function SendInvoiceComponent({
-  transmittalData,
-  onSend,
-}: {
-  transmittalData: TransmittalWithItems;
-  onSend: () => void;
-}) {
-  const { execute: sendTransmittal, loading } = useSendTransmittal();
-  const [open, setOpen] = useState(false);
-  const isDisabled = transmittalData.status === "sent" || transmittalData.status === "accepted";
-  const hasItems = (transmittalData.transmittal_items?.length ?? 0) > 0;
-
-  const handleSend = async () => {
-    const { error } = await sendTransmittal({
-      body: transmittalData,
-      params: `/${transmittalData.id}/send`,
-    });
-    if (error) {
-      toast.error(error.message || "Failed to send transmittal");
-      return;
-    }
-    setOpen(false);
-    onSend();
-    toast.success("Transmittal sent successfully!");
-  };
-
-  return (
-    <>
-      <Button variant="default" onClick={() => setOpen(true)} disabled={isDisabled}>
-        {isDisabled ? "Sent" : "Send"}
-      </Button>
-
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="w-[calc(100%-2rem)] sm:max-w-lg rounded-lg">
-          <DialogHeader>
-            <DialogTitle>
-              {hasItems ? "Confirm Send Invoice" : "Cannot Send Invoice"}
-            </DialogTitle>
-          </DialogHeader>
-
-          {hasItems ? (
-            <div className="space-y-4">
-              <div className="rounded-lg border p-3 space-y-1 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Invoice</span>
-                  <span className="font-medium">{transmittalData.transmittal_number}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Date</span>
-                  <span className="font-medium">
-                    {new Date(transmittalData.transmittal_date).toLocaleDateString()}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Files</span>
-                  <span className="font-medium">{transmittalData.transmittal_items.length} attached</span>
-                </div>
-              </div>
-
-              <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
-                <Button variant="outline" onClick={() => setOpen(false)} className="w-full sm:w-auto">
-                  Cancel
-                </Button>
-                <Button onClick={handleSend} disabled={loading} className="w-full sm:w-auto">
-                  {loading ? "Sending..." : "Confirm Send"}
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              <div className="flex items-start gap-3 p-3 bg-yellow-50 text-yellow-700 rounded-lg border border-yellow-200">
-                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-                <p className="text-sm">
-                  No files attached. Please upload at least one billing statement before sending.
-                </p>
-              </div>
-              <div className="flex justify-end">
-                <Button variant="outline" onClick={() => setOpen(false)} className="w-full sm:w-auto">
-                  Close
-                </Button>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
-    </>
-  );
-}
-
-export function EditModal({
-  transmittalData,
-  onSubmit,
-}: {
-  transmittalData: TransmittalWithItems;
-  onSubmit: () => void;
-}) {
-  const { execute, loading } = useUpdateTransmittal();
-  const formSchema = z.object({
-    transmittal_date: z.string().default(new Date().toISOString().split("T")[0]),
-  });
-  const form = useForm({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      transmittal_date: transmittalData.transmittal_date,
-    },
-  });
-
-  async function handleSubmit(
-    data: z.infer<typeof formSchema>,
-    close: () => void,
-  ) {
-    const { error } = await execute({
-      params: `/${transmittalData.id}`,
-      body: {
-        id: transmittalData.id,
-        transmittal_date: data.transmittal_date,
-      },
-    });
-    if (error) {
-      toast.error(error.message);
-      return;
-    }
-    toast.success("Transmittal updated successfully");
-    close();
-    onSubmit();
-  }
-
-  return (
-    <div>
-      <DrawerDialog
-        title="Edit Transmittal"
-        description="Edit Transmittal details"
-        renderTrigger={
-          <Button variant="outline">
-            <Edit className="h-4 w-4 mr-2" />
-            Edit
-          </Button>
-        }
-      >
-        {(close) => (
-          <form
-            onSubmit={form.handleSubmit(async (values) => {
-              await handleSubmit(values, close!);
-            })}
-            className="space-y-6"
-          >
-            <Form {...form}>
-              <FormField
-                control={form.control}
-                name="transmittal_date"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Transmittal Date</FormLabel>
-                    <FormControl>
-                      <DatePicker {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <Button type="submit" loading={loading} className="w-full">
-                Update Transmittal
-              </Button>
-            </Form>
-          </form>
-        )}
-      </DrawerDialog>
-    </div>
-  );
-}
-
 export function RejectionReasonDialog({ transmittalData }: { transmittalData: TransmittalWithItems }) {
   if (transmittalData.status !== "rejected" || !transmittalData.rejection_reason) {
     return null;
@@ -544,3 +153,161 @@ export function RejectionReasonDialog({ transmittalData }: { transmittalData: Tr
     </DrawerDialog>
   );
 }
+
+export function AcceptTransmittalDialog({
+  onConfirm,
+  loading,
+  disabled,
+}: {
+  onConfirm: () => void;
+  loading?: boolean;
+  disabled: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <>
+      <Button
+        className="bg-green-600 hover:bg-green-700"
+        onClick={() => setOpen(true)}
+        disabled={disabled}
+      >
+        Accepted
+      </Button>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-green-600">
+              <CheckCircle className="w-5 h-5" />
+              Accept Transmittal
+            </DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Are you sure you want to accept these invoices? This action cannot be
+            undone.
+          </p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              className="bg-green-600 hover:bg-green-700"
+              onClick={() => {
+                onConfirm();
+                setOpen(false);
+              }}
+              disabled={loading}
+            >
+              {loading ? "Processing..." : "Confirm Accept"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
+const rejectSchema = z.object({
+  rejection_reason: z.string().min(1, "Rejection reason is required").trim(),
+});
+
+type RejectFormValues = z.infer<typeof rejectSchema>;
+
+export function RejectTransmittalDialog({
+  onConfirm,
+  loading,
+  disabled,
+}: {
+  onConfirm: (reason: string) => void;
+  loading?: boolean;
+  disabled?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+
+  const form = useForm<RejectFormValues>({
+    resolver: zodResolver(rejectSchema),
+    defaultValues: { rejection_reason: "" },
+  });
+
+  function handleConfirm(values: RejectFormValues) {
+    onConfirm(values.rejection_reason);
+    setOpen(false);
+    form.reset();
+  }
+
+  function handleClose() {
+    setOpen(false);
+    form.reset();
+  }
+
+  return (
+    <>
+      <Button
+        variant="outline"
+        className="border-red-600 text-red-600 hover:bg-red-50 hover:text-red-700"
+        onClick={() => setOpen(true)}
+        disabled={disabled}
+      >
+        Rejected
+      </Button>
+
+      <Dialog open={open} onOpenChange={handleClose}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <AlertTriangle className="w-5 h-5" />
+              Reject Transmittal
+            </DialogTitle>
+          </DialogHeader>
+
+          <Form {...form}>
+            <form
+              onSubmit={form.handleSubmit(handleConfirm)}
+              className="space-y-4"
+            >
+              <div className="rounded-md border border-yellow-300 bg-yellow-50 p-3">
+                <p className="text-sm text-yellow-800">
+                  This action cannot be undone. The sender will be notified with
+                  your rejection reason.
+                </p>
+              </div>
+
+              <FormField
+                control={form.control}
+                name="rejection_reason"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      Rejection Reason{" "}
+                      <span className="text-destructive">*</span>
+                    </FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Please provide a reason for rejecting this transmittal..."
+                        rows={4}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <DialogFooter>
+                <Button variant="outline" type="button" onClick={handleClose}>
+                  Cancel
+                </Button>
+                <Button variant="destructive" type="submit" disabled={loading}>
+                  {loading ? "Processing..." : "Confirm Reject"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
+
