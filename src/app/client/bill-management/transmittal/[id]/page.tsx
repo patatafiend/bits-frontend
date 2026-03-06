@@ -24,10 +24,12 @@ import {
   useFetchTransmittal,
 } from "@/hooks/use-transmittal";
 import { useFetchUsers } from "@/hooks/use-user";
+import { TransmittalModal } from "./dialogs";
 
 export default function TransmittalDetailPage() {
   const params = useParams();
   const transmittalId = params.id;
+  const [modalOpen, setModalOpen] = useState(false);
   const [viewingFile, setViewingFile] = useState<{
     url: string;
     name: string;
@@ -136,6 +138,12 @@ export default function TransmittalDetailPage() {
     );
   };
 
+  const isButtonDisabled =
+    transmittalData?.status === "accepted" ||
+    transmittalData?.status === "rejected";
+  const isRejected = transmittalData?.status === "rejected";
+  const isDraft = transmittalData?.status === "draft";
+
   return (
     <div className="container mx-auto py-8 max-w-4xl">
       <Link href="/client/bill-management/transmittal">
@@ -153,27 +161,44 @@ export default function TransmittalDetailPage() {
                 <CardTitle>Transmittal Details</CardTitle>
                 <div className="flex items-center gap-2">
                   <RejectionReasonDialog transmittalData={transmittalData} />
-                  <EditModal
-                    transmittalData={transmittalData}
-                    userData={userData}
-                    onSubmit={() => {
-                      refetchUsers({
-                        query: { client_id: user?.client.id },
-                      });
-                      refetchTransmittals();
-                    }}
-                  />
-                  {transmittalData.billing_receiver_email ? (
-                    <SendTransmittalComponent
+                  {!isButtonDisabled && (
+                    <EditModal
                       transmittalData={transmittalData}
-                      onSend={refetchTransmittals}
-                    />
-                  ) : (
-                    <PostTransmittalComponent
-                      transmittalData={transmittalData}
-                      onPost={refetchTransmittals}
+                      userData={userData}
+                      onSubmit={() => {
+                        refetchUsers({
+                          query: { client_id: user?.client.id },
+                        });
+                        refetchTransmittals();
+                      }}
                     />
                   )}
+                  {isRejected && (
+                    <>
+                      <Button onClick={() => setModalOpen(true)}>
+                        Resubmit
+                      </Button>
+                      <TransmittalModal
+                        client_id={transmittalData.client_id}
+                        open={modalOpen}
+                        onOpenChange={setModalOpen}
+                        onSubmit={refetchTransmittals}
+                        transmittalData={transmittalData}
+                      />
+                    </>
+                  )}
+                  {!isRejected &&
+                    (transmittalData.billing_receiver_email ? (
+                      <SendTransmittalComponent
+                        transmittalData={transmittalData}
+                        onSend={refetchTransmittals}
+                      />
+                    ) : (
+                      <PostTransmittalComponent
+                        transmittalData={transmittalData}
+                        onPost={refetchTransmittals}
+                      />
+                    ))}
                 </div>
               </div>
             </CardHeader>
@@ -286,17 +311,19 @@ export default function TransmittalDetailPage() {
                             >
                               {loadingUrl ? "Loading..." : "View"}
                             </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="text-destructive hover:text-destructive"
-                              onClick={() =>
-                                handleDeleteItem(item.id, item.file_key)
-                              }
-                              disabled={deletingFile}
-                            >
-                              Delete
-                            </Button>
+                            {isDraft && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-destructive hover:text-destructive"
+                                onClick={() =>
+                                  handleDeleteItem(item.id, item.file_key)
+                                }
+                                disabled={deletingFile}
+                              >
+                                Delete
+                              </Button>
+                            )}
                           </div>
 
                           <FileViewerModal
