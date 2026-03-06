@@ -168,6 +168,7 @@ export function TransmittalModal({
 
   const formSchema = z.object({
     transmittal_number: z.string().min(1, "Transmittal Number is required"),
+    resubmitted_from_id: z.number().optional(),
     client_id: z.number().min(1, "client id required"),
     status: z.string().optional(),
   });
@@ -176,6 +177,7 @@ export function TransmittalModal({
     resolver: zodResolver(formSchema),
     defaultValues: {
       transmittal_number: "",
+      resubmitted_from_id: undefined,
       client_id: client_id,
       status: "Draft",
     },
@@ -193,6 +195,7 @@ export function TransmittalModal({
         transmittal_number: data.transmittal_number,
         status: "Draft",
         client_id: data.client_id,
+        resubmitted_from_id: data.resubmitted_from_id ?? null,
       },
     });
     if (!error) {
