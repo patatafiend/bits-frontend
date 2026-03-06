@@ -4,8 +4,8 @@ import { useMultiFileUpload } from "@/hooks/use-multi-file-upload";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Upload, FileText, CheckCircle, AlertCircle } from "lucide-react";
-import { useState } from "react";
+import { Upload, FileText, CheckCircle, AlertCircle, RefreshCcw } from "lucide-react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -20,6 +20,7 @@ import {
   TransmittalWithItems,
   User,
   Transmittal,
+  TransmittalModalProps,
 } from "@/lib/types";
 import { useDropzone } from "react-dropzone";
 import { Edit } from "lucide-react";
@@ -42,9 +43,13 @@ import {
 import UserComboBox from "@/components/user-combobox";
 import {
   useAddItemToTransmittal,
+  useCreateTransmittal,
+  useGenerateTMN,
+  usePostTransmittal,
   useSendTransmittal,
   useUpdateTransmittal,
 } from "@/hooks/use-transmittal";
+import { FieldSet, FieldGroup, Field, FieldLabel, FieldContent, FieldError, FieldSeparator } from "@/components/ui/field";
 
 export function FileViewerModal({ file, onClose }: FileViewerModalProps) {
   if (!file) return null;
@@ -467,7 +472,7 @@ export function PostTransmittalComponent({
   transmittalData: Transmittal;
   onPost: () => void;
 }) {
-  const { execute: postTransmittal, loading } = useUpdateTransmittal();
+  const { execute: postTransmittal, loading } = usePostTransmittal();
   const [open, setOpen] = useState(false);
   const isDisabled =
     transmittalData.status === "posted" ||
@@ -476,7 +481,9 @@ export function PostTransmittalComponent({
 
   const handlePost = async () => {
     const { error } = await postTransmittal({
-      body: transmittalData,
+      body: {
+        status: "posted",
+      },
       params: `/${transmittalData.id}`,
     });
     if (error) {
@@ -773,5 +780,126 @@ export function RejectionReasonDialog({
         )}
       </div>
     </DrawerDialog>
+  );
+}
+
+export function TransmittalModal({
+  client_id,
+  open,
+  onOpenChange,
+  onSubmit,
+  transmittalData,
+}: TransmittalModalProps) {
+  const { execute } = useCreateTransmittal();
+  const { execute: generateTMN } = useGenerateTMN();
+  
+  const formSchema = z.object({
+
+    transmittal_number: z.string().min(1, "Transmittal Number is required"),
+    resubmitted_as_id: z.number().optional(),
+    resubmitted_from_id: z.number().optional(),
+    client_id: z.number().min(1, "client id required"),
+    status: z.string().optional(),
+  });
+
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      transmittal_number: "",
+      resubmitted_as_id: undefined,
+      resubmitted_from_id: undefined,
+      client_id: client_id,
+      status: "Draft",
+    },
+  });
+
+  useEffect(() => {
+    if (client_id) {
+      form.setValue("client_id", client_id);
+    }
+  }, [client_id, form]);
+
+  async function handleSubmit(data: z.infer<typeof formSchema>) {
+    const { error } = await execute({
+      body: {
+        transmittal_number: data.transmittal_number,
+        status: "Draft",
+        client_id: data.client_id,
+        resubmitted_from_id: Number(transmittalData?.id)?? null,
+      },
+    });
+    if (!error) {
+      onOpenChange(false);
+      onSubmit();
+      toast.success("Transmittal Created Successfully!");
+    } else {
+      toast.error(`Error: ${error.message}`);
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Transmittal Details</DialogTitle>
+        </DialogHeader>
+
+        <form onSubmit={form.handleSubmit(handleSubmit)}>
+          <FieldSet>
+            <FieldGroup className="grid">
+              <Field>
+                <FieldLabel>Transmittal Number</FieldLabel>
+                <FieldContent>
+                                    <div className="flex gap-2">
+                    {" "}
+                    <Input
+                      type="text"
+                      placeholder="INV-2024-001"
+                      {...form.register("transmittal_number")}
+                    />
+                    <Button
+                      type="button"
+                      onClick={async () => {
+                        const { data, error } = await generateTMN();
+                        if (error) {
+                          toast.error(error.message);
+                        }
+                        if (data) {
+                          form.setValue(
+                            "transmittal_number",
+                            data.transmittal_number,
+                          );
+                        }
+                      }}
+                    >
+                      <RefreshCcw />
+                      Autogenerate
+                    </Button>
+                  </div>
+                </FieldContent>
+                {form.formState.errors.transmittal_number && (
+                  <FieldError>
+                    {form.formState.errors.transmittal_number.message}
+                  </FieldError>
+                )}
+              </Field>
+            </FieldGroup>
+
+            <FieldSeparator />
+
+            <div className="flex justify-end gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+              >
+                Cancel
+              </Button>
+              <Button type="submit">Save Transmittal</Button>
+            </div>
+          </FieldSet>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }

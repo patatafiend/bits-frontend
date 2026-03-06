@@ -238,6 +238,8 @@ export type Transmittal = {
   created_at: string;
   assigned_user?: number | null;
   billing_receiver_email: string | null;
+  resubmitted_as_id: number | null;
+  resubmitted_from_id: number | null;
   transmittal_items: TransmittalItems[];
 };
 
@@ -257,6 +259,8 @@ export type TransmittalWithItems = {
   created_at: string;
   assigned_user?: number | null;
   billing_receiver_email: string | null;
+  resubmitted_as_id: number | null;
+  resubmitted_from_id: number | null;
   transmittal_items: TransmittalItems[];
   billing_receiver: Receiver | null;
   user_assigned: User;
@@ -276,11 +280,12 @@ export type TransmittalItems = {
 
 export type CreateTransmittal = {
   transmittal_number: string;
+  resubmitted_from_id: number | null;
   client_id: number;
   status: string;
 };
 
-export type UpdateTransmittal = Partial<Transmittal> & { id: number };
+export type UpdateTransmittal = Partial<Transmittal>;
 
 export type AddTransmittalItemPayload = {
   transmittal_id: number;
@@ -313,4 +318,5 @@ export type TransmittalModalProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSubmit: () => void;
+  transmittalData?: Transmittal;
 };
