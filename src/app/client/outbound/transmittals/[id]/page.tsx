@@ -11,12 +11,12 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useGetPresignedUrl } from "@/hooks/use-media";
 import { useCurrentUser } from "@/components/providers/auth-provider";
-import {
-  FileViewerModal,
-} from "./dialogs";
+import { FileViewerModal } from "./dialogs";
 import {
   useFetchTransmittal,
+  useUpdateTransmittal,
 } from "@/hooks/use-transmittal";
+import { RejectTransmittalDialog, AcceptTransmittalDialog } from "./dialogs";
 
 export default function TransmittalDetailPage() {
   const params = useParams();
@@ -37,6 +37,8 @@ export default function TransmittalDetailPage() {
   const [urlCache, setUrlCache] = useState<
     Map<string, { url: string; expires: number }>
   >(new Map());
+  const { execute: updateStatus, loading: loadingUpdate } =
+    useUpdateTransmittal();
 
   function refetchTransmittals() {
     refetchTransmittal({
@@ -88,6 +90,19 @@ export default function TransmittalDetailPage() {
     setViewingFile({ url: data.url, name: fileName, type: fileType });
   }
 
+  async function handleUpdateStatus(status: "accepted" | "rejected") {
+    const { error } = await updateStatus({
+      params: `/${transmittalData?.id}`,
+      body: { status },
+    });
+    if (error) {
+      toast.error(
+        `Failed to ${status === "accepted" ? "accept" : "reject"} transmittal: ${error.message}`,
+      );
+    }
+    refetchTransmittals();
+  }
+
   const getStatusBadge = (status: string) => {
     if (!status) return null;
 
@@ -102,6 +117,10 @@ export default function TransmittalDetailPage() {
       </Badge>
     );
   };
+
+  const isActionDisabled =
+    transmittalData?.status === "accepted" ||
+    transmittalData?.status === "rejected";
 
   return (
     <div className="container mx-auto py-8 max-w-4xl">
@@ -119,19 +138,16 @@ export default function TransmittalDetailPage() {
               <div className="flex items-center justify-between">
                 <CardTitle>Transmittal Details</CardTitle>
                 <div className="flex items-center gap-2">
-                  {/* <RejectionReasonDialog transmittalData={transmittalData} />
-                  <EditModal
-                    transmittalData={transmittalData}
-                    onSubmit={() =>
-                      refetchTransmittals()
-                    }
+                  <AcceptTransmittalDialog
+                    onConfirm={() => handleUpdateStatus("accepted")}
+                    loading={loadingUpdate}
+                    disabled={isActionDisabled}
                   />
-                  <SendInvoiceComponent
-                    transmittalData={transmittalData}
-                    onSend={() => {
-                      refetchTransmittals();
-                    }}
-                  /> */}
+                  <RejectTransmittalDialog
+                    onConfirm={() => handleUpdateStatus("rejected")}
+                    loading={loadingUpdate}
+                    disabled={isActionDisabled}
+                  />
                 </div>
               </div>
             </CardHeader>
@@ -147,7 +163,9 @@ export default function TransmittalDetailPage() {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Date</p>
-                  <p className="font-medium">{transmittalData.transmittal_date}</p>
+                  <p className="font-medium">
+                    {transmittalData.transmittal_date}
+                  </p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Status</p>
@@ -230,7 +248,6 @@ export default function TransmittalDetailPage() {
                     </div>
                   </div>
                 )}
-
               {(!transmittalData?.transmittal_items ||
                 transmittalData.transmittal_items.length === 0) && (
                 <div className="text-center py-8 text-muted-foreground">
