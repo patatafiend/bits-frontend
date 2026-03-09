@@ -25,7 +25,7 @@ export default function TransmittalListPage() {
         search: params.search ?? "",
         client_id: user?.client.id,
         order_by: params.order_by ?? "recent",
-        status: params.status ?? "posted",
+        status: params.status === "all" ? undefined : params.status,
         assigned_user: user?.id,
       },
     });
