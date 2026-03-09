@@ -29,6 +29,10 @@ export default function AccountTypeSelect({
       label: "Admin Account",
       value: "admin_account",
     },
+    {
+      label: "Billing Operator",
+      value: "billing_account",
+    },
   ];
 
   return (
