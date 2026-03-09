@@ -94,3 +94,9 @@ export function usePostTransmittal() {
     method: "POST",
   });
 }
+
+export function useFetchHistory() {
+  return useServerFetch<Transmittal[]>(`/transmittals/resubmission-history`, {
+    method: "GET",
+  });
+}
