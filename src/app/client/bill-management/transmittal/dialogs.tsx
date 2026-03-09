@@ -10,7 +10,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
 import { Eye, RefreshCcw } from "lucide-react";
 import Link from "next/link";
 import {
@@ -52,6 +51,7 @@ import {
   PaginationPrevious,
   PaginationNext,
 } from "@/components/ui/pagination";
+import { StatusBadge } from "@/components/status-badge";
 
 export function TransmittalList({
   data,
@@ -68,19 +68,6 @@ export function TransmittalList({
 }) {
   const pageCount = Math.ceil(total / limit);
   const pages = [...Array(pageCount)].map((_, i) => i + 1);
-
-  const getStatusBadge = (status: string) => {
-    const variants: Record<string, "default" | "secondary" | "destructive"> = {
-      draft: "default",
-      sent: "secondary",
-      rejected: "destructive",
-    };
-    return (
-      <Badge variant={variants[status] || "default"}>
-        {status.charAt(0).toUpperCase() + status.slice(1)}
-      </Badge>
-    );
-  };
 
   return (
     <>
@@ -102,7 +89,9 @@ export function TransmittalList({
               </TableCell>
               <TableCell>{transmittal.transmittal_date}</TableCell>
               <TableCell>{transmittal.created_by}</TableCell>
-              <TableCell>{getStatusBadge(transmittal.status)}</TableCell>
+              <TableCell>
+                <StatusBadge status={transmittal.status} />
+              </TableCell>
               <TableCell className="text-right">
                 <Link
                   href={`/client/bill-management/transmittal/${transmittal.id}`}
@@ -356,6 +345,7 @@ export function SearchTransmittalComponent({
           <SelectContent>
             <SelectItem value="all">All</SelectItem>
             <SelectItem value="draft">Draft</SelectItem>
+            <SelectItem value="pending">Pending</SelectItem>
             <SelectItem value="sent">Sent</SelectItem>
             <SelectItem value="accepted">Accepted</SelectItem>
             <SelectItem value="rejected">Rejected</SelectItem>
@@ -369,9 +359,6 @@ export function SearchTransmittalComponent({
           <SelectContent>
             <SelectItem value="recent">Most Recent</SelectItem>
             <SelectItem value="oldest">Oldest</SelectItem>
-            <SelectItem value="transmittal_number">
-              Transmittal Number
-            </SelectItem>
           </SelectContent>
         </Select>
 

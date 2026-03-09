@@ -10,7 +10,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
 import { Eye } from "lucide-react";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
@@ -31,6 +30,7 @@ import {
   PaginationNext,
 } from "@/components/ui/pagination";
 import Loader from "@/components/ui/loader";
+import { StatusBadge } from "@/components/status-badge";
 
 export function TransmittalList({
   data,
@@ -47,19 +47,6 @@ export function TransmittalList({
 }) {
   const pageCount = Math.ceil(total / limit);
   const pages = [...Array(pageCount)].map((_, i) => i + 1);
-
-  const getStatusBadge = (status: string) => {
-    const variants: Record<string, "default" | "secondary" | "destructive"> = {
-      draft: "default",
-      sent: "secondary",
-      rejected: "destructive",
-    };
-    return (
-      <Badge variant={variants[status] || "default"}>
-        {status.charAt(0).toUpperCase() + status.slice(1)}
-      </Badge>
-    );
-  };
 
   return (
     <>
@@ -79,7 +66,9 @@ export function TransmittalList({
                 {transmittal.transmittal_number}
               </TableCell>
               <TableCell>{transmittal.transmittal_date}</TableCell>
-              <TableCell>{getStatusBadge(transmittal.status)}</TableCell>
+              <TableCell>
+                <StatusBadge status={transmittal.status} />
+              </TableCell>
               <TableCell className="text-right">
                 <Link href={`/client/outbound/transmittals/${transmittal.id}`}>
                   <Button variant="ghost" size="sm">
@@ -148,7 +137,7 @@ export function SearchTransmittalComponent({
   }) => void;
 }) {
   const [query, setQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState("posted");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [orderBy, setOrderBy] = useState("recent");
   const [limit, setLimit] = useState(10);
   const [page, setPage] = useState(1);
@@ -189,14 +178,14 @@ export function SearchTransmittalComponent({
 
   function handleClear() {
     setQuery("");
-    setStatusFilter("posted");
+    setStatusFilter("all");
     setOrderBy("recent");
     setLimit(10);
     setPage(1);
   }
 
   const isDirty =
-    query || statusFilter !== "posted" || orderBy !== "recent" || limit !== 10;
+    query || statusFilter !== "pending" || orderBy !== "recent" || limit !== 10;
 
   return (
     <div className="space-y-4">
@@ -213,8 +202,8 @@ export function SearchTransmittalComponent({
             <SelectValue placeholder="Status" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="posted">Posted</SelectItem>
-            <SelectItem value="delivered">Delivered</SelectItem>
+            <SelectItem value="all">All</SelectItem>
+            <SelectItem value="pending">Pending</SelectItem>
             <SelectItem value="accepted">Accepted</SelectItem>
             <SelectItem value="rejected">Rejected</SelectItem>
           </SelectContent>
@@ -227,9 +216,6 @@ export function SearchTransmittalComponent({
           <SelectContent>
             <SelectItem value="recent">Most Recent</SelectItem>
             <SelectItem value="oldest">Oldest</SelectItem>
-            <SelectItem value="transmittal_number">
-              Transmittal Number
-            </SelectItem>
           </SelectContent>
         </Select>
 

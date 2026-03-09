@@ -3,7 +3,6 @@
 import { useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { FileText, ArrowLeft, RefreshCw } from "lucide-react";
 import Link from "next/link";
@@ -17,6 +16,7 @@ import {
   useUpdateTransmittal,
 } from "@/hooks/use-transmittal";
 import { RejectTransmittalDialog, AcceptTransmittalDialog } from "./dialogs";
+import { StatusBadge } from "@/components/status-badge";
 
 export default function TransmittalDetailPage() {
   const params = useParams();
@@ -103,21 +103,6 @@ export default function TransmittalDetailPage() {
     refetchTransmittals();
   }
 
-  const getStatusBadge = (status: string) => {
-    if (!status) return null;
-
-    const variants: Record<string, "default" | "secondary" | "destructive"> = {
-      draft: "default",
-      sent: "secondary",
-      rejected: "destructive",
-    };
-    return (
-      <Badge variant={variants[status] || "default"}>
-        {status.charAt(0).toUpperCase() + status.slice(1)}
-      </Badge>
-    );
-  };
-
   const isActionDisabled =
     transmittalData?.status === "accepted" ||
     transmittalData?.status === "rejected";
@@ -155,7 +140,7 @@ export default function TransmittalDetailPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-sm text-muted-foreground">
-                    Invoice Number
+                    Transmittal Number
                   </p>
                   <p className="font-medium">
                     {transmittalData.transmittal_number}
@@ -170,7 +155,7 @@ export default function TransmittalDetailPage() {
                 <div>
                   <p className="text-sm text-muted-foreground">Status</p>
                   <p className="font-medium">
-                    {getStatusBadge(transmittalData?.status)}
+                    <StatusBadge status={transmittalData.status} />
                   </p>
                 </div>
               </div>

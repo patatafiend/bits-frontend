@@ -3,7 +3,6 @@
 import { useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { FileText, ArrowLeft, RefreshCw } from "lucide-react";
 import Link from "next/link";
@@ -18,6 +17,7 @@ import {
   RejectionReasonDialog,
   PostTransmittalComponent,
   SendTransmittalComponent,
+  HistoryDialog,
 } from "./dialogs";
 import {
   useDeleteTransmittalItem,
@@ -25,6 +25,7 @@ import {
 } from "@/hooks/use-transmittal";
 import { useFetchUsers } from "@/hooks/use-user";
 import { TransmittalModal } from "./dialogs";
+import { StatusBadge } from "@/components/status-badge";
 
 export default function TransmittalDetailPage() {
   const params = useParams();
@@ -123,21 +124,6 @@ export default function TransmittalDetailPage() {
     setViewingFile({ url: data.url, name: fileName, type: fileType });
   }
 
-  const getStatusBadge = (status: string) => {
-    if (!status) return null;
-
-    const variants: Record<string, "default" | "secondary" | "destructive"> = {
-      draft: "default",
-      sent: "secondary",
-      rejected: "destructive",
-    };
-    return (
-      <Badge variant={variants[status] || "default"}>
-        {status.charAt(0).toUpperCase() + status.slice(1)}
-      </Badge>
-    );
-  };
-
   const isButtonDisabled =
     transmittalData?.status === "accepted" ||
     transmittalData?.status === "rejected";
@@ -161,6 +147,9 @@ export default function TransmittalDetailPage() {
                 <CardTitle>Transmittal Details</CardTitle>
                 <div className="flex items-center gap-2">
                   <RejectionReasonDialog transmittalData={transmittalData} />
+                  {transmittalData.resubmitted_as_id && (
+                    <HistoryDialog id={transmittalData.id} />
+                  )}
                   {!isButtonDisabled && (
                     <EditModal
                       transmittalData={transmittalData}
@@ -240,7 +229,7 @@ export default function TransmittalDetailPage() {
                 <div>
                   <p className="text-sm text-muted-foreground">Status</p>
                   <p className="font-medium">
-                    {getStatusBadge(transmittalData?.status)}
+                    <StatusBadge status={transmittalData.status} />
                   </p>
                 </div>
               </div>

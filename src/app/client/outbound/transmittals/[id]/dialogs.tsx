@@ -168,7 +168,7 @@ export function AcceptTransmittalDialog({
   return (
     <>
       <Button
-        className="bg-green-600 hover:bg-green-700"
+        variant="success"
         onClick={() => setOpen(true)}
         disabled={disabled}
       >
@@ -244,8 +244,7 @@ export function RejectTransmittalDialog({
   return (
     <>
       <Button
-        variant="outline"
-        className="border-red-600 text-red-600 hover:bg-red-50 hover:text-red-700"
+        variant="destructive"
         onClick={() => setOpen(true)}
         disabled={disabled}
       >
