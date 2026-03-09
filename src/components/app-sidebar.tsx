@@ -73,7 +73,7 @@ const clientData: { navMain: NavItem[]; adminMain: NavItem[] } = {
         {
           title: "Bill Statements",
           url: "/client/bill-management/bill-statements",
-          permission: "billing:read",
+          permission: "receiver:read",
         },
       ],
     },
