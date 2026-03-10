@@ -18,6 +18,15 @@ export function useCreateTransmittal() {
   );
 }
 
+export function useResubmitTransmittal() {
+  return useServerAction<Transmittal, CreateTransmittal>(
+    `/transmittals/resubmit`,
+    {
+      method: "POST",
+    },
+  );
+}
+
 export function useUpdateTransmittal() {
   return useServerAction<Transmittal, UpdateTransmittal>(`/transmittals/`, {
     method: "PUT",
