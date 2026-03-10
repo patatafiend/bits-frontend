@@ -13,7 +13,6 @@ import { useCurrentUser } from "@/components/providers/auth-provider";
 import {
   EditModal,
   FileViewerModal,
-  UploadFile,
   RejectionReasonDialog,
   PostTransmittalComponent,
   SendTransmittalComponent,
@@ -26,6 +25,7 @@ import {
 import { useFetchUsers } from "@/hooks/use-user";
 import { TransmittalModal } from "./dialogs";
 import { StatusBadge } from "@/components/status-badge";
+import { UploadFile } from "./upload-file";
 
 export default function TransmittalDetailPage() {
   const params = useParams();
@@ -146,6 +146,19 @@ export default function TransmittalDetailPage() {
               <div className="flex items-center justify-between">
                 <CardTitle>Transmittal Details</CardTitle>
                 <div className="flex items-center gap-2">
+                  {/* <PDFDownloadLink
+                    document={
+                      <TransmittalPDF transmittalData={transmittalData} />
+                    }
+                    fileName={`transmittal-${transmittalData.transmittal_number}.pdf`}
+                  >
+                    {({ loading }) => (
+                      <Button variant="outline" size="sm" disabled={loading}>
+                        <Download className="w-4 h-4 mr-2" />
+                        {loading ? "Generating..." : "Export PDF"}
+                      </Button>
+                    )}
+                  </PDFDownloadLink> */}
                   <RejectionReasonDialog transmittalData={transmittalData} />
                   {transmittalData.resubmitted_as_id && (
                     <HistoryDialog id={transmittalData.id} />
