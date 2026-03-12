@@ -2,123 +2,305 @@ import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
 import { TransmittalWithItems } from "@/lib/types";
 
 const styles = StyleSheet.create({
-  page: { padding: 40, fontFamily: "Helvetica" },
-  header: { fontSize: 18, fontWeight: "bold", marginBottom: 16 },
-  section: { marginBottom: 12 },
-  label: { fontSize: 10, color: "#6b7280", marginBottom: 2 },
-  value: { fontSize: 12, fontWeight: "medium" },
-  divider: { borderBottom: "1 solid #e5e7eb", marginVertical: 12 },
-  row: { flexDirection: "row", gap: 16, marginBottom: 8 },
-  col: { flex: 1 },
+  page: { padding: 40, fontFamily: "Helvetica", fontSize: 10 },
+
+  // Header
+  headerRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  companyName: { fontSize: 18, fontWeight: "bold", letterSpacing: 1 },
+  companySubtitle: { fontSize: 11, color: "#555" },
+  titleBlock: { alignItems: "flex-end" },
+  metaRow: { flexDirection: "row", borderWidth: 1, borderColor: "#000" },
+  metaCell: {
+    paddingVertical: 3,
+    paddingHorizontal: 6,
+    borderRightWidth: 1,
+    borderRightColor: "#000",
+    fontSize: 9,
+  },
+  metaCellLast: { paddingVertical: 3, paddingHorizontal: 6, fontSize: 9 },
+  metaLabel: { fontWeight: "bold" },
+
+  divider: {
+    borderBottomWidth: 1,
+    borderBottomColor: "#000",
+    marginVertical: 10,
+  },
+
+  // Info grid
+  infoTable: {
+    flexDirection: "row",
+    borderWidth: 1,
+    borderColor: "#ccc",
+    marginBottom: 14,
+  },
+  infoCol: { flex: 1 },
+  infoRow: {
+    flexDirection: "row",
+    borderBottomWidth: 1,
+    borderBottomColor: "#ccc",
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+  },
+  infoRowLast: {
+    flexDirection: "row",
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+  },
+  infoLabel: { fontWeight: "bold", width: 90, fontSize: 9 },
+  infoValue: { flex: 1, fontSize: 9 },
+  infoColDivider: { borderRightWidth: 1, borderRightColor: "#ccc" },
+
+  // Files table
+  tableTitle: { fontSize: 10, fontWeight: "bold", marginBottom: 4 },
   tableHeader: {
     flexDirection: "row",
-    backgroundColor: "#f3f4f6",
-    padding: "6 8",
-    fontSize: 10,
+    backgroundColor: "#f0f0f0",
+    borderWidth: 1,
+    borderColor: "#000",
+    paddingVertical: 4,
+    paddingHorizontal: 4,
     fontWeight: "bold",
+    fontSize: 9,
   },
   tableRow: {
     flexDirection: "row",
-    borderBottom: "1 solid #e5e7eb",
-    padding: "6 8",
-    fontSize: 10,
+    borderLeftWidth: 1,
+    borderRightWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: "#000",
+    paddingVertical: 4,
+    paddingHorizontal: 4,
+    fontSize: 9,
   },
-  colFile: { flex: 3 },
-  colSize: { flex: 1 },
-  colDate: { flex: 2 },
-  badge: {
-    padding: "2 6",
-    borderRadius: 4,
-    fontSize: 10,
-    textTransform: "capitalize",
-  },
-});
+  colItem: { width: 30, textAlign: "center" },
+  colFilename: { flex: 3 },
+  colFormat: { width: 40, textAlign: "center" },
 
-const STATUS_COLORS: Record<string, string> = {
-  draft: "#d1d5db",
-  accepted: "#bbf7d0",
-  rejected: "#fecaca",
-  pending: "#fed7aa",
-};
+  // From / To
+  fromToSection: {
+    flexDirection: "row",
+    borderWidth: 1,
+    borderColor: "#ccc",
+    marginBottom: 14,
+  },
+  fromToCol: { flex: 1, paddingVertical: 6, paddingHorizontal: 10 },
+  fromToColDivider: { borderRightWidth: 1, borderRightColor: "#ccc" },
+  fromToHeading: {
+    fontSize: 8,
+    fontWeight: "bold",
+    color: "#6b7280",
+    textTransform: "uppercase",
+    marginBottom: 4,
+    letterSpacing: 1,
+  },
+  fromToName: { fontSize: 11, fontWeight: "bold", marginBottom: 2 },
+  fromToDetail: { fontSize: 9, color: "#444", marginBottom: 1 },
+
+  // Signatures
+  signatureSection: {
+    flexDirection: "row",
+    marginTop: 32,
+  },
+  signatureCol: {
+    flex: 1,
+    paddingHorizontal: 10,
+  },
+  signatureColDivider: {
+    borderRightWidth: 1,
+    borderRightColor: "#e5e7eb",
+  },
+  signatureHeading: {
+    fontSize: 8,
+    fontWeight: "bold",
+    color: "#6b7280",
+    textTransform: "uppercase",
+    letterSpacing: 1,
+    marginBottom: 32,
+  },
+  signatureLine: {
+    borderBottomWidth: 1,
+    borderBottomColor: "#000",
+    marginBottom: 4,
+  },
+  signatureName: { fontSize: 9, fontWeight: "bold", marginBottom: 2 },
+  signatureLabel: { fontSize: 8, color: "#6b7280" },
+  signatureDateRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 12,
+  },
+  signatureDateBox: { flex: 1 },
+  signatureDateLine: {
+    borderBottomWidth: 1,
+    borderBottomColor: "#000",
+    marginBottom: 4,
+    marginRight: 16,
+  },
+  signatureDateLabel: { fontSize: 8, color: "#6b7280" },
+});
 
 export function TransmittalPDF({
   transmittalData,
 }: {
   transmittalData: TransmittalWithItems;
 }) {
-  const statusColor = STATUS_COLORS[transmittalData.status] ?? "#e5e7eb";
-
   return (
     <Document>
       <Page size="A4" style={styles.page}>
-        {/* Title */}
-        <Text style={styles.header}>Transmittal Details</Text>
-        <View style={styles.divider} />
 
-        {/* Details Grid */}
-        <View style={styles.row}>
-          <View style={styles.col}>
-            <Text style={styles.label}>Transmittal Number</Text>
-            <Text style={styles.value}>
-              {transmittalData.transmittal_number}
-            </Text>
+        {/* Header */}
+        <View style={styles.headerRow}>
+          <View>
+            <Text style={styles.companyName}>TRANSMITTAL</Text>
+            <Text style={styles.companySubtitle}>Document Transmittal Sheet</Text>
           </View>
-          <View style={styles.col}>
-            <Text style={styles.label}>Date</Text>
-            <Text style={styles.value}>{transmittalData.transmittal_date}</Text>
-          </View>
-        </View>
-
-        <View style={styles.row}>
-          <View style={styles.col}>
-            <Text style={styles.label}>
-              {transmittalData.billing_receiver_email
-                ? "Receiver"
-                : "Billing Officer"}
-            </Text>
-            <Text style={styles.value}>
-              {transmittalData.billing_receiver_email ??
-                transmittalData.user_assigned?.username ??
-                "No officer assigned"}
-            </Text>
-          </View>
-          <View style={styles.col}>
-            <Text style={styles.label}>Status</Text>
-            <View style={[styles.badge, { backgroundColor: statusColor }]}>
-              <Text>{transmittalData.status}</Text>
+          <View style={styles.titleBlock}>
+            <View style={styles.metaRow}>
+              <Text style={styles.metaCell}>
+                <Text style={styles.metaLabel}># </Text>
+                {transmittalData.transmittal_number}
+              </Text>
+              <Text style={styles.metaCellLast}>
+                <Text style={styles.metaLabel}>Date </Text>
+                {transmittalData.transmittal_date}
+              </Text>
             </View>
           </View>
         </View>
 
         <View style={styles.divider} />
+
+        {/* From / To */}
+        <View style={styles.fromToSection}>
+          <View style={[styles.fromToCol, styles.fromToColDivider]}>
+            <Text style={styles.fromToHeading}>From</Text>
+            {/* <Text style={styles.fromToName}>
+              {transmittalData.user_assigned?.username ?? "—"}
+            </Text>
+            <Text style={styles.fromToDetail}>Billing Officer</Text> */}
+          </View>
+          <View style={styles.fromToCol}>
+            <Text style={styles.fromToHeading}>To</Text>
+            <Text style={styles.fromToName}>
+              {transmittalData.billing_receiver_name ?? "—"}
+            </Text>
+            <Text style={styles.fromToDetail}>
+              {transmittalData.billing_receiver_company ?? "—"}
+            </Text>
+            <Text style={styles.fromToDetail}>
+              {transmittalData.billing_receiver_email ?? "—"}
+            </Text>
+          </View>
+        </View>
+
+        {/* Info Grid */}
+        <View style={styles.infoTable}>
+          <View style={[styles.infoCol, styles.infoColDivider]}>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Recipient Name:</Text>
+              <Text style={styles.infoValue}>
+                {transmittalData.billing_receiver_name ?? "—"}
+              </Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Recipient Company:</Text>
+              <Text style={styles.infoValue}>
+                {transmittalData.billing_receiver_company ?? "—"}
+              </Text>
+            </View>
+            <View style={styles.infoRowLast}>
+              <Text style={styles.infoLabel}>Recipient Email:</Text>
+              <Text style={styles.infoValue}>
+                {transmittalData.billing_receiver_email ?? "—"}
+              </Text>
+            </View>
+          </View>
+          <View style={styles.infoCol}>
+            <View style={styles.infoRow}>
+              {/* <Text style={styles.infoLabel}>Billing Officer:</Text>
+              <Text style={styles.infoValue}>
+                {transmittalData.user_assigned?.username ?? "—"}
+              </Text> */}
+            </View>
+            <View style={styles.infoRowLast}>
+              <Text style={styles.infoLabel}>Transmittal #:</Text>
+              <Text style={styles.infoValue}>
+                {transmittalData.transmittal_number}
+              </Text>
+            </View>
+          </View>
+        </View>
 
         {/* Files Table */}
-        <Text style={[styles.value, { marginBottom: 8 }]}>Uploaded Files</Text>
+        <Text style={styles.tableTitle}>Transmitted Documents</Text>
+        <View style={styles.tableHeader}>
+          <Text style={styles.colItem}>Item</Text>
+          <Text style={styles.colFilename}>Filename</Text>
+          <Text style={styles.colFormat}>Format</Text>
+        </View>
 
         {transmittalData.transmittal_items?.length > 0 ? (
-          <View>
-            <View style={styles.tableHeader}>
-              <Text style={styles.colFile}>File Name</Text>
-              <Text style={styles.colSize}>Size (MB)</Text>
-              <Text style={styles.colDate}>Uploaded At</Text>
+          transmittalData.transmittal_items.map((item, index) => (
+            <View key={item.id} style={styles.tableRow}>
+              <Text style={styles.colItem}>{index + 1}</Text>
+              <Text style={styles.colFilename}>{item.file_name}</Text>
+              <Text style={styles.colFormat}>
+                {item.file_type?.split("/")[1]?.toUpperCase() ?? "—"}
+              </Text>
             </View>
-            {transmittalData.transmittal_items.map((item) => (
-              <View key={item.id} style={styles.tableRow}>
-                <Text style={styles.colFile}>{item.file_name}</Text>
-                <Text style={styles.colSize}>
-                  {(parseInt(item.file_size) / 1024 / 1024).toFixed(2)}
-                </Text>
-                <Text style={styles.colDate}>
-                  {new Date(item.uploaded_at).toLocaleDateString()}
-                </Text>
-              </View>
-            ))}
-          </View>
+          ))
         ) : (
-          <Text style={{ fontSize: 11, color: "#9ca3af" }}>
-            No files uploaded yet.
-          </Text>
+          <View style={styles.tableRow}>
+            <Text style={{ fontSize: 9, color: "#9ca3af", padding: 4 }}>
+              No files uploaded yet.
+            </Text>
+          </View>
         )}
+
+        {/* Signatures */}
+        <View style={styles.divider} />
+        <View style={styles.signatureSection}>
+
+          {/* Sender */}
+          <View style={[styles.signatureCol, styles.signatureColDivider]}>
+            <Text style={styles.signatureHeading}>Issued By</Text>
+            <View style={styles.signatureLine} />
+            {/* <Text style={styles.signatureName}>
+              {transmittalData.user_assigned?.username ?? "—"}
+            </Text>
+            <Text style={styles.signatureLabel}>Billing Officer</Text> */}
+            <View style={styles.signatureDateRow}>
+              <View style={styles.signatureDateBox}>
+                <View style={styles.signatureDateLine} />
+                <Text style={styles.signatureDateLabel}>Date</Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Receiver */}
+          <View style={styles.signatureCol}>
+            <Text style={styles.signatureHeading}>Received By</Text>
+            <View style={styles.signatureLine} />
+            <Text style={styles.signatureName}>
+              {transmittalData.billing_receiver_name ?? "—"}
+            </Text>
+            <Text style={styles.signatureLabel}>
+              {transmittalData.billing_receiver_company ?? ""}
+            </Text>
+            <View style={styles.signatureDateRow}>
+              <View style={styles.signatureDateBox}>
+                <View style={styles.signatureDateLine} />
+                <Text style={styles.signatureDateLabel}>Date</Text>
+              </View>
+            </View>
+          </View>
+
+        </View>
       </Page>
     </Document>
   );
