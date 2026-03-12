@@ -8,6 +8,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
+  useRefetchUser,
   useSignIn,
   //  useRefreshToken,
 } from "@/components/providers/auth-provider";
@@ -21,6 +22,7 @@ export function LoginForm({
   ...props
 }: React.ComponentProps<"form">) {
   const { execute, loading, error } = useSignIn();
+  const refetchUser = useRefetchUser();
   const router = useRouter();
 
   const loginSchema = z.object({
@@ -50,9 +52,11 @@ export function LoginForm({
       response.data.mfa_required
     ) {
       console.log("mfa true");
+      refetchUser();
       router.push("/signin/mfa");
     } else {
       console.log("mfa false");
+      refetchUser();
       router.push("/auth/mfa/verify");
     }
   }

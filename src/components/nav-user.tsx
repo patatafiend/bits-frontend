@@ -25,12 +25,12 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { UserPayload } from "@/lib/types";
-import { useSignOut, useGetCurrentUser } from "./providers/auth-provider";
+import { useSignOut, useRefetchUser } from "./providers/auth-provider";
 import { useRouter } from "next/navigation";
 
 export function NavUser({ user }: { user: UserPayload }) {
+  const refetchUser = useRefetchUser();
   const { isMobile } = useSidebar();
-  const { refetch } = useGetCurrentUser();
   const { execute: signout, loading } = useSignOut();
   const router = useRouter();
 
@@ -97,7 +97,7 @@ export function NavUser({ user }: { user: UserPayload }) {
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={async () => {
-                  await refetch();
+                  refetchUser();
                 }}
               >
                 <RefreshCcw />
