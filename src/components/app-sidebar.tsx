@@ -31,6 +31,7 @@ type NavSubItem = {
   url: string;
   permission?: string;
   accountTypes?: string[];
+  roles?: string[];
 };
 
 type NavItem = {
@@ -41,11 +42,12 @@ type NavItem = {
   permission?: string;
   accountTypes?: string[];
   items?: NavSubItem[];
+  roles?: string[];
 };
 
 function canAccess(
   user: UserPayload | null,
-  item: { permission?: string; accountTypes?: string[] },
+  item: { permission?: string; accountTypes?: string[]; roles?: string[] },
 ) {
   if (
     item.accountTypes &&
@@ -54,6 +56,7 @@ function canAccess(
     return false;
   if (item.permission && !user?.permissions?.includes(item.permission))
     return false;
+  if (item.roles && !item.roles.includes(user?.role ?? "")) return false;
   return true;
 }
 
@@ -64,16 +67,31 @@ const clientData: { navMain: NavItem[]; adminMain: NavItem[] } = {
       url: "/client/bill-management",
       icon: ReceiptText,
       isActive: true,
+      roles: ["admin", "billing admin"],
       items: [
         {
           title: "Transmittals",
           url: "/client/bill-management/transmittal",
           permission: "billing:read",
         },
+        // {
+        //   title: "Bill Statements",
+        //   url: "/client/bill-management/bill-statements",
+        //   permission: "receiver:read",
+        // },
+      ],
+    },
+    {
+      title: "Operations",
+      url: "/client/operations",
+      icon: ReceiptText,
+      isActive: true,
+      roles: ["admin", "operations admin"],
+      items: [
         {
-          title: "Bill Statements",
-          url: "/client/bill-management/bill-statements",
-          permission: "receiver:read",
+          title: "Transmittals",
+          url: "/client/operations/transmittal",
+          permission: "billing:read",
         },
       ],
     },
@@ -82,6 +100,7 @@ const clientData: { navMain: NavItem[]; adminMain: NavItem[] } = {
       url: "/client/outbound",
       icon: ReceiptText,
       isActive: true,
+      roles: ["admin", "billing officer"],
       items: [
         {
           title: "Transmittals",
