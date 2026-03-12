@@ -1,6 +1,6 @@
 "use client";
 
-import { useGetCurrentUser, useRefetchUser } from "@/components/providers/auth-provider";
+import { useCurrentUser, useRefetchUser } from "@/components/providers/auth-provider";
 import { Button } from "@/components/ui/button";
 import { Copy } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
@@ -22,7 +22,7 @@ import { useMfaVerify, useMfaSetup } from "@/hooks/use-mfa";
 import { useRouter } from "next/navigation";
 
 export default function Mfa() {
-  const { data: currentUser } = useGetCurrentUser();
+  const user = useCurrentUser();
   const { execute: submitVerify, loading: submitLoading } = useMfaVerify();
   const router = useRouter();
   const refetchUser = useRefetchUser();
@@ -43,7 +43,7 @@ export default function Mfa() {
   });
 
   async function onSubmit(data: z.infer<typeof formSchema>) {
-    const { error } = await submitVerify({ body: { mfa_code: data.code } });
+    const { error } = await submitVerify({ query: { mfa_code: data.code } });
     if (error) {
       form.setError("code", { type: "manual", message: error.message });
     } else {
@@ -137,7 +137,7 @@ export default function Mfa() {
           )}
         </Loader>
 
-        {!currentUser?.mfa_enabled && currentUser?.allow_skip_mfa ? (
+        {!user?.mfa_enabled && user?.allow_skip_mfa ? (
           <div className="text-center">
             <Button variant="link" onClick={() => router.push("/client")}>
               Skip For Now
