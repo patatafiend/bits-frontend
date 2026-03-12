@@ -10,7 +10,7 @@ export function useFetchUsers() {
 
 export function useFetchUser(userId: string) {
   return useServerFetch<User>(`/user/${userId}`, {
-    fetchImmediately: false,
+    fetchImmediately: true,
     method: "GET",
   });
 }
