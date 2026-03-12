@@ -4,7 +4,7 @@ import { useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { FileText, ArrowLeft, RefreshCw } from "lucide-react";
+import { FileText, ArrowLeft, RefreshCw, Download } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -26,11 +26,18 @@ import { useFetchUsers } from "@/hooks/use-user";
 import { TransmittalModal } from "./dialogs";
 import { StatusBadge } from "@/components/status-badge";
 import { UploadFile } from "./upload-file";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { PDFDownloadLink } from "@react-pdf/renderer";
+import { TransmittalPDF } from "./export-to-pdf";
+
+const OPERATIONS_ADMIN = 4;
 
 export default function TransmittalDetailPage() {
   const params = useParams();
   const transmittalId = params.id;
   const [modalOpen, setModalOpen] = useState(false);
+  const [isSendMode, setIsSendMode] = useState(false);
   const [viewingFile, setViewingFile] = useState<{
     url: string;
     name: string;
@@ -87,7 +94,7 @@ export default function TransmittalDetailPage() {
       query: { include_items: true },
     });
     refetchUsers({
-      query: { client_id: user?.client.id },
+      query: { client_id: user?.client.id, role_id: OPERATIONS_ADMIN },
     });
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -129,6 +136,8 @@ export default function TransmittalDetailPage() {
     transmittalData?.status === "rejected";
   const isRejected = transmittalData?.status === "rejected";
   const isDraft = transmittalData?.status === "draft";
+  const hasHistory =
+    transmittalData?.resubmitted_as_id || transmittalData?.resubmitted_from_id;
 
   return (
     <div className="container mx-auto py-8 max-w-4xl">
@@ -143,26 +152,45 @@ export default function TransmittalDetailPage() {
         {transmittalData && (
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle>Transmittal Details</CardTitle>
-                <div className="flex items-center gap-2">
-                  {/* <PDFDownloadLink
+              <div className="flex flex-col gap-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <CardTitle>Transmittal Details</CardTitle>
+                    <StatusBadge status={transmittalData.status} />
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      refetchTransmittals();
+                      refetchUsers({
+                        query: { client_id: user?.client.id },
+                      });
+                      toast.info("Refreshing transmittal data...");
+                    }}
+                    disabled={transmittalLoading}
+                  >
+                    <RefreshCw
+                      className={`w-4 h-4 ${transmittalLoading ? "animate-spin" : ""}`}
+                    />
+                  </Button>
+                </div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <PDFDownloadLink
                     document={
                       <TransmittalPDF transmittalData={transmittalData} />
                     }
                     fileName={`transmittal-${transmittalData.transmittal_number}.pdf`}
                   >
-                    {({ loading }) => (
-                      <Button variant="outline" size="sm" disabled={loading}>
+                    {({ loading: pdfLoading }) => (
+                      <Button variant="outline" size="sm" disabled={pdfLoading}>
                         <Download className="w-4 h-4 mr-2" />
-                        {loading ? "Generating..." : "Export PDF"}
+                        {pdfLoading ? "Generating..." : "Export PDF"}
                       </Button>
                     )}
-                  </PDFDownloadLink> */}
+                  </PDFDownloadLink>
                   <RejectionReasonDialog transmittalData={transmittalData} />
-                  {transmittalData.resubmitted_as_id && (
-                    <HistoryDialog id={transmittalData.id} />
-                  )}
+                  {hasHistory && <HistoryDialog id={transmittalData.id} />}
                   {!isButtonDisabled && (
                     <EditModal
                       transmittalData={transmittalData}
@@ -189,18 +217,34 @@ export default function TransmittalDetailPage() {
                       />
                     </>
                   )}
-                  {!isRejected &&
-                    (transmittalData.billing_receiver_email ? (
-                      <SendTransmittalComponent
-                        transmittalData={transmittalData}
-                        onSend={refetchTransmittals}
-                      />
-                    ) : (
-                      <PostTransmittalComponent
-                        transmittalData={transmittalData}
-                        onPost={refetchTransmittals}
-                      />
-                    ))}
+                  {!isRejected && (
+                    <>
+                      <div className="flex items-center gap-2 ml-auto">
+                        <Switch
+                          id="send-mode"
+                          checked={isSendMode}
+                          onCheckedChange={setIsSendMode}
+                        />
+                        <Label
+                          htmlFor="send-mode"
+                          className="cursor-pointer text-sm"
+                        >
+                          {isSendMode ? "Email" : "Operations"}
+                        </Label>
+                      </div>
+                      {isSendMode ? (
+                        <SendTransmittalComponent
+                          transmittalData={transmittalData}
+                          onSend={refetchTransmittals}
+                        />
+                      ) : (
+                        <PostTransmittalComponent
+                          transmittalData={transmittalData}
+                          onPost={refetchTransmittals}
+                        />
+                      )}
+                    </>
+                  )}
                 </div>
               </div>
             </CardHeader>
@@ -220,49 +264,44 @@ export default function TransmittalDetailPage() {
                     {transmittalData.transmittal_date}
                   </p>
                 </div>
-                {transmittalData.billing_receiver_email ? (
-                  <div>
-                    <p className="text-sm text-muted-foreground">Receiver</p>
-                    <p className="font-medium">
-                      {transmittalData.billing_receiver_email ??
-                        "No officer assigned"}
-                    </p>
-                  </div>
-                ) : (
-                  <div>
-                    <p className="text-sm text-muted-foreground">
-                      Billing Officer
-                    </p>
-                    <p className="font-medium">
-                      {transmittalData.user_assigned?.username ??
-                        "No officer assigned"}
-                    </p>
-                  </div>
-                )}
                 <div>
-                  <p className="text-sm text-muted-foreground">Status</p>
+                  <p className="text-sm text-muted-foreground">
+                    Operation Admin
+                  </p>
                   <p className="font-medium">
-                    <StatusBadge status={transmittalData.status} />
+                    {transmittalData.operation_admin_assigned?.username ??
+                      "No Admin assigned"}
                   </p>
                 </div>
-              </div>
-              <div className="flex justify-end">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    refetchTransmittals();
-                    refetchUsers({
-                      query: { client_id: user?.client.id },
-                    });
-                    toast.info("Refreshing transmittal data...");
-                  }}
-                  disabled={transmittalLoading}
-                >
-                  <RefreshCw
-                    className={`w-4 h-4 ${transmittalLoading ? "animate-spin" : ""}`}
-                  />
-                </Button>
+                <div>
+                  <p className="text-sm text-muted-foreground">Officer</p>
+                  <p className="font-medium">
+                    {transmittalData.billing_officer_assigned?.username ??
+                      "No Officer assigned"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">
+                    Receiver Email
+                  </p>
+                  <p className="font-medium">
+                    {transmittalData.billing_receiver_email ?? "—"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Receiver Name</p>
+                  <p className="font-medium">
+                    {transmittalData.billing_receiver_name ?? "—"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">
+                    Receiver Company
+                  </p>
+                  <p className="font-medium">
+                    {transmittalData.billing_receiver_company ?? "—"}
+                  </p>
+                </div>
               </div>
 
               <Separator />
@@ -327,14 +366,13 @@ export default function TransmittalDetailPage() {
                               </Button>
                             )}
                           </div>
-
-                          <FileViewerModal
-                            file={viewingFile}
-                            onClose={() => setViewingFile(null)}
-                          />
                         </div>
                       ))}
                     </div>
+                    <FileViewerModal
+                      file={viewingFile}
+                      onClose={() => setViewingFile(null)}
+                    />
                   </div>
                 )}
 
