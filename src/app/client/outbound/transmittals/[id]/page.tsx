@@ -15,7 +15,7 @@ import {
   useFetchTransmittal,
   useUpdateTransmittal,
 } from "@/hooks/use-transmittal";
-import { RejectTransmittalDialog, AcceptTransmittalDialog } from "./dialogs";
+import { ForwardTransmittalDialog } from "./dialogs";
 import { StatusBadge } from "@/components/status-badge";
 
 export default function TransmittalDetailPage() {
@@ -90,14 +90,14 @@ export default function TransmittalDetailPage() {
     setViewingFile({ url: data.url, name: fileName, type: fileType });
   }
 
-  async function handleUpdateStatus(status: "accepted" | "rejected") {
+  async function handleUpdateStatus(status: "forwarded") {
     const { error } = await updateStatus({
       params: `/${transmittalData?.id}`,
       body: { status },
     });
     if (error) {
       toast.error(
-        `Failed to ${status === "accepted" ? "accept" : "reject"} transmittal: ${error.message}`,
+        `Failed to forward transmittal: ${error.message}`,
       );
     }
     refetchTransmittals();
@@ -120,16 +120,28 @@ export default function TransmittalDetailPage() {
         {transmittalData && (
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle>Transmittal Details</CardTitle>
+              <div className="flex flex-col gap-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <CardTitle>Transmittal Details</CardTitle>
+                    <StatusBadge status={transmittalData.status} />
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      refetchTransmittals();
+                    }}
+                    disabled={transmittalLoading}
+                  >
+                    <RefreshCw
+                      className={`w-4 h-4 ${transmittalLoading ? "animate-spin" : ""}`}
+                    />
+                  </Button>
+                </div>
                 <div className="flex items-center gap-2">
-                  <AcceptTransmittalDialog
-                    onConfirm={() => handleUpdateStatus("accepted")}
-                    loading={loadingUpdate}
-                    disabled={isActionDisabled}
-                  />
-                  <RejectTransmittalDialog
-                    onConfirm={() => handleUpdateStatus("rejected")}
+                  <ForwardTransmittalDialog
+                    onConfirm={() => handleUpdateStatus("forwarded")}
                     loading={loadingUpdate}
                     disabled={isActionDisabled}
                   />
@@ -153,25 +165,36 @@ export default function TransmittalDetailPage() {
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Status</p>
+                  <p className="text-sm text-muted-foreground">
+                    Billing Officer
+                  </p>
                   <p className="font-medium">
-                    <StatusBadge status={transmittalData.status} />
+                    {transmittalData.billing_officer_assigned?.username ??
+                      "No officer assigned"}
                   </p>
                 </div>
-              </div>
-              <div className="flex justify-end">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    refetchTransmittals();
-                  }}
-                  disabled={transmittalLoading}
-                >
-                  <RefreshCw
-                    className={`w-4 h-4 ${transmittalLoading ? "animate-spin" : ""}`}
-                  />
-                </Button>
+                <div>
+                  <p className="text-sm text-muted-foreground">
+                    Receiver Email
+                  </p>
+                  <p className="font-medium">
+                    {transmittalData.billing_receiver_email ?? "—"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Receiver Name</p>
+                  <p className="font-medium">
+                    {transmittalData.billing_receiver_name ?? "—"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">
+                    Receiver Company
+                  </p>
+                  <p className="font-medium">
+                    {transmittalData.billing_receiver_company ?? "—"}
+                  </p>
+                </div>
               </div>
 
               <Separator />
@@ -223,14 +246,13 @@ export default function TransmittalDetailPage() {
                               {loadingUrl ? "Loading..." : "View"}
                             </Button>
                           </div>
-
-                          <FileViewerModal
-                            file={viewingFile}
-                            onClose={() => setViewingFile(null)}
-                          />
                         </div>
                       ))}
                     </div>
+                    <FileViewerModal
+                      file={viewingFile}
+                      onClose={() => setViewingFile(null)}
+                    />
                   </div>
                 )}
               {(!transmittalData?.transmittal_items ||

@@ -5,7 +5,6 @@ import {
   FileText,
   CheckCircle,
   AlertCircle,
-  AlertTriangle,
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -14,26 +13,11 @@ import {
   DialogContent,
   DialogFooter,
   DialogHeader,
-  DialogTitle
+  DialogTitle,
 } from "@/components/ui/dialog";
 import { Download } from "lucide-react";
-import {
-  FileViewerModalProps,
-  TransmittalWithItems,
-} from "@/lib/types";
-import z from "zod";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { FileViewerModalProps, TransmittalWithItems } from "@/lib/types";
 import { DrawerDialog } from "@/components/drawer-dialog";
-import {
-  Form,
-  FormField,
-  FormLabel,
-  FormItem,
-  FormControl,
-  FormMessage,
-} from "@/components/ui/form";
-import { Textarea } from "@/components/ui/textarea";
 
 export function FileViewerModal({ file, onClose }: FileViewerModalProps) {
   if (!file) return null;
@@ -120,8 +104,15 @@ export function FileViewerModal({ file, onClose }: FileViewerModalProps) {
   );
 }
 
-export function RejectionReasonDialog({ transmittalData }: { transmittalData: TransmittalWithItems }) {
-  if (transmittalData.status !== "rejected" || !transmittalData.rejection_reason) {
+export function RejectionReasonDialog({
+  transmittalData,
+}: {
+  transmittalData: TransmittalWithItems;
+}) {
+  if (
+    transmittalData.status !== "rejected" ||
+    !transmittalData.rejection_reason
+  ) {
     return null;
   }
 
@@ -143,10 +134,13 @@ export function RejectionReasonDialog({ transmittalData }: { transmittalData: Tr
       }
     >
       <div className="space-y-3 px-4 sm:px-0 pb-4">
-        <p className="text-sm text-muted-foreground break-all">{transmittalData.rejection_reason}</p>
+        <p className="text-sm text-muted-foreground break-all">
+          {transmittalData.rejection_reason}
+        </p>
         {transmittalData.response_date && (
           <p className="text-xs text-muted-foreground">
-            Rejected on {new Date(transmittalData.response_date).toLocaleDateString()}
+            Rejected on{" "}
+            {new Date(transmittalData.response_date).toLocaleDateString()}
           </p>
         )}
       </div>
@@ -154,7 +148,7 @@ export function RejectionReasonDialog({ transmittalData }: { transmittalData: Tr
   );
 }
 
-export function AcceptTransmittalDialog({
+export function ForwardTransmittalDialog({
   onConfirm,
   loading,
   disabled,
@@ -172,7 +166,7 @@ export function AcceptTransmittalDialog({
         onClick={() => setOpen(true)}
         disabled={disabled}
       >
-        Accepted
+        Forwarded
       </Button>
 
       <Dialog open={open} onOpenChange={setOpen}>
@@ -180,12 +174,12 @@ export function AcceptTransmittalDialog({
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-green-600">
               <CheckCircle className="w-5 h-5" />
-              Accept Transmittal
+              Confirn
             </DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground">
-            Are you sure you want to accept these invoices? This action cannot be
-            undone.
+            Are you sure you want to tag this transmittal as forwarded? This action cannot
+            be undone.
           </p>
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpen(false)}>
@@ -199,7 +193,7 @@ export function AcceptTransmittalDialog({
               }}
               disabled={loading}
             >
-              {loading ? "Processing..." : "Confirm Accept"}
+              {loading ? "Processing..." : "Confirm"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -207,106 +201,3 @@ export function AcceptTransmittalDialog({
     </>
   );
 }
-
-const rejectSchema = z.object({
-  rejection_reason: z.string().min(1, "Rejection reason is required").trim(),
-});
-
-type RejectFormValues = z.infer<typeof rejectSchema>;
-
-export function RejectTransmittalDialog({
-  onConfirm,
-  loading,
-  disabled,
-}: {
-  onConfirm: (reason: string) => void;
-  loading?: boolean;
-  disabled?: boolean;
-}) {
-  const [open, setOpen] = useState(false);
-
-  const form = useForm<RejectFormValues>({
-    resolver: zodResolver(rejectSchema),
-    defaultValues: { rejection_reason: "" },
-  });
-
-  function handleConfirm(values: RejectFormValues) {
-    onConfirm(values.rejection_reason);
-    setOpen(false);
-    form.reset();
-  }
-
-  function handleClose() {
-    setOpen(false);
-    form.reset();
-  }
-
-  return (
-    <>
-      <Button
-        variant="destructive"
-        onClick={() => setOpen(true)}
-        disabled={disabled}
-      >
-        Rejected
-      </Button>
-
-      <Dialog open={open} onOpenChange={handleClose}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-destructive">
-              <AlertTriangle className="w-5 h-5" />
-              Reject Transmittal
-            </DialogTitle>
-          </DialogHeader>
-
-          <Form {...form}>
-            <form
-              onSubmit={form.handleSubmit(handleConfirm)}
-              className="space-y-4"
-            >
-              <div className="rounded-md border border-yellow-300 bg-yellow-50 p-3">
-                <p className="text-sm text-yellow-800">
-                  This action cannot be undone. The sender will be notified with
-                  your rejection reason.
-                </p>
-              </div>
-
-              <FormField
-                control={form.control}
-                name="rejection_reason"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      Rejection Reason{" "}
-                      <span className="text-destructive">*</span>
-                    </FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Please provide a reason for rejecting this transmittal..."
-                        rows={4}
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <DialogFooter>
-                <Button variant="outline" type="button" onClick={handleClose}>
-                  Cancel
-                </Button>
-                <Button variant="destructive" type="submit" disabled={loading}>
-                  {loading ? "Processing..." : "Confirm Reject"}
-                </Button>
-              </DialogFooter>
-            </form>
-          </Form>
-        </DialogContent>
-      </Dialog>
-    </>
-  );
-}
-
-
