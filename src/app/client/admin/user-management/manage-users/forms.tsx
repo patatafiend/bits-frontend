@@ -31,6 +31,7 @@ import { useForm, useWatch } from "react-hook-form";
 import { useRef } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useFetchRoles } from "@/hooks/use-role-permission";
+import { toast } from "sonner";
 
 const formSchema = z.object({
   username: z.string().min(2).max(100),
@@ -60,7 +61,7 @@ const formSchema = z.object({
     .min(10, { message: "Phone number must be at least 10 characters long" })
     .max(15, { message: "Phone number must be at most 15 characters long" }),
   account_type: z.enum(
-    ["company_account", "admin_account"],
+    ["company_account", "admin_account", "billing_account"],
     {
       message: "Please select an account type",
     },
@@ -134,17 +135,14 @@ export function UserForm({
       defaultsSignatureRef.current = signature;
       form.reset(nextValues);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [defaulValues]);
   async function onSubmit(values: z.infer<typeof formSchema>) {
     if (onSubmitSuccess) {
       onSubmitSuccess(values);
+      toast.success("User Successfully created!");
       return;
     }
-    // const success = await createUser(values);
-    // if (success) {
-    //   form.reset();
-    // }
   }
   return (
     <Card className="p-6 mx-auto">

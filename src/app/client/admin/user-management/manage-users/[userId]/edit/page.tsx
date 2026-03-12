@@ -25,7 +25,7 @@ function EditUserPage() {
       refetch({ params: `/${params.userId}` });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [params.userId]);
+  }, []);
 
   return (
     <div>
@@ -37,7 +37,8 @@ function EditUserPage() {
             ...data,
             account_type:
               data.account_type === "company_account" ||
-              data.account_type === "admin_account"
+              data.account_type === "admin_account" ||
+              data.account_type === "billing_account"
                 ? data.account_type
                 : undefined,
           }}
