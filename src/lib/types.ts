@@ -236,11 +236,16 @@ export type Transmittal = {
   rejection_reason: string;
   created_by: string;
   created_at: string;
-  assigned_user?: number | null;
+  assigned_operation_admin: number | null;
+  assigned_billing_officer: number | null;
   billing_receiver_email: string | null;
+  billing_receiver_name: string | null;
+  billing_receiver_company: string | null;
   resubmitted_as_id: number | null;
   resubmitted_from_id: number | null;
   transmittal_items: TransmittalItems[];
+  operation_admin_assigned: User;
+  billing_officer_assigned: User;
 };
 
 export type TransmittalWithItems = {
@@ -257,13 +262,17 @@ export type TransmittalWithItems = {
   rejection_reason: string;
   created_by: string;
   created_at: string;
-  assigned_user?: number | null;
+  assigned_operation_admin: number | null;
+  assigned_billing_officer: number | null;
   billing_receiver_email: string | null;
+  billing_receiver_name: string | null;
+  billing_receiver_company: string | null;
   resubmitted_as_id: number | null;
   resubmitted_from_id: number | null;
   transmittal_items: TransmittalItems[];
   billing_receiver: Receiver | null;
-  user_assigned: User;
+  operation_admin_assigned: User;
+  billing_officer_assigned: User;
 };
 
 export type TransmittalItems = {
