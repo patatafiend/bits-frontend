@@ -4,7 +4,7 @@ import { useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { FileText, ArrowLeft, RefreshCw, Download } from "lucide-react";
+import { FileText, ArrowLeft, RefreshCw } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -13,16 +13,14 @@ import { useCurrentUser } from "@/components/providers/auth-provider";
 import {
   EditModal,
   FileViewerModal,
-  PostTransmittalComponent,
+  EndorseTransmittalComponent,
   HistoryDialog,
 } from "./dialogs";
-import {
-  useFetchTransmittal,
-} from "@/hooks/use-transmittal";
+import { useFetchTransmittal } from "@/hooks/use-transmittal";
 import { useFetchUsers } from "@/hooks/use-user";
 import { StatusBadge } from "@/components/status-badge";
-import { PDFDownloadLink } from "@react-pdf/renderer";
-import { TransmittalPDF } from "./export-to-pdf";
+// import { PDFDownloadLink } from "@react-pdf/renderer";
+// import { TransmittalPDF } from "./export-to-pdf";
 
 const BILLING_OFFICER = 3;
 
@@ -102,8 +100,8 @@ export default function TransmittalDetailPage() {
 
   const isButtonDisabled =
     transmittalData?.status === "accepted" ||
-    transmittalData?.status === "rejected";
-  const isRejected = transmittalData?.status === "rejected";
+    transmittalData?.status === "rejected" ||
+    transmittalData?.status === "endorsed";
   const hasHistory =
     transmittalData?.resubmitted_as_id || transmittalData?.resubmitted_from_id;
 
@@ -132,7 +130,10 @@ export default function TransmittalDetailPage() {
                     onClick={() => {
                       refetchTransmittals();
                       refetchUsers({
-                        query: { client_id: user?.client.id },
+                        query: {
+                          client_id: user?.client.id,
+                          role_id: BILLING_OFFICER,
+                        },
                       });
                       toast.info("Refreshing transmittal data...");
                     }}
@@ -144,7 +145,7 @@ export default function TransmittalDetailPage() {
                   </Button>
                 </div>
                 <div className="flex items-center gap-2 flex-wrap">
-                  <PDFDownloadLink
+                  {/* <PDFDownloadLink
                     document={
                       <TransmittalPDF transmittalData={transmittalData} />
                     }
@@ -156,7 +157,7 @@ export default function TransmittalDetailPage() {
                         {pdfLoading ? "Generating..." : "Export PDF"}
                       </Button>
                     )}
-                  </PDFDownloadLink>
+                  </PDFDownloadLink> */}
                   {hasHistory && <HistoryDialog id={transmittalData.id} />}
                   {!isButtonDisabled && (
                     <EditModal
@@ -164,16 +165,19 @@ export default function TransmittalDetailPage() {
                       userData={userData}
                       onSubmit={() => {
                         refetchUsers({
-                          query: { client_id: user?.client.id },
+                          query: {
+                            client_id: user?.client.id,
+                            role_id: BILLING_OFFICER,
+                          },
                         });
                         refetchTransmittals();
                       }}
                     />
                   )}
-                  {!isRejected && (
-                    <PostTransmittalComponent
+                  {!isButtonDisabled && (
+                    <EndorseTransmittalComponent
                       transmittalData={transmittalData}
-                      onPost={refetchTransmittals}
+                      onEndorse={refetchTransmittals}
                     />
                   )}
                 </div>

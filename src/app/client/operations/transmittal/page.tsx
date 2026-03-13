@@ -19,7 +19,7 @@ export default function TransmittalListPage() {
     order_by?: string;
   }) {
     refetch({
-      params: `client/user/operation_admin`,
+      params: `client/operations`,
       query: {
         skip: params.skip ?? 0,
         limit: params.limit ?? 10,
@@ -28,7 +28,6 @@ export default function TransmittalListPage() {
         order_by: params.order_by ?? "recent",
         status: params.status === "all" ? undefined : params.status,
         assigned_operation_admin: user?.id,
-        exclude_draft: true,
       },
     });
   }

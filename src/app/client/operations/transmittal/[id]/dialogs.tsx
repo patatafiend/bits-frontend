@@ -1,12 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import {
-  FileText,
-  AlertCircle,
-  ArrowRight,
-  History,
-} from "lucide-react";
+import { FileText, AlertCircle, ArrowRight, History } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -138,34 +133,34 @@ export function FileViewerModal({ file, onClose }: FileViewerModalProps) {
   );
 }
 
-export function PostTransmittalComponent({
+export function EndorseTransmittalComponent({
   transmittalData,
-  onPost,
+  onEndorse,
 }: {
   transmittalData: Transmittal;
-  onPost: () => void;
+  onEndorse: () => void;
 }) {
   const { execute: postTransmittal, loading } = usePostTransmittal();
   const [open, setOpen] = useState(false);
   const isDisabled =
-    transmittalData.status === "pending" ||
-    transmittalData.status === "accepted";
+    transmittalData.status === "accepted" ||
+    transmittalData.status === "endorsed";
   const hasItems = (transmittalData.transmittal_items?.length ?? 0) > 0;
 
   const handlePost = async () => {
     const { error } = await postTransmittal({
       body: {
-        status: "pending",
+        status: "endorsed",
       },
       params: `/${transmittalData.id}`,
     });
     if (error) {
-      toast.error(error.message || "Failed to post transmittal");
+      toast.error(error.message || "Failed to endorse transmittal");
       return;
     }
     setOpen(false);
-    onPost();
-    toast.success("Transmittal posted successfully!");
+    onEndorse();
+    toast.success("Transmittal endorsed successfully!");
   };
   return (
     <>
@@ -174,7 +169,7 @@ export function PostTransmittalComponent({
         onClick={() => setOpen(true)}
         disabled={isDisabled}
       >
-        {isDisabled ? "Posted" : "Post"}
+        {isDisabled ? "Endorsed" : "Endorse"}
       </Button>
 
       <Dialog open={open} onOpenChange={setOpen}>
@@ -182,8 +177,8 @@ export function PostTransmittalComponent({
           <DialogHeader>
             <DialogTitle>
               {hasItems
-                ? "Confirm Post Transmittal"
-                : "Cannot Post Transmittal"}
+                ? "Confirm Endorse Transmittal"
+                : "Cannot Endorse Transmittal"}
             </DialogTitle>
           </DialogHeader>
 
@@ -235,7 +230,7 @@ export function PostTransmittalComponent({
                 <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
                 <p className="text-sm">
                   No files attached. Please upload at least one billing
-                  statement before posting.
+                  statement before endorsing.
                 </p>
               </div>
               <div className="flex justify-end">
@@ -271,7 +266,8 @@ export function EditModal({
   const form = useForm({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      assigned_billing_officer: transmittalData.assigned_billing_officer ?? undefined,
+      assigned_billing_officer:
+        transmittalData.assigned_billing_officer ?? undefined,
     },
   });
 
@@ -335,7 +331,7 @@ export function EditModal({
                 )}
               />
               <Button type="submit" loading={loading} className="w-full">
-                Update Transmittal
+                Assign
               </Button>
             </Form>
           </form>

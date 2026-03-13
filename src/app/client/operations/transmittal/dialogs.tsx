@@ -208,11 +208,9 @@ export function SearchTransmittalComponent({
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All</SelectItem>
-            <SelectItem value="draft">Draft</SelectItem>
             <SelectItem value="pending">Pending</SelectItem>
-            <SelectItem value="sent">Sent</SelectItem>
-            <SelectItem value="accepted">Accepted</SelectItem>
-            <SelectItem value="rejected">Rejected</SelectItem>
+            <SelectItem value="endorsed">Endorsed</SelectItem>
+            <SelectItem value="forwarded">Forwarded</SelectItem>
           </SelectContent>
         </Select>
 
