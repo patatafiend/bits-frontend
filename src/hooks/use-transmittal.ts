@@ -104,6 +104,12 @@ export function usePostTransmittal() {
   });
 }
 
+export function useEndorseTransmittal() {
+  return useServerAction<Transmittal, UpdateTransmittal>(`/transmittals/endorse`, {
+    method: "POST",
+  });
+}
+
 export function useFetchHistory() {
   return useServerFetch<Transmittal[]>(`/transmittals/resubmission-history`, {
     method: "GET",
