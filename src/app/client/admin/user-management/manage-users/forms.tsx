@@ -31,7 +31,6 @@ import { useForm, useWatch } from "react-hook-form";
 import { useRef } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useFetchRoles } from "@/hooks/use-role-permission";
-import { toast } from "sonner";
 
 const formSchema = z.object({
   username: z.string().min(2).max(100),
@@ -140,7 +139,6 @@ export function UserForm({
   async function onSubmit(values: z.infer<typeof formSchema>) {
     if (onSubmitSuccess) {
       onSubmitSuccess(values);
-      toast.success("User Successfully created!");
       return;
     }
   }

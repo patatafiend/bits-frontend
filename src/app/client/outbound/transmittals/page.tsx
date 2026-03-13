@@ -18,7 +18,7 @@ export default function TransmittalListPage() {
     order_by?: string;
   }) {
     refetch({
-      params: `client/user/billing_officer`,
+      params: `client/operations`,
       query: {
         skip: params.skip ?? 0,
         limit: params.limit ?? 10,
@@ -27,6 +27,7 @@ export default function TransmittalListPage() {
         order_by: params.order_by ?? "recent",
         status: params.status === "all" ? undefined : params.status,
         assigned_billing_officer: user?.id,
+        exclude_statuses: ["pending"],
       },
     });
   }
