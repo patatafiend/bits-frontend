@@ -96,17 +96,17 @@ export default function TransmittalDetailPage() {
       body: { status },
     });
     if (error) {
-      toast.error(
-        `Failed to forward transmittal: ${error.message}`,
-      );
+      toast.error(`Failed to forward transmittal: ${error.message}`);
     }
+    toast.success("Transmittal forwarded successfully!");
     refetchTransmittals();
   }
 
   const isActionDisabled =
     transmittalData?.status === "accepted" ||
-    transmittalData?.status === "rejected";
-
+    transmittalData?.status === "rejected" ||
+    transmittalData?.status === "forwarded" ||
+    transmittalData?.status === "returned";
   return (
     <div className="container mx-auto py-8 max-w-4xl">
       <Link href="/client/outbound/transmittals">

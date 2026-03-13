@@ -174,7 +174,7 @@ export function ForwardTransmittalDialog({
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-green-600">
               <CheckCircle className="w-5 h-5" />
-              Confirn
+              Confirm
             </DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground">
