@@ -4,7 +4,7 @@ import { useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { FileText, ArrowLeft, RefreshCw, Download } from "lucide-react";
+import { FileText, ArrowLeft, RefreshCw } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -17,10 +17,12 @@ import {
   PostTransmittalComponent,
   SendTransmittalComponent,
   HistoryDialog,
+  ReturnedTransmittalDialog,
 } from "./dialogs";
 import {
   useDeleteTransmittalItem,
   useFetchTransmittal,
+  useUpdateTransmittal,
 } from "@/hooks/use-transmittal";
 import { useFetchUsers } from "@/hooks/use-user";
 import { TransmittalModal } from "./dialogs";
@@ -28,8 +30,8 @@ import { StatusBadge } from "@/components/status-badge";
 import { UploadFile } from "./upload-file";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { PDFDownloadLink } from "@react-pdf/renderer";
-import { TransmittalPDF } from "./export-to-pdf";
+// import { PDFDownloadLink } from "@react-pdf/renderer";
+// import { TransmittalPDF } from "./export-to-pdf";
 
 const OPERATIONS_ADMIN = 4;
 
@@ -58,6 +60,8 @@ export default function TransmittalDetailPage() {
   const [urlCache, setUrlCache] = useState<
     Map<string, { url: string; expires: number }>
   >(new Map());
+  const { execute: updateStatus, loading: loadingUpdate } =
+    useUpdateTransmittal();
 
   function refetchTransmittals() {
     refetchTransmittal({
@@ -131,9 +135,22 @@ export default function TransmittalDetailPage() {
     setViewingFile({ url: data.url, name: fileName, type: fileType });
   }
 
-  const isButtonDisabled =
+  async function handleUpdateStatus(status: string) {
+    const { error } = await updateStatus({
+      params: `/${transmittalData?.id}`,
+      body: { status },
+    });
+    if (error) {
+      toast.error(`Failed to forward transmittal: ${error.message}`);
+    }
+    refetchTransmittals();
+  }
+
+  const isActionDisabled =
     transmittalData?.status === "accepted" ||
-    transmittalData?.status === "rejected";
+    transmittalData?.status === "rejected" ||
+    transmittalData?.status === "forwarded" ||
+    transmittalData?.status === "returned";
   const isRejected = transmittalData?.status === "rejected";
   const isDraft = transmittalData?.status === "draft";
   const hasHistory =
@@ -164,7 +181,7 @@ export default function TransmittalDetailPage() {
                     onClick={() => {
                       refetchTransmittals();
                       refetchUsers({
-                        query: { client_id: user?.client.id },
+                        query: { client_id: user?.client.id, role_id: OPERATIONS_ADMIN },
                       });
                       toast.info("Refreshing transmittal data...");
                     }}
@@ -176,7 +193,7 @@ export default function TransmittalDetailPage() {
                   </Button>
                 </div>
                 <div className="flex items-center gap-2 flex-wrap">
-                  <PDFDownloadLink
+                  {/* <PDFDownloadLink
                     document={
                       <TransmittalPDF transmittalData={transmittalData} />
                     }
@@ -188,16 +205,16 @@ export default function TransmittalDetailPage() {
                         {pdfLoading ? "Generating..." : "Export PDF"}
                       </Button>
                     )}
-                  </PDFDownloadLink>
+                  </PDFDownloadLink> */}
                   <RejectionReasonDialog transmittalData={transmittalData} />
                   {hasHistory && <HistoryDialog id={transmittalData.id} />}
-                  {!isButtonDisabled && (
+                  {!isActionDisabled && (
                     <EditModal
                       transmittalData={transmittalData}
                       userData={userData}
                       onSubmit={() => {
                         refetchUsers({
-                          query: { client_id: user?.client.id },
+                          query: { client_id: user?.client.id, role_id: OPERATIONS_ADMIN },
                         });
                         refetchTransmittals();
                       }}
@@ -205,6 +222,11 @@ export default function TransmittalDetailPage() {
                   )}
                   {isRejected && (
                     <>
+                      <ReturnedTransmittalDialog
+                        onConfirm={() => handleUpdateStatus("returned")}
+                        loading={loadingUpdate}
+                        disabled={isActionDisabled}
+                      />
                       <Button onClick={() => setModalOpen(true)}>
                         Resubmit
                       </Button>

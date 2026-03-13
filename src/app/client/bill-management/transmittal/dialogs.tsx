@@ -349,6 +349,7 @@ export function SearchTransmittalComponent({
             <SelectItem value="sent">Sent</SelectItem>
             <SelectItem value="accepted">Accepted</SelectItem>
             <SelectItem value="rejected">Rejected</SelectItem>
+            <SelectItem value="forwarded">Forwarded</SelectItem>
           </SelectContent>
         </Select>
 
