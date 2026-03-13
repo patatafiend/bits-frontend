@@ -105,13 +105,43 @@ export function usePostTransmittal() {
 }
 
 export function useEndorseTransmittal() {
-  return useServerAction<Transmittal, UpdateTransmittal>(`/transmittals/endorse`, {
-    method: "POST",
-  });
+  return useServerAction<Transmittal, UpdateTransmittal>(
+    `/transmittals/endorse`,
+    {
+      method: "POST",
+    },
+  );
 }
 
 export function useFetchHistory() {
   return useServerFetch<Transmittal[]>(`/transmittals/resubmission-history`, {
     method: "GET",
   });
+}
+
+export function useAssignOfficer() {
+  return useServerAction<Transmittal, UpdateTransmittal>(
+    `/transmittals/assign`,
+    {
+      method: "POST",
+    },
+  );
+}
+
+export function useForwardTransmittal() {
+  return useServerAction<Transmittal, UpdateTransmittal>(
+    `/transmittals/forward`,
+    {
+      method: "POST",
+    },
+  );
+}
+
+export function useReturnTransmittal() {
+  return useServerAction<Transmittal, UpdateTransmittal>(
+    `/transmittals/return`,
+    {
+      method: "POST",
+    },
+  );
 }
