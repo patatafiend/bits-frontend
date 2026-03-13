@@ -17,12 +17,11 @@ import {
   PostTransmittalComponent,
   SendTransmittalComponent,
   HistoryDialog,
-  ReturnedTransmittalDialog,
+  ReturnTransmittalComponent,
 } from "./dialogs";
 import {
   useDeleteTransmittalItem,
   useFetchTransmittal,
-  useUpdateTransmittal,
 } from "@/hooks/use-transmittal";
 import { useFetchUsers } from "@/hooks/use-user";
 import { TransmittalModal } from "./dialogs";
@@ -60,8 +59,6 @@ export default function TransmittalDetailPage() {
   const [urlCache, setUrlCache] = useState<
     Map<string, { url: string; expires: number }>
   >(new Map());
-  const { execute: updateStatus, loading: loadingUpdate } =
-    useUpdateTransmittal();
 
   function refetchTransmittals() {
     refetchTransmittal({
@@ -135,22 +132,6 @@ export default function TransmittalDetailPage() {
     setViewingFile({ url: data.url, name: fileName, type: fileType });
   }
 
-  async function handleUpdateStatus(status: string) {
-    const { error } = await updateStatus({
-      params: `/${transmittalData?.id}`,
-      body: { status },
-    });
-    if (error) {
-      toast.error(`Failed to forward transmittal: ${error.message}`);
-    }
-    refetchTransmittals();
-  }
-
-  const isActionDisabled =
-    transmittalData?.status === "accepted" ||
-    transmittalData?.status === "rejected" ||
-    transmittalData?.status === "forwarded" ||
-    transmittalData?.status === "returned";
   const isRejected = transmittalData?.status === "rejected";
   const isDraft = transmittalData?.status === "draft";
   const hasHistory =
@@ -181,7 +162,10 @@ export default function TransmittalDetailPage() {
                     onClick={() => {
                       refetchTransmittals();
                       refetchUsers({
-                        query: { client_id: user?.client.id, role_id: OPERATIONS_ADMIN },
+                        query: {
+                          client_id: user?.client.id,
+                          role_id: OPERATIONS_ADMIN,
+                        },
                       });
                       toast.info("Refreshing transmittal data...");
                     }}
@@ -208,13 +192,16 @@ export default function TransmittalDetailPage() {
                   </PDFDownloadLink> */}
                   <RejectionReasonDialog transmittalData={transmittalData} />
                   {hasHistory && <HistoryDialog id={transmittalData.id} />}
-                  {!isActionDisabled && (
+                  {isDraft && (
                     <EditModal
                       transmittalData={transmittalData}
                       userData={userData}
                       onSubmit={() => {
                         refetchUsers({
-                          query: { client_id: user?.client.id, role_id: OPERATIONS_ADMIN },
+                          query: {
+                            client_id: user?.client.id,
+                            role_id: OPERATIONS_ADMIN,
+                          },
                         });
                         refetchTransmittals();
                       }}
@@ -222,11 +209,10 @@ export default function TransmittalDetailPage() {
                   )}
                   {isRejected && (
                     <>
-                      <ReturnedTransmittalDialog
-                        onConfirm={() => handleUpdateStatus("returned")}
-                        loading={loadingUpdate}
-                        disabled={isActionDisabled}
-                      />
+                        <ReturnTransmittalComponent
+                          transmittalData={transmittalData}
+                          onReturn={refetchTransmittals}
+                        />
                       <Button onClick={() => setModalOpen(true)}>
                         Resubmit
                       </Button>
@@ -408,11 +394,13 @@ export default function TransmittalDetailPage() {
             </CardContent>
           </Card>
         )}
-        <UploadFile
-          transmittalData={transmittalData}
-          transmittalId={transmittalId ? Number(transmittalId) : undefined}
-          refetchTransmittal={refetchTransmittal}
-        />
+        {isDraft && (
+          <UploadFile
+            transmittalData={transmittalData}
+            transmittalId={transmittalId ? Number(transmittalId) : undefined}
+            refetchTransmittal={refetchTransmittal}
+          />
+        )}
       </div>
     </div>
   );
