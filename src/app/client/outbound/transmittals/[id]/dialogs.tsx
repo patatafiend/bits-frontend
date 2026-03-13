@@ -155,7 +155,7 @@ export function ForwardTransmittalDialog({
 }: {
   onConfirm: () => void;
   loading?: boolean;
-  disabled: boolean;
+  disabled?: boolean;
 }) {
   const [open, setOpen] = useState(false);
 

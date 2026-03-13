@@ -13,7 +13,7 @@ import { useCurrentUser } from "@/components/providers/auth-provider";
 import { FileViewerModal } from "./dialogs";
 import {
   useFetchTransmittal,
-  useUpdateTransmittal,
+  useForwardTransmittal,
 } from "@/hooks/use-transmittal";
 import { ForwardTransmittalDialog } from "./dialogs";
 import { StatusBadge } from "@/components/status-badge";
@@ -38,7 +38,7 @@ export default function TransmittalDetailPage() {
     Map<string, { url: string; expires: number }>
   >(new Map());
   const { execute: updateStatus, loading: loadingUpdate } =
-    useUpdateTransmittal();
+    useForwardTransmittal();
 
   function refetchTransmittals() {
     refetchTransmittal({
@@ -90,23 +90,21 @@ export default function TransmittalDetailPage() {
     setViewingFile({ url: data.url, name: fileName, type: fileType });
   }
 
-  async function handleUpdateStatus(status: "forwarded") {
+  async function handleUpdateStatus(status: string) {
     const { error } = await updateStatus({
       params: `/${transmittalData?.id}`,
       body: { status },
     });
     if (error) {
       toast.error(`Failed to forward transmittal: ${error.message}`);
+    } else {
+      toast.success("Transmittal forwarded successfully!");
     }
-    toast.success("Transmittal forwarded successfully!");
     refetchTransmittals();
   }
 
-  const isActionDisabled =
-    transmittalData?.status === "accepted" ||
-    transmittalData?.status === "rejected" ||
-    transmittalData?.status === "forwarded" ||
-    transmittalData?.status === "returned";
+  const isButtonDisabled = transmittalData?.status === "endorsed";
+
   return (
     <div className="container mx-auto py-8 max-w-4xl">
       <Link href="/client/outbound/transmittals">
@@ -140,11 +138,12 @@ export default function TransmittalDetailPage() {
                   </Button>
                 </div>
                 <div className="flex items-center gap-2">
-                  <ForwardTransmittalDialog
-                    onConfirm={() => handleUpdateStatus("forwarded")}
-                    loading={loadingUpdate}
-                    disabled={isActionDisabled}
-                  />
+                  {isButtonDisabled && (
+                    <ForwardTransmittalDialog
+                      onConfirm={() => handleUpdateStatus("forwarded")}
+                      loading={loadingUpdate}
+                    />
+                  )}
                 </div>
               </div>
             </CardHeader>
