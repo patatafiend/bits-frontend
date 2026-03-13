@@ -43,9 +43,18 @@ export function useServerFetch<T>(
     if (!query || Object.keys(query).length === 0) return "";
     const params = new URLSearchParams();
     Object.entries(query).forEach(([key, value]) => {
-      if (value !== undefined && value !== null) {
-        params.append(key, String(value));
+      if (value === undefined || value === null) return;
+
+      if (Array.isArray(value)) {
+        value.forEach((item) => {
+          if (item !== undefined && item !== null) {
+            params.append(key, String(item));
+          }
+        });
+        return;
       }
+
+      params.append(key, String(value));
     });
     const queryStr = params.toString();
     return queryStr ? `?${queryStr}` : "";
@@ -142,9 +151,18 @@ export function useServerAction<T, TBody = unknown>(
     if (!query || Object.keys(query).length === 0) return "";
     const params = new URLSearchParams();
     Object.entries(query).forEach(([key, value]) => {
-      if (value !== undefined && value !== null) {
-        params.append(key, String(value));
+      if (value === undefined || value === null) return;
+
+      if (Array.isArray(value)) {
+        value.forEach((item) => {
+          if (item !== undefined && item !== null) {
+            params.append(key, String(item));
+          }
+        });
+        return;
       }
+
+      params.append(key, String(value));
     });
     const queryStr = params.toString();
     return queryStr ? `?${queryStr}` : "";
