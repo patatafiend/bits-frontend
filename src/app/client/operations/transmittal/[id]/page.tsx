@@ -98,10 +98,7 @@ export default function TransmittalDetailPage() {
     setViewingFile({ url: data.url, name: fileName, type: fileType });
   }
 
-  const isButtonDisabled =
-    transmittalData?.status === "accepted" ||
-    transmittalData?.status === "rejected" ||
-    transmittalData?.status === "endorsed";
+  const isPending = transmittalData?.status === "pending";
   const hasHistory =
     transmittalData?.resubmitted_as_id || transmittalData?.resubmitted_from_id;
 
@@ -159,26 +156,26 @@ export default function TransmittalDetailPage() {
                     )}
                   </PDFDownloadLink> */}
                   {hasHistory && <HistoryDialog id={transmittalData.id} />}
-                  {!isButtonDisabled && (
-                    <EditModal
-                      transmittalData={transmittalData}
-                      userData={userData}
-                      onSubmit={() => {
-                        refetchUsers({
-                          query: {
-                            client_id: user?.client.id,
-                            role_id: BILLING_OFFICER,
-                          },
-                        });
-                        refetchTransmittals();
-                      }}
-                    />
-                  )}
-                  {!isButtonDisabled && (
-                    <EndorseTransmittalComponent
-                      transmittalData={transmittalData}
-                      onEndorse={refetchTransmittals}
-                    />
+                  {isPending && (
+                    <>
+                      <EditModal
+                        transmittalData={transmittalData}
+                        userData={userData}
+                        onSubmit={() => {
+                          refetchUsers({
+                            query: {
+                              client_id: user?.client.id,
+                              role_id: BILLING_OFFICER,
+                            },
+                          });
+                          refetchTransmittals();
+                        }}
+                      />
+                      <EndorseTransmittalComponent
+                        transmittalData={transmittalData}
+                        onEndorse={refetchTransmittals}
+                      />
+                    </>
                   )}
                 </div>
               </div>

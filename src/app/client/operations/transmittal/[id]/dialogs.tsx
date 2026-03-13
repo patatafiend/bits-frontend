@@ -32,9 +32,9 @@ import {
 } from "@/components/ui/form";
 import UserComboBox from "@/components/user-combobox";
 import {
+  useAssignOfficer,
+  useEndorseTransmittal,
   useFetchHistory,
-  usePostTransmittal,
-  useUpdateTransmittal,
 } from "@/hooks/use-transmittal";
 import {
   Table,
@@ -140,7 +140,7 @@ export function EndorseTransmittalComponent({
   transmittalData: Transmittal;
   onEndorse: () => void;
 }) {
-  const { execute: postTransmittal, loading } = usePostTransmittal();
+  const { execute: endorseTransmittal, loading } = useEndorseTransmittal();
   const [open, setOpen] = useState(false);
   const isDisabled =
     transmittalData.status === "accepted" ||
@@ -148,7 +148,7 @@ export function EndorseTransmittalComponent({
   const hasItems = (transmittalData.transmittal_items?.length ?? 0) > 0;
 
   const handlePost = async () => {
-    const { error } = await postTransmittal({
+    const { error } = await endorseTransmittal({
       body: {
         status: "endorsed",
       },
@@ -259,7 +259,7 @@ export function EditModal({
   userData: User[] | null;
   onSubmit: () => void;
 }) {
-  const { execute, loading } = useUpdateTransmittal();
+  const { execute, loading } = useAssignOfficer();
   const formSchema = z.object({
     assigned_billing_officer: z.number().nullable().optional(),
   });
