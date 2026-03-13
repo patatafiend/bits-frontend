@@ -134,6 +134,8 @@ export default function TransmittalDetailPage() {
 
   const isRejected = transmittalData?.status === "rejected";
   const isDraft = transmittalData?.status === "draft";
+  const isForwarded = transmittalData?.status === "forwarded";
+  const isReturned = transmittalData?.status === "returned";
   const hasHistory =
     transmittalData?.resubmitted_as_id || transmittalData?.resubmitted_from_id;
 
@@ -207,52 +209,56 @@ export default function TransmittalDetailPage() {
                       }}
                     />
                   )}
-                  {isRejected && (
-                    <>
-                        <ReturnTransmittalComponent
+                  {isRejected ||
+                    (isReturned && (
+                      <>
+                        <Button onClick={() => setModalOpen(true)}>
+                          Resubmit
+                        </Button>
+                        <TransmittalModal
+                          client_id={transmittalData.client_id}
+                          open={modalOpen}
+                          onOpenChange={setModalOpen}
+                          onSubmit={refetchTransmittals}
                           transmittalData={transmittalData}
-                          onReturn={refetchTransmittals}
                         />
-                      <Button onClick={() => setModalOpen(true)}>
-                        Resubmit
-                      </Button>
-                      <TransmittalModal
-                        client_id={transmittalData.client_id}
-                        open={modalOpen}
-                        onOpenChange={setModalOpen}
-                        onSubmit={refetchTransmittals}
-                        transmittalData={transmittalData}
-                      />
-                    </>
+                      </>
+                    ))}
+                  {isForwarded && (
+                    <ReturnTransmittalComponent
+                      transmittalData={transmittalData}
+                      onReturn={refetchTransmittals}
+                    />
                   )}
-                  {!isRejected && (
-                    <>
-                      <div className="flex items-center gap-2 ml-auto">
-                        <Switch
-                          id="send-mode"
-                          checked={isSendMode}
-                          onCheckedChange={setIsSendMode}
-                        />
-                        <Label
-                          htmlFor="send-mode"
-                          className="cursor-pointer text-sm"
-                        >
-                          {isSendMode ? "Email" : "Operations"}
-                        </Label>
-                      </div>
-                      {isSendMode ? (
-                        <SendTransmittalComponent
-                          transmittalData={transmittalData}
-                          onSend={refetchTransmittals}
-                        />
-                      ) : (
-                        <PostTransmittalComponent
-                          transmittalData={transmittalData}
-                          onPost={refetchTransmittals}
-                        />
-                      )}
-                    </>
-                  )}
+                  {!isRejected ||
+                    (!isReturned && (
+                      <>
+                        <div className="flex items-center gap-2 ml-auto">
+                          <Switch
+                            id="send-mode"
+                            checked={isSendMode}
+                            onCheckedChange={setIsSendMode}
+                          />
+                          <Label
+                            htmlFor="send-mode"
+                            className="cursor-pointer text-sm"
+                          >
+                            {isSendMode ? "Email" : "Operations"}
+                          </Label>
+                        </div>
+                        {isSendMode ? (
+                          <SendTransmittalComponent
+                            transmittalData={transmittalData}
+                            onSend={refetchTransmittals}
+                          />
+                        ) : (
+                          <PostTransmittalComponent
+                            transmittalData={transmittalData}
+                            onPost={refetchTransmittals}
+                          />
+                        )}
+                      </>
+                    ))}
                 </div>
               </div>
             </CardHeader>
