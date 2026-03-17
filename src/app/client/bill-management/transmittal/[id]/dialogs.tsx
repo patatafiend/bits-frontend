@@ -735,7 +735,11 @@ function buildChain(data: Transmittal[]): Transmittal[] {
 }
 
 export function HistoryDialog({ id }: { id: number }) {
-  const { data, refetch } = useFetchHistory();
+  const { data, refetch, loading } = useFetchHistory();
+
+  const handleRefresh = async () => {
+    await refetch({ query: { transmittal_id: id } });
+  };
 
   useEffect(() => {
     refetch({ query: { transmittal_id: id } });
@@ -758,6 +762,20 @@ export function HistoryDialog({ id }: { id: number }) {
       }
     >
       <div className="px-4 sm:px-0 pb-4">
+        <div className="mb-3 flex justify-end">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={handleRefresh}
+            disabled={loading}
+          >
+            <RefreshCcw
+              className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`}
+            />
+            Refresh
+          </Button>
+        </div>
         <Table>
           <TableHeader>
             <TableRow>

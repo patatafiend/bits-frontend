@@ -230,35 +230,34 @@ export default function TransmittalDetailPage() {
                       onReturn={refetchTransmittals}
                     />
                   )}
-                  {!isRejected ||
-                    (!isReturned && (
-                      <>
-                        <div className="flex items-center gap-2 ml-auto">
-                          <Switch
-                            id="send-mode"
-                            checked={isSendMode}
-                            onCheckedChange={setIsSendMode}
-                          />
-                          <Label
-                            htmlFor="send-mode"
-                            className="cursor-pointer text-sm"
-                          >
-                            {isSendMode ? "Email" : "Operations"}
-                          </Label>
-                        </div>
-                        {isSendMode ? (
-                          <SendTransmittalComponent
-                            transmittalData={transmittalData}
-                            onSend={refetchTransmittals}
-                          />
-                        ) : (
-                          <PostTransmittalComponent
-                            transmittalData={transmittalData}
-                            onPost={refetchTransmittals}
-                          />
-                        )}
-                      </>
-                    ))}
+                  {isDraft && (
+                    <>
+                      <div className="flex items-center gap-2 ml-auto">
+                        <Switch
+                          id="send-mode"
+                          checked={isSendMode}
+                          onCheckedChange={setIsSendMode}
+                        />
+                        <Label
+                          htmlFor="send-mode"
+                          className="cursor-pointer text-sm"
+                        >
+                          {isSendMode ? "Email" : "Operations"}
+                        </Label>
+                      </div>
+                      {isSendMode ? (
+                        <SendTransmittalComponent
+                          transmittalData={transmittalData}
+                          onSend={refetchTransmittals}
+                        />
+                      ) : (
+                        <PostTransmittalComponent
+                          transmittalData={transmittalData}
+                          onPost={refetchTransmittals}
+                        />
+                      )}
+                    </>
+                  )}
                 </div>
               </div>
             </CardHeader>
