@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start",
+    "start:standalone": "bun .next/standalone/server.js",
+    "deploy": "powershell -ExecutionPolicy Bypass -File scripts/deploy.ps1",
     "lint": "eslint"
   },
   "dependencies": {
