@@ -278,6 +278,20 @@ export default function TransmittalDetailPage() {
                   </p>
                 </div>
                 <div>
+                  <p className="text-sm text-muted-foreground">Endorsed Date</p>
+                  <p className="font-medium">
+                    {transmittalData.endorsed_date ?? "-"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">
+                    Forwarded Date
+                  </p>
+                  <p className="font-medium">
+                    {transmittalData.forwarded_date ?? "-"}
+                  </p>
+                </div>
+                <div>
                   <p className="text-sm text-muted-foreground">
                     Operation Admin
                   </p>
