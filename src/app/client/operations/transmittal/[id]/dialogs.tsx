@@ -1,8 +1,8 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { FileText, AlertCircle, ArrowRight, History } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { FileText, AlertCircle } from "lucide-react";
+import { useState } from "react";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -34,19 +34,7 @@ import UserComboBox from "@/components/user-combobox";
 import {
   useAssignOfficer,
   useEndorseTransmittal,
-  useFetchHistory,
 } from "@/hooks/use-transmittal";
-import {
-  Table,
-  TableHeader,
-  TableRow,
-  TableHead,
-  TableBody,
-  TableCell,
-} from "@/components/ui/table";
-import { format } from "date-fns";
-import Link from "next/link";
-import { StatusBadge } from "@/components/status-badge";
 
 export function FileViewerModal({ file, onClose }: FileViewerModalProps) {
   if (!file) return null;
@@ -338,104 +326,5 @@ export function EditModal({
         )}
       </DrawerDialog>
     </div>
-  );
-}
-
-function buildChain(data: Transmittal[]): Transmittal[] {
-  const map = new Map(data.map((t) => [t.id, t]));
-  const root = data.find((t) => t.resubmitted_from_id === null);
-  if (!root) return data;
-
-  const chain: Transmittal[] = [];
-  let current: Transmittal | undefined = root;
-  while (current) {
-    chain.push(current);
-    current = current.resubmitted_as_id
-      ? map.get(current.resubmitted_as_id)
-      : undefined;
-  }
-  return chain;
-}
-
-export function HistoryDialog({ id }: { id: number }) {
-  const { data, refetch } = useFetchHistory();
-
-  useEffect(() => {
-    refetch({ query: { transmittal_id: id } });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const chain = useMemo(() => (data ? buildChain(data) : []), [data]);
-
-  return (
-    <DrawerDialog
-      title="Resubmission History"
-      description=""
-      responsive
-      className="max-w-2xl"
-      renderTrigger={
-        <Button variant="outline" size="sm">
-          <History className="h-4 w-4 mr-2" />
-          History
-        </Button>
-      }
-    >
-      <div className="px-4 sm:px-0 pb-4">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Transmittal</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Date</TableHead>
-              <TableHead>Resubmitted As</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {chain.map((transmittal, index) => {
-              const isLast = index === chain.length - 1;
-              const next = chain[index + 1];
-              return (
-                <TableRow key={transmittal.id}>
-                  <TableCell className="font-medium">
-                    {transmittal.transmittal_number}
-                  </TableCell>
-                  <TableCell>
-                    <StatusBadge status={transmittal.status} />
-                  </TableCell>
-                  <TableCell className="text-muted-foreground text-sm">
-                    {transmittal.transmittal_date
-                      ? format(
-                          new Date(transmittal.transmittal_date),
-                          "MMM d, yyyy",
-                        )
-                      : "—"}
-                  </TableCell>
-                  <TableCell>
-                    {isLast ? (
-                      <span className="text-muted-foreground text-sm">—</span>
-                    ) : (
-                      <span className="flex items-center gap-1 text-sm">
-                        <ArrowRight className="h-3 w-3 text-muted-foreground" />
-                        <Link
-                          href={`/client/bill-management/transmittal/${next.id}`}
-                          className=""
-                        >
-                          <Button
-                            variant="link"
-                            className="p-0 h-auto font-medium text-sm md:text-base leading-tight"
-                          >
-                            {next.transmittal_number}
-                          </Button>
-                        </Link>
-                      </span>
-                    )}
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
-      </div>
-    </DrawerDialog>
   );
 }

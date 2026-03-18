@@ -232,6 +232,9 @@ export type Transmittal = {
   sent_date: string;
   received_date: string;
   response_date: string;
+  submitted_date: string;
+  endorsed_date: string;
+  forwarded_date: string;
   notes: string;
   rejection_reason: string;
   created_by: string;
@@ -258,6 +261,9 @@ export type TransmittalWithItems = {
   sent_date: string;
   received_date: string;
   response_date: string;
+  submitted_date: string;
+  endorsed_date: string;
+  forwarded_date: string;
   notes: string;
   rejection_reason: string;
   created_by: string;

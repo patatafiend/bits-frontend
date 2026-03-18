@@ -14,8 +14,8 @@ import {
   EditModal,
   FileViewerModal,
   EndorseTransmittalComponent,
-  HistoryDialog,
 } from "./dialogs";
+import { HistoryDialog } from "@/app/client/bill-management/transmittal/[id]/dialogs";
 import { useFetchTransmittal } from "@/hooks/use-transmittal";
 import { useFetchUsers } from "@/hooks/use-user";
 import { StatusBadge } from "@/components/status-badge";
