@@ -798,9 +798,9 @@ export function HistoryDialog({ id }: { id: number }) {
                     <StatusBadge status={transmittal.status} />
                   </TableCell>
                   <TableCell className="text-muted-foreground text-sm">
-                    {transmittal.transmittal_date
+                    {transmittal.created_at
                       ? format(
-                          new Date(transmittal.transmittal_date),
+                          new Date(transmittal.created_at),
                           "MMM d, yyyy",
                         )
                       : "—"}
