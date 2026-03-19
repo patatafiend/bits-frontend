@@ -23,6 +23,7 @@ import {
   User,
   Transmittal,
   TransmittalModalProps,
+  TransmittalItems,
 } from "@/lib/types";
 import { Edit } from "lucide-react";
 import z from "zod";
@@ -69,6 +70,17 @@ import {
 import { format } from "date-fns";
 import Link from "next/link";
 import { StatusBadge } from "@/components/status-badge";
+import Loader from "@/components/ui/loader";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useGetPresignedUrl } from "@/hooks/use-media";
+import { useDeleteTransmittalItem } from "@/hooks/use-transmittal";
+import { useDeleteS3Object } from "@/hooks/use-media";
 
 export function FileViewerModal({ file, onClose }: FileViewerModalProps) {
   if (!file) return null;
@@ -799,10 +811,7 @@ export function HistoryDialog({ id }: { id: number }) {
                   </TableCell>
                   <TableCell className="text-muted-foreground text-sm">
                     {transmittal.created_at
-                      ? format(
-                          new Date(transmittal.created_at),
-                          "MMM d, yyyy",
-                        )
+                      ? format(new Date(transmittal.created_at), "MMM d, yyyy")
                       : "—"}
                   </TableCell>
                   <TableCell>
@@ -949,5 +958,253 @@ export function ReturnTransmittalComponent({
         </DialogContent>
       </Dialog>
     </>
+  );
+}
+
+export function SearchTransmittalItemsComponent({
+  data,
+  onFilter,
+  loading,
+  isDraft,
+  transmittalId,
+  refetchTransmittals,
+}: {
+  data: TransmittalItems[];
+  loading: boolean;
+  isDraft: boolean;
+  transmittalId: number;
+  refetchTransmittals: () => void;
+  onFilter: (params: { search?: string; status?: string }) => void;
+}) {
+  const [query, setQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [urlCache, setUrlCache] = useState<
+    Map<string, { url: string; expires: number }>
+  >(new Map());
+  const { execute: getPresignedUrl, loading: loadingUrl } =
+    useGetPresignedUrl();
+  const { execute: deleteTransmittalItem } = useDeleteTransmittalItem();
+  const { deleteObject: deleteS3Object, loading: deletingFile } =
+    useDeleteS3Object();
+  const [viewingFile, setViewingFile] = useState<{
+    url: string;
+    name: string;
+    type: string;
+  } | null>(null);
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      onFilter({
+        search: query,
+        status: statusFilter,
+      });
+    }, 350);
+    return () => clearTimeout(timeout);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query, statusFilter]);
+
+  function handleQueryChange(e: React.ChangeEvent<HTMLInputElement>) {
+    setQuery(e.target.value);
+  }
+
+  function handleStatusChange(value: string) {
+    setStatusFilter(value);
+  }
+
+  function handleClear() {
+    setQuery("");
+    setStatusFilter("all");
+  }
+
+  async function handleDeleteItem(itemId: number, fileKey: string) {
+    const { error: s3Error } = await deleteS3Object(fileKey);
+    if (s3Error) {
+      toast.error("Failed to delete file from storage");
+      return;
+    }
+
+    const { error: dbError } = await deleteTransmittalItem({
+      params: `/${transmittalId}/items/${itemId}`,
+    });
+    if (dbError) {
+      toast.error("File removed from storage but failed to delete record");
+      return;
+    }
+
+    refetchTransmittals();
+    toast.success("File deleted successfully");
+  }
+
+  async function handleViewFile(
+    filekey: string,
+    fileName: string,
+    fileType: string,
+  ) {
+    const cached = urlCache.get(filekey);
+    if (cached && cached.expires > Date.now()) {
+      setViewingFile({ url: cached.url, name: fileName, type: fileType });
+      return;
+    }
+    const { data, error } = await getPresignedUrl({
+      params: `/${filekey}`,
+    });
+
+    if (error || !data) {
+      toast.error("Failed to generate file URL");
+      return;
+    }
+
+    setUrlCache(
+      new Map(
+        urlCache.set(filekey, {
+          url: data.url,
+          expires: Date.now() + 50 * 60 * 1000,
+        }),
+      ),
+    );
+
+    setViewingFile({ url: data.url, name: fileName, type: fileType });
+  }
+  const isDirty = query || statusFilter !== "all";
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-2">
+        <Input
+          type="text"
+          placeholder="Search by transmittal number or date..."
+          value={query}
+          onChange={handleQueryChange}
+          className="max-w-sm"
+        />
+        <Select value={statusFilter} onValueChange={handleStatusChange}>
+          <SelectTrigger className="w-40">
+            <SelectValue placeholder="Status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All</SelectItem>
+            <SelectItem value="returned">Returned</SelectItem>
+            <SelectItem value="forwarded">Forwarded</SelectItem>
+          </SelectContent>
+        </Select>
+
+        {isDirty && (
+          <Button variant="ghost" size="sm" onClick={handleClear}>
+            Clear
+          </Button>
+        )}
+      </div>
+
+      {loading ? (
+        <Loader loading={loading} />
+      ) : data.length === 0 ? (
+        <p className="text-sm text-muted-foreground py-4 text-center">
+          No transmittals match your search.
+        </p>
+      ) : (
+        <div className="rounded-xl border bg-card overflow-hidden">
+          {data.map((item, index) => (
+            <div
+              key={item.id}
+              className={`group flex items-center justify-between px-4 py-3 transition-colors hover:bg-muted/50 ${
+                index !== data.length - 1 ? "border-b" : ""
+              }`}
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-muted">
+                  <FileText className="w-4 h-4 text-muted-foreground" />
+                </div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-xs text-muted-foreground font-mono">
+                      #{item.transmittal_item_number}
+                    </span>
+                    <p className="text-sm font-medium truncate">
+                      {item.file_name}
+                    </p>
+                    {item.status && <StatusBadge status={item.status} />}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {(parseInt(item.file_size) / 1024 / 1024).toFixed(2)} MB ·
+                    uploaded {new Date(item.uploaded_at).toLocaleDateString()}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-1 ml-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() =>
+                    handleViewFile(
+                      item.file_key,
+                      item.file_name,
+                      item.file_type,
+                    )
+                  }
+                  disabled={loadingUrl}
+                >
+                  {loadingUrl ? "Loading..." : "View"}
+                </Button>
+                {isDraft && (
+                  <DeleteItemDialog
+                    disabled={deletingFile}
+                    onConfirm={() => handleDeleteItem(item.id, item.file_key)}
+                  />
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+      <FileViewerModal
+        file={viewingFile}
+        onClose={() => setViewingFile(null)}
+      />
+    </div>
+  );
+}
+
+function DeleteItemDialog({
+  onConfirm,
+  disabled,
+}: {
+  onConfirm: () => void;
+  disabled?: boolean;
+}) {
+  return (
+    <DrawerDialog
+      title="Delete File"
+      description="This will permanently delete the file from storage and cannot be undone."
+      responsive
+      className="max-w-md"
+      renderTrigger={
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-destructive hover:text-destructive hover:bg-destructive/10"
+          disabled={disabled}
+        >
+          Delete
+        </Button>
+      }
+    >
+      {(close) => (
+        <div className="flex justify-end gap-2 px-4 sm:px-0 pb-4">
+          <Button variant="outline" onClick={close}>
+            Cancel
+          </Button>
+          <Button
+            variant="destructive"
+            onClick={() => {
+              onConfirm();
+              close?.();
+            }}
+          >
+            Delete
+          </Button>
+        </div>
+      )}
+    </DrawerDialog>
   );
 }

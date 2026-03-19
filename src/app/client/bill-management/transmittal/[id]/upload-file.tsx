@@ -63,6 +63,9 @@ export function UploadFile({
 
         return {
           transmittal_id: transmittalData.id,
+          transmittal_item_number: null,
+          return_date: null,
+          status: "pending",
           file_name: file.name,
           file_key: s3Key,
           file_size: file.size.toString(),

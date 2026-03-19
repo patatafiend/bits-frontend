@@ -19,6 +19,7 @@ import { HistoryDialog } from "@/app/client/bill-management/transmittal/[id]/dia
 import { useFetchTransmittal } from "@/hooks/use-transmittal";
 import { useFetchUsers } from "@/hooks/use-user";
 import { StatusBadge } from "@/components/status-badge";
+import { formatDate } from "@/lib/utils";
 // import { PDFDownloadLink } from "@react-pdf/renderer";
 // import { TransmittalPDF } from "./export-to-pdf";
 
@@ -191,9 +192,9 @@ export default function TransmittalDetailPage() {
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Date</p>
+                  <p className="text-sm text-muted-foreground">Transmittal Date</p>
                   <p className="font-medium">
-                    {transmittalData.transmittal_date}
+                    {formatDate(transmittalData.transmittal_date)}
                   </p>
                 </div>
                 <div>

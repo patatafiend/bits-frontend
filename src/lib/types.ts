@@ -284,6 +284,9 @@ export type TransmittalWithItems = {
 export type TransmittalItems = {
   id: number;
   transmittal_id: number;
+  transmittal_item_number: number;
+  status: string;
+  return_date: string;
   file_name: string;
   file_key: string;
   file_size: string;
@@ -304,6 +307,7 @@ export type UpdateTransmittal = Partial<Transmittal>;
 
 export type AddTransmittalItemPayload = {
   transmittal_id: number;
+  status: string;
   file_name: string;
   file_key: string;
   file_size: string;

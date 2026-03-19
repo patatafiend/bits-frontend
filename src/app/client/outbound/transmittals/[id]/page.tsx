@@ -17,6 +17,7 @@ import {
 } from "@/hooks/use-transmittal";
 import { ForwardTransmittalDialog } from "./dialogs";
 import { StatusBadge } from "@/components/status-badge";
+import { formatDate } from "@/lib/utils";
 
 export default function TransmittalDetailPage() {
   const params = useParams();
@@ -158,9 +159,9 @@ export default function TransmittalDetailPage() {
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Date</p>
+                  <p className="text-sm text-muted-foreground">Transmittal Date</p>
                   <p className="font-medium">
-                    {transmittalData.transmittal_date}
+                    {formatDate(transmittalData.transmittal_date)}
                   </p>
                 </div>
                 <div>
