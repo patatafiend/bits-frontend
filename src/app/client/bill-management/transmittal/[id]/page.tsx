@@ -15,13 +15,10 @@ import {
   PostTransmittalComponent,
   SendTransmittalComponent,
   HistoryDialog,
-  ReturnTransmittalComponent,
 } from "./dialogs";
-import {
-  useFetchTransmittal,
-} from "@/hooks/use-transmittal";
+import { useFetchTransmittal, useFetchItems } from "@/hooks/use-transmittal";
 import { useFetchUsers } from "@/hooks/use-user";
-import { TransmittalModal } from "./dialogs";
+import { ResubmittModal } from "./resubmit-modal";
 import { StatusBadge } from "@/components/status-badge";
 import { UploadFile } from "./upload-file";
 import { Switch } from "@/components/ui/switch";
@@ -47,6 +44,11 @@ export default function TransmittalDetailPage() {
     loading: transmittalLoading,
   } = useFetchTransmittal();
   const { data: userData, refetch: refetchUsers } = useFetchUsers();
+  const {
+    data: items,
+    refetch: refetchItems,
+    loading: itemLoading,
+  } = useFetchItems();
 
   const [filteredItems, setFilteredItems] = useState<TransmittalItems[]>([]);
 
@@ -54,6 +56,13 @@ export default function TransmittalDetailPage() {
     refetchTransmittal({
       params: `${transmittalId}`,
       query: { include_items: true },
+    });
+  }
+
+  function refetchTransmittalItems() {
+    refetchItems({
+      params: `${transmittalData?.id}/items`,
+      query: { status: "returned" },
     });
   }
 
@@ -87,7 +96,9 @@ export default function TransmittalDetailPage() {
 
     const result = items.filter((item) => {
       const matchesSearch = search
-        ? item.file_name.toLowerCase().includes(search.toLowerCase())
+        ? item.file_name.toLowerCase().includes(search.toLowerCase()) ||
+          item.transmittal_item_number?.toString().includes(search) ||
+          item.reference_number?.toString().includes(search)
         : true;
 
       const matchesStatus =
@@ -99,10 +110,12 @@ export default function TransmittalDetailPage() {
     setFilteredItems(result);
   }
 
-  const isRejected = transmittalData?.status === "rejected";
+  //const isRejected = transmittalData?.status === "rejected";
   const isDraft = transmittalData?.status === "draft";
-  const isForwarded = transmittalData?.status === "forwarded";
-  const isReturned = transmittalData?.status === "returned";
+  const isReturned =
+    transmittalData?.status === "returned" ||
+    transmittalData?.status === "partially_returned";
+  //const isReturned = transmittalData?.status === "returned";
   const hasHistory =
     transmittalData?.resubmitted_as_id || transmittalData?.resubmitted_from_id;
 
@@ -160,7 +173,7 @@ export default function TransmittalDetailPage() {
                     )}
                   </PDFDownloadLink> */}
                   <RejectionReasonDialog transmittalData={transmittalData} />
-                  {hasHistory && <HistoryDialog id={transmittalData.id} />}
+                  {hasHistory && (<HistoryDialog id={transmittalData.id} />) }
                   {isDraft && (
                     <EditModal
                       transmittalData={transmittalData}
@@ -176,26 +189,26 @@ export default function TransmittalDetailPage() {
                       }}
                     />
                   )}
-                  {isRejected ||
-                    (isReturned && (
-                      <>
-                        <Button onClick={() => setModalOpen(true)}>
-                          Resubmit
-                        </Button>
-                        <TransmittalModal
-                          client_id={transmittalData.client_id}
-                          open={modalOpen}
-                          onOpenChange={setModalOpen}
-                          onSubmit={refetchTransmittals}
-                          transmittalData={transmittalData}
-                        />
-                      </>
-                    ))}
-                  {isForwarded && (
-                    <ReturnTransmittalComponent
-                      transmittalData={transmittalData}
-                      onReturn={refetchTransmittals}
-                    />
+                  {isReturned && (
+                    <>
+                      <Button
+                        onClick={() => {
+                          setModalOpen(true);
+                          refetchTransmittalItems();
+                        }}
+                      >
+                        Resubmit
+                      </Button>
+                      <ResubmittModal
+                        client_id={transmittalData.client_id}
+                        open={modalOpen}
+                        onOpenChange={setModalOpen}
+                        onSubmit={refetchTransmittals}
+                        transmittalData={transmittalData}
+                        itemLoading={itemLoading}
+                        items={items}
+                      />
+                    </>
                   )}
                   {isDraft && (
                     <>
@@ -311,6 +324,7 @@ export default function TransmittalDetailPage() {
                   transmittalId={Number(transmittalId)}
                   refetchTransmittals={refetchTransmittals}
                   onFilter={handleFilter}
+                  transmittalData={transmittalData}
                 />
               </div>
             </CardContent>
