@@ -4,15 +4,13 @@ import { useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { FileText, ArrowLeft, RefreshCw } from "lucide-react";
+import { ArrowLeft, RefreshCw } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { useGetPresignedUrl } from "@/hooks/use-media";
 import { useCurrentUser } from "@/components/providers/auth-provider";
 import {
   EditModal,
-  FileViewerModal,
   EndorseTransmittalComponent,
 } from "./dialogs";
 import { HistoryDialog } from "@/app/client/bill-management/transmittal/[id]/dialogs";
@@ -20,6 +18,8 @@ import { useFetchTransmittal } from "@/hooks/use-transmittal";
 import { useFetchUsers } from "@/hooks/use-user";
 import { StatusBadge } from "@/components/status-badge";
 import { formatDate } from "@/lib/utils";
+import { SearchTransmittalItemsComponent } from "./dialogs";
+import { TransmittalItems } from "@/lib/types";
 // import { PDFDownloadLink } from "@react-pdf/renderer";
 // import { TransmittalPDF } from "./export-to-pdf";
 
@@ -28,11 +28,6 @@ const BILLING_OFFICER = 3;
 export default function TransmittalDetailPage() {
   const params = useParams();
   const transmittalId = params.id;
-  const [viewingFile, setViewingFile] = useState<{
-    url: string;
-    name: string;
-    type: string;
-  } | null>(null);
   const user = useCurrentUser();
   const {
     data: transmittalData,
@@ -40,11 +35,7 @@ export default function TransmittalDetailPage() {
     loading: transmittalLoading,
   } = useFetchTransmittal();
   const { data: userData, refetch: refetchUsers } = useFetchUsers();
-  const { execute: getPresignedUrl, loading: loadingUrl } =
-    useGetPresignedUrl();
-  const [urlCache, setUrlCache] = useState<
-    Map<string, { url: string; expires: number }>
-  >(new Map());
+  const [filteredItems, setFilteredItems] = useState<TransmittalItems[]>([]);
 
   function refetchTransmittals() {
     refetchTransmittal({
@@ -68,35 +59,33 @@ export default function TransmittalDetailPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [transmittalId]);
 
-  async function handleViewFile(
-    filekey: string,
-    fileName: string,
-    fileType: string,
-  ) {
-    const cached = urlCache.get(filekey);
-    if (cached && cached.expires > Date.now()) {
-      setViewingFile({ url: cached.url, name: fileName, type: fileType });
-      return;
-    }
-    const { data, error } = await getPresignedUrl({
-      params: `/${filekey}`,
+  useEffect(() => {
+    setFilteredItems(transmittalData?.transmittal_items ?? []);
+  }, [transmittalData]);
+
+    function handleFilter({
+    search,
+    status,
+  }: {
+    search?: string;
+    status?: string;
+  }) {
+    const items = transmittalData?.transmittal_items ?? [];
+
+    const result = items.filter((item) => {
+      const matchesSearch = search
+        ? item.file_name.toLowerCase().includes(search.toLowerCase()) ||
+          item.transmittal_item_number?.toString().includes(search) ||
+          item.reference_number?.toString().includes(search)
+        : true;
+
+      const matchesStatus =
+        !status || status === "all" ? true : item.status === status;
+
+      return matchesSearch && matchesStatus;
     });
 
-    if (error || !data) {
-      toast.error("Failed to generate file URL");
-      return;
-    }
-
-    setUrlCache(
-      new Map(
-        urlCache.set(filekey, {
-          url: data.url,
-          expires: Date.now() + 50 * 60 * 1000,
-        }),
-      ),
-    );
-
-    setViewingFile({ url: data.url, name: fileName, type: fileType });
+    setFilteredItems(result);
   }
 
   const isPending = transmittalData?.status === "pending";
@@ -192,7 +181,9 @@ export default function TransmittalDetailPage() {
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Transmittal Date</p>
+                  <p className="text-sm text-muted-foreground">
+                    Transmittal Date
+                  </p>
                   <p className="font-medium">
                     {formatDate(transmittalData.transmittal_date)}
                   </p>
@@ -232,70 +223,14 @@ export default function TransmittalDetailPage() {
 
               <Separator />
 
-              {transmittalData?.transmittal_items &&
-                transmittalData.transmittal_items.length > 0 && (
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between mb-2">
-                      <h3 className="text-sm font-medium">Uploaded Files</h3>
-                    </div>
-
-                    <div className="divide-y rounded-lg border">
-                      {transmittalData.transmittal_items.map((item) => (
-                        <div
-                          key={item.id}
-                          className="flex items-center justify-between p-3"
-                        >
-                          <div className="flex items-center gap-3">
-                            <FileText className="w-5 h-5 text-muted-foreground" />
-                            <div>
-                              <p className="text-sm font-medium">
-                                {item.file_name}
-                              </p>
-                              <p className="text-xs text-muted-foreground">
-                                {(
-                                  parseInt(item.file_size) /
-                                  1024 /
-                                  1024
-                                ).toFixed(2)}{" "}
-                                MB •{" "}
-                                {new Date(
-                                  item.uploaded_at,
-                                ).toLocaleDateString()}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() =>
-                                handleViewFile(
-                                  item.file_key,
-                                  item.file_name,
-                                  item.file_type,
-                                )
-                              }
-                            >
-                              {loadingUrl ? "Loading..." : "View"}
-                            </Button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                    <FileViewerModal
-                      file={viewingFile}
-                      onClose={() => setViewingFile(null)}
-                    />
-                  </div>
-                )}
-
-              {(!transmittalData?.transmittal_items ||
-                transmittalData.transmittal_items.length === 0) && (
-                <div className="text-center py-8 text-muted-foreground">
-                  <FileText className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                  <p className="text-sm">No files uploaded yet</p>
-                </div>
-              )}
+              <div className="space-y-2">
+                <h3 className="text-sm font-medium">Uploaded Files</h3>
+                <SearchTransmittalItemsComponent
+                  data={filteredItems}
+                  loading={transmittalLoading}
+                  onFilter={handleFilter}
+                />
+              </div>
             </CardContent>
           </Card>
         )}

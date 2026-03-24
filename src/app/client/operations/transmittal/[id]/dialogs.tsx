@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { FileText, AlertCircle } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -16,6 +16,7 @@ import {
   TransmittalWithItems,
   User,
   Transmittal,
+  TransmittalItems
 } from "@/lib/types";
 import { Edit } from "lucide-react";
 import z from "zod";
@@ -35,6 +36,18 @@ import {
   useAssignOfficer,
   useEndorseTransmittal,
 } from "@/hooks/use-transmittal";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useGetPresignedUrl } from "@/hooks/use-media";
+import Loader from "@/components/ui/loader";
+import { StatusBadge } from "@/components/status-badge";
+
 
 export function FileViewerModal({ file, onClose }: FileViewerModalProps) {
   if (!file) return null;
@@ -325,6 +338,175 @@ export function EditModal({
           </form>
         )}
       </DrawerDialog>
+    </div>
+  );
+}
+
+export function SearchTransmittalItemsComponent({
+  data,
+  onFilter,
+  loading,
+}: {
+  data: TransmittalItems[];
+  loading: boolean;
+  onFilter: (params: { search?: string; status?: string }) => void;
+}) {
+  const [query, setQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [urlCache, setUrlCache] = useState<
+    Map<string, { url: string; expires: number }>
+  >(new Map());
+  const { execute: getPresignedUrl, loading: loadingUrl } =
+    useGetPresignedUrl();
+  const [viewingFile, setViewingFile] = useState<{
+    url: string;
+    name: string;
+    type: string;
+  } | null>(null);
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      onFilter({
+        search: query,
+        status: statusFilter,
+      });
+    }, 350);
+    return () => clearTimeout(timeout);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query, statusFilter]);
+
+  function handleQueryChange(e: React.ChangeEvent<HTMLInputElement>) {
+    setQuery(e.target.value);
+  }
+
+  function handleStatusChange(value: string) {
+    setStatusFilter(value);
+  }
+
+  function handleClear() {
+    setQuery("");
+    setStatusFilter("all");
+  }
+
+  async function handleViewFile(
+    filekey: string,
+    fileName: string,
+    fileType: string,
+  ) {
+    const cached = urlCache.get(filekey);
+    if (cached && cached.expires > Date.now()) {
+      setViewingFile({ url: cached.url, name: fileName, type: fileType });
+      return;
+    }
+    const { data, error } = await getPresignedUrl({
+      params: `/${filekey}`,
+    });
+
+    if (error || !data) {
+      toast.error("Failed to generate file URL");
+      return;
+    }
+
+    setUrlCache(
+      new Map(
+        urlCache.set(filekey, {
+          url: data.url,
+          expires: Date.now() + 50 * 60 * 1000,
+        }),
+      ),
+    );
+
+    setViewingFile({ url: data.url, name: fileName, type: fileType });
+  }
+  const isDirty = query || statusFilter !== "all";
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-2">
+        <Input
+          type="text"
+          placeholder="Search by transmittal number or date..."
+          value={query}
+          onChange={handleQueryChange}
+          className="max-w-sm"
+        />
+        <Select value={statusFilter} onValueChange={handleStatusChange}>
+          <SelectTrigger className="w-40">
+            <SelectValue placeholder="Status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All</SelectItem>
+            <SelectItem value="returned">Returned</SelectItem>
+            <SelectItem value="forwarded">Forwarded</SelectItem>
+          </SelectContent>
+        </Select>
+
+        {isDirty && (
+          <Button variant="ghost" size="sm" onClick={handleClear}>
+            Clear
+          </Button>
+        )}
+      </div>
+
+      {loading ? (
+        <Loader loading={loading} />
+      ) : data.length === 0 ? (
+        <p className="text-sm text-muted-foreground py-4 text-center">
+          No transmittals match your search.
+        </p>
+      ) : (
+        <div className="rounded-xl border bg-card overflow-hidden">
+          {data.map((item, index) => (
+            <div
+              key={item.id}
+              className={`group flex items-center justify-between px-4 py-3 transition-colors hover:bg-muted/50 ${
+                index !== data.length - 1 ? "border-b" : ""
+              }`}
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-muted">
+                  <FileText className="w-4 h-4 text-muted-foreground" />
+                </div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-xs text-muted-foreground font-mono">
+                      {item.reference_number}
+                    </span>
+                    <p className="text-sm font-medium truncate">
+                      {item.file_name}
+                    </p>
+                    {item.status && <StatusBadge status={item.status} />}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {(parseInt(item.file_size) / 1024 / 1024).toFixed(2)} MB ·
+                    uploaded {new Date(item.uploaded_at).toLocaleDateString()}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-1 ml-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() =>
+                    handleViewFile(
+                      item.file_key,
+                      item.file_name,
+                      item.file_type,
+                    )
+                  }
+                  disabled={loadingUrl}
+                >
+                  {loadingUrl ? "Loading..." : "View"}
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+      <FileViewerModal
+        file={viewingFile}
+        onClose={() => setViewingFile(null)}
+      />
     </div>
   );
 }
