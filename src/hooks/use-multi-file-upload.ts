@@ -35,7 +35,9 @@ export function useMultiFileUpload(options?: Options) {
     };
   }
 
-  function addFiles(newFiles: File[] | FileList | ChangeEvent<HTMLInputElement>) {
+  function addFiles(
+    newFiles: File[] | FileList | ChangeEvent<HTMLInputElement>,
+  ) {
     let filesToAdd: File[] = [];
 
     if (newFiles instanceof FileList) {
@@ -156,12 +158,11 @@ export function useMultiFileUpload(options?: Options) {
       return publicUrl;
     } catch (err) {
       console.error(`Error uploading file [${item.file.name}]:`, err);
-      const message =
-        axios.isAxiosError(err)
-          ? err.response?.data?.error || "Upload failed"
-          : err instanceof Error
-            ? err.message
-            : "Upload failed";
+      const message = axios.isAxiosError(err)
+        ? err.response?.data?.error || "Upload failed"
+        : err instanceof Error
+          ? err.message
+          : "Upload failed";
 
       updateFile(id, {
         uploading: false,
@@ -212,7 +213,9 @@ export function useMultiFileUpload(options?: Options) {
     await Promise.all(workers);
 
     // Include already-uploaded files
-    const existingUrls = files.filter((f) => f.url && !filesToUpload.includes(f)).map((f) => f.url!);
+    const existingUrls = files
+      .filter((f) => f.url && !filesToUpload.includes(f))
+      .map((f) => f.url!);
     const allUrls = [...existingUrls, ...results];
 
     // Show summary toast
@@ -236,6 +239,73 @@ export function useMultiFileUpload(options?: Options) {
     return allUrls;
   }
 
+  async function uploadFiles(rawFiles: File[], location: string) {
+    // Map raw files to UploadItems
+    const items: UploadItem[] = rawFiles.map((file) => ({
+      id: crypto.randomUUID(),
+      file,
+      progress: 0,
+      uploading: false,
+      compressing: false,
+    }));
+
+    // Add to state for UI tracking
+    setFiles((prev) => [...prev, ...items]);
+
+    const results: string[] = [];
+
+    // Upload directly using local items, not stale state
+    for (const item of items) {
+      try {
+        updateFile(item.id, { uploading: true, error: undefined, progress: 0 });
+
+        let fileToUpload = item.file;
+
+        const isImage = fileToUpload.type.startsWith("image/");
+        if (fileToUpload.size > 5 * 1024 * 1024 && isImage) {
+          updateFile(item.id, { compressing: true });
+          fileToUpload = await compressImage(fileToUpload);
+          updateFile(item.id, { compressing: false, file: fileToUpload });
+        }
+
+        const uploadUrl = await getPresignedUploadUrl(fileToUpload, location);
+
+        await axios.put(uploadUrl, fileToUpload, {
+          headers: {
+            "Content-Type": fileToUpload.type || "application/octet-stream",
+          },
+          onUploadProgress: (e) => {
+            const percent = Math.round((e.loaded * 100) / (e.total || 1));
+            updateFile(item.id, { progress: percent });
+          },
+        });
+
+        const publicUrl = uploadUrl.split("?")[0];
+        updateFile(item.id, {
+          uploading: false,
+          progress: 100,
+          url: publicUrl,
+        });
+        results.push(publicUrl);
+      } catch (err) {
+        const message = axios.isAxiosError(err)
+          ? err.response?.data?.error || "Upload failed"
+          : err instanceof Error
+            ? err.message
+            : "Upload failed";
+        updateFile(item.id, {
+          uploading: false,
+          compressing: false,
+          error: message,
+        });
+        toast.error(`Failed to upload ${item.file.name}: ${message}`);
+        throw err;
+      }
+    }
+
+    return results;
+  }
+
   function retryFile(id: string, location: string) {
     // Reset error state before retrying
     updateFile(id, { error: undefined });
@@ -247,9 +317,10 @@ export function useMultiFileUpload(options?: Options) {
   const isAnyCompressing = files.some((f) => f.compressing);
   const hasErrors = files.some((f) => f.error);
   const allCompleted = files.length > 0 && files.every((f) => f.url);
-  const totalProgress = files.length > 0
-    ? Math.round(files.reduce((sum, f) => sum + f.progress, 0) / files.length)
-    : 0;
+  const totalProgress =
+    files.length > 0
+      ? Math.round(files.reduce((sum, f) => sum + f.progress, 0) / files.length)
+      : 0;
 
   return {
     files,
@@ -260,6 +331,7 @@ export function useMultiFileUpload(options?: Options) {
     retryFile,
     getPresignedUploadUrl,
     onUploadComplete,
+    uploadFiles,
     // Computed states
     isAnyUploading,
     isAnyCompressing,
