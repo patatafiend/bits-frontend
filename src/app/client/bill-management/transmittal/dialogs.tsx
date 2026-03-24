@@ -220,7 +220,9 @@ export function TransmittalModal({
                       type="button"
                       onClick={async () => {
                         const { data, error } = await generateTMN();
-                        if (error) {
+                        if (!error) {
+                          toast.success("Number Generated!");
+                        } else {
                           toast.error(error.message);
                         }
                         if (data) {
@@ -351,6 +353,7 @@ export function SearchTransmittalComponent({
             <SelectItem value="rejected">Rejected</SelectItem>
             <SelectItem value="forwarded">Forwarded</SelectItem>
             <SelectItem value="returned">Returned</SelectItem>
+            <SelectItem value="partially_returned">Partially Returned</SelectItem>
           </SelectContent>
         </Select>
 
