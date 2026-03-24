@@ -7,6 +7,8 @@ import {
   TransmittalWithItems,
   UpdateTransmittal,
   PaginatedTransmittal,
+  ItemActionUpdate,
+  TransmittalItemAction,
 } from "@/lib/types";
 
 export function useCreateTransmittal() {
@@ -140,6 +142,27 @@ export function useForwardTransmittal() {
 export function useReturnTransmittal() {
   return useServerAction<Transmittal, UpdateTransmittal>(
     `/transmittals/return`,
+    {
+      method: "POST",
+    },
+  );
+}
+
+export function useFetchItems() {
+  return useServerFetch<TransmittalItems[]>(`/transmittals`, {
+    method: "GET",
+  });
+}
+
+export function useFetchItem() {
+  return useServerFetch<TransmittalItems>(`/transmittals`, {
+    method: "GET",
+  });
+}
+
+export function useItemAction() {
+  return useServerAction<TransmittalItemAction, ItemActionUpdate>(
+    `/transmittals/item/action`,
     {
       method: "POST",
     },
