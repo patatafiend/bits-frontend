@@ -25,12 +25,15 @@ const variants: Record<string, { badge: string; dot: string }> = {
     badge: "bg-amber-50 text-amber-700 border-amber-200",
     dot: "bg-amber-500",
   },
+  partially_returned: {
+    badge: "bg-orange-50 text-orange-700 border-orange-200",
+    dot: "bg-orange-500",
+  },
   forwarded: {
     badge: "bg-purple-50 text-purple-700 border-purple-200",
     dot: "bg-purple-500",
   },
 };
-
 export function StatusBadge({ status }: { status: string }) {
   const variant = variants[status] ?? {
     badge: "bg-gray-100 text-gray-600 border-gray-200",
@@ -44,7 +47,7 @@ export function StatusBadge({ status }: { status: string }) {
       )}
     >
       <span className={cn("h-1.5 w-1.5 rounded-full", variant.dot)} />
-      {status}
+      {status.replace(/_/g, " ")}
     </span>
   );
 }
