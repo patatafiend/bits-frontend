@@ -22,7 +22,6 @@ import {
   TransmittalWithItems,
   User,
   Transmittal,
-  TransmittalModalProps,
   TransmittalItems,
 } from "@/lib/types";
 import { Edit } from "lucide-react";
@@ -43,22 +42,12 @@ import {
 import UserComboBox from "@/components/user-combobox";
 import {
   useFetchHistory,
-  useGenerateTMN,
+  useItemAction,
   usePostTransmittal,
-  useResubmitTransmittal,
   useReturnTransmittal,
   useSendTransmittal,
   useUpdateTransmittal,
 } from "@/hooks/use-transmittal";
-import {
-  FieldSet,
-  FieldGroup,
-  Field,
-  FieldLabel,
-  FieldContent,
-  FieldError,
-  FieldSeparator,
-} from "@/components/ui/field";
 import {
   Table,
   TableHeader,
@@ -83,6 +72,8 @@ import { useDeleteTransmittalItem } from "@/hooks/use-transmittal";
 import { useDeleteS3Object } from "@/hooks/use-media";
 
 export function FileViewerModal({ file, onClose }: FileViewerModalProps) {
+  const [isDownloading, setIsDownloading] = useState(false);
+
   if (!file) return null;
 
   const isImage = file.type.startsWith("image/");
@@ -92,11 +83,24 @@ export function FileViewerModal({ file, onClose }: FileViewerModalProps) {
     file.type.includes("excels") ||
     file.name.match(/\.(xlsx|xls|csv)$/i);
 
-  const handleDownload = () => {
-    const link = document.createElement("a");
-    link.href = file.url;
-    link.download = file.name;
-    link.click();
+  const handleDownload = async () => {
+    setIsDownloading(true);
+    try {
+      const response = await fetch(file.url);
+      const blob = await response.blob();
+      const blobUrl = URL.createObjectURL(blob);
+
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = file.name;
+      link.click();
+
+      URL.revokeObjectURL(blobUrl);
+    } catch (error) {
+      toast.error("Download failed. Please try again :" + error);
+    } finally {
+      setIsDownloading(false);
+    }
   };
 
   return (
@@ -108,7 +112,12 @@ export function FileViewerModal({ file, onClose }: FileViewerModalProps) {
               {file.name}
             </DialogTitle>
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={handleDownload}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleDownload}
+                loading={isDownloading}
+              >
                 <Download className="w-4 h-4 mr-2" />
                 Download
               </Button>
@@ -610,126 +619,6 @@ export function RejectionReasonDialog({
   );
 }
 
-export function TransmittalModal({
-  client_id,
-  open,
-  onOpenChange,
-  onSubmit,
-  transmittalData,
-}: TransmittalModalProps) {
-  const { execute } = useResubmitTransmittal();
-  const { execute: generateTMN } = useGenerateTMN();
-
-  const formSchema = z.object({
-    transmittal_number: z.string().min(1, "Transmittal Number is required"),
-    resubmitted_as_id: z.number().optional(),
-    resubmitted_from_id: z.number().optional(),
-    client_id: z.number().min(1, "client id required"),
-    status: z.string().optional(),
-  });
-
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      transmittal_number: "",
-      resubmitted_as_id: undefined,
-      resubmitted_from_id: undefined,
-      client_id: client_id,
-      status: "Draft",
-    },
-  });
-
-  useEffect(() => {
-    if (client_id) {
-      form.setValue("client_id", client_id);
-    }
-  }, [client_id, form]);
-
-  async function handleSubmit(data: z.infer<typeof formSchema>) {
-    const { error } = await execute({
-      body: {
-        transmittal_number: data.transmittal_number,
-        status: "Draft",
-        client_id: data.client_id,
-        resubmitted_from_id: Number(transmittalData?.id) ?? null,
-      },
-    });
-    if (!error) {
-      onOpenChange(false);
-      onSubmit();
-      toast.success("Transmittal Created Successfully!");
-    } else {
-      toast.error(`Error: ${error.message}`);
-    }
-  }
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Transmittal Details</DialogTitle>
-        </DialogHeader>
-
-        <form onSubmit={form.handleSubmit(handleSubmit)}>
-          <FieldSet>
-            <FieldGroup className="grid">
-              <Field>
-                <FieldLabel>Transmittal Number</FieldLabel>
-                <FieldContent>
-                  <div className="flex gap-2">
-                    {" "}
-                    <Input
-                      type="text"
-                      placeholder="INV-2024-001"
-                      {...form.register("transmittal_number")}
-                    />
-                    <Button
-                      type="button"
-                      onClick={async () => {
-                        const { data, error } = await generateTMN();
-                        if (error) {
-                          toast.error(error.message);
-                        }
-                        if (data) {
-                          form.setValue(
-                            "transmittal_number",
-                            data.transmittal_number,
-                          );
-                        }
-                      }}
-                    >
-                      <RefreshCcw />
-                      Autogenerate
-                    </Button>
-                  </div>
-                </FieldContent>
-                {form.formState.errors.transmittal_number && (
-                  <FieldError>
-                    {form.formState.errors.transmittal_number.message}
-                  </FieldError>
-                )}
-              </Field>
-            </FieldGroup>
-
-            <FieldSeparator />
-
-            <div className="flex justify-end gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-              >
-                Cancel
-              </Button>
-              <Button type="submit">Save Transmittal</Button>
-            </div>
-          </FieldSet>
-        </form>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
 function buildChain(data: Transmittal[]): Transmittal[] {
   const map = new Map(data.map((t) => [t.id, t]));
   const root = data.find((t) => t.resubmitted_from_id === null);
@@ -749,12 +638,14 @@ function buildChain(data: Transmittal[]): Transmittal[] {
 export function HistoryDialog({ id }: { id: number }) {
   const { data, refetch, loading } = useFetchHistory();
 
-  const handleRefresh = async () => {
-    await refetch({ query: { transmittal_id: id } });
-  };
+  async function handleRefresh() {
+    refetch({ query: { transmittal_id: id } });
+  }
 
   useEffect(() => {
-    refetch({ query: { transmittal_id: id } });
+    if (!id) {
+      handleRefresh();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -963,6 +854,7 @@ export function ReturnTransmittalComponent({
 
 export function SearchTransmittalItemsComponent({
   data,
+  transmittalData,
   onFilter,
   loading,
   isDraft,
@@ -970,6 +862,7 @@ export function SearchTransmittalItemsComponent({
   refetchTransmittals,
 }: {
   data: TransmittalItems[];
+  transmittalData: Transmittal;
   loading: boolean;
   isDraft: boolean;
   transmittalId: number;
@@ -1066,7 +959,11 @@ export function SearchTransmittalItemsComponent({
     setViewingFile({ url: data.url, name: fileName, type: fileType });
   }
   const isDirty = query || statusFilter !== "all";
-
+  const canReturn =
+    transmittalData.status === "forwarded" ||
+    transmittalData.status === "returned" ||
+    transmittalData.status === "rejected" ||
+    transmittalData.status === "partially_returned";
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2">
@@ -1117,7 +1014,7 @@ export function SearchTransmittalItemsComponent({
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-xs text-muted-foreground font-mono">
-                      #{item.transmittal_item_number}
+                      {item.reference_number}
                     </span>
                     <p className="text-sm font-medium truncate">
                       {item.file_name}
@@ -1151,6 +1048,9 @@ export function SearchTransmittalItemsComponent({
                     disabled={deletingFile}
                     onConfirm={() => handleDeleteItem(item.id, item.file_key)}
                   />
+                )}
+                {canReturn && (
+                  <ItemAction item={item} onClick={refetchTransmittals} />
                 )}
               </div>
             </div>
@@ -1206,5 +1106,51 @@ function DeleteItemDialog({
         </div>
       )}
     </DrawerDialog>
+  );
+}
+
+export function ItemAction({
+  item,
+  onClick,
+}: {
+  item: TransmittalItems;
+  onClick: () => void;
+}) {
+  const { execute: itemAction, loading } = useItemAction();
+
+  const handleAction = async (action: "return" | "undo") => {
+    const status = action === "return" ? "returned" : "forwarded";
+
+    const { error } = await itemAction({
+      query: {
+        id: item.id,
+        action: action,
+      },
+      body: {
+        status: status,
+      },
+    });
+
+    if (!error) {
+      onClick();
+    } else {
+      toast.error(error.message);
+    }
+  };
+
+  const isReturned = item?.status === "returned";
+
+  return (
+    <>
+      {isReturned ? (
+        <Button onClick={() => handleAction("undo")} disabled={loading}>
+          Undo
+        </Button>
+      ) : (
+        <Button onClick={() => handleAction("return")} disabled={loading}>
+          Return
+        </Button>
+      )}
+    </>
   );
 }
