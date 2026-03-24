@@ -284,7 +284,8 @@ export type TransmittalWithItems = {
 export type TransmittalItems = {
   id: number;
   transmittal_id: number;
-  transmittal_item_number: number;
+  transmittal_item_number: string;
+  reference_number: string;
   status: string;
   return_date: string;
   file_name: string;
@@ -295,6 +296,24 @@ export type TransmittalItems = {
   uploaded_by: string;
   uploaded_at: string;
 };
+
+export type TransmittalItemAction = {
+  id: number;
+  transmittal_id: number;
+  transmittal_item_number: string;
+  status: string;
+  return_date: string;
+  action: string;
+  file_name: string;
+  file_key: string;
+  file_size: string;
+  file_type: string;
+  s3_bucket: string;
+  uploaded_by: string;
+  uploaded_at: string;
+};
+
+export type ItemActionUpdate = Partial<TransmittalItemAction>;
 
 export type CreateTransmittal = {
   transmittal_number: string;
@@ -338,4 +357,6 @@ export type TransmittalModalProps = {
   onOpenChange: (open: boolean) => void;
   onSubmit: () => void;
   transmittalData?: Transmittal;
+  itemLoading?: boolean;
+  items?: TransmittalItems[] | null;
 };
