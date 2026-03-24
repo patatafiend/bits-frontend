@@ -35,6 +35,6 @@ Write-Host "Uploading release..."
 scp -i $Key ".\release\standalone.tar.gz" "$RemoteUser@$HostName`:$RemoteBase/standalone.tar.gz"
 
 Write-Host "Extracting and reloading with PM2..."
-ssh -i $Key "$RemoteUser@$HostName" "cd $RemoteBase && rm -rf current && mkdir -p current && tar -xzf standalone.tar.gz -C current --strip-components=1 && pm2 startOrReload ecosystem.config.js --env production && pm2 save"
+ssh -i $Key "$RemoteUser@$HostName" "cd $RemoteBase && rm -rf current && mkdir -p current && tar -xzf standalone.tar.gz -C current --strip-components=1 && ~/.bun/bin/pm2 startOrReload ecosystem.config.js --env production && ~/.bun/bin/pm2 save"
 
 Write-Host "Done."
