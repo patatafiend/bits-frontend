@@ -37,13 +37,6 @@ import {
   useEndorseTransmittal,
 } from "@/hooks/use-transmittal";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { useGetPresignedUrl } from "@/hooks/use-media";
 import Loader from "@/components/ui/loader";
 import { StatusBadge } from "@/components/status-badge";
@@ -352,7 +345,6 @@ export function SearchTransmittalItemsComponent({
   onFilter: (params: { search?: string; status?: string }) => void;
 }) {
   const [query, setQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
   const [urlCache, setUrlCache] = useState<
     Map<string, { url: string; expires: number }>
   >(new Map());
@@ -368,24 +360,18 @@ export function SearchTransmittalItemsComponent({
     const timeout = setTimeout(() => {
       onFilter({
         search: query,
-        status: statusFilter,
       });
     }, 350);
     return () => clearTimeout(timeout);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query, statusFilter]);
+  }, [query]);
 
   function handleQueryChange(e: React.ChangeEvent<HTMLInputElement>) {
     setQuery(e.target.value);
   }
 
-  function handleStatusChange(value: string) {
-    setStatusFilter(value);
-  }
-
   function handleClear() {
     setQuery("");
-    setStatusFilter("all");
   }
 
   async function handleViewFile(
@@ -418,7 +404,7 @@ export function SearchTransmittalItemsComponent({
 
     setViewingFile({ url: data.url, name: fileName, type: fileType });
   }
-  const isDirty = query || statusFilter !== "all";
+  const isDirty = query;
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2">
@@ -429,17 +415,6 @@ export function SearchTransmittalItemsComponent({
           onChange={handleQueryChange}
           className="max-w-sm"
         />
-        <Select value={statusFilter} onValueChange={handleStatusChange}>
-          <SelectTrigger className="w-40">
-            <SelectValue placeholder="Status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All</SelectItem>
-            <SelectItem value="returned">Returned</SelectItem>
-            <SelectItem value="forwarded">Forwarded</SelectItem>
-          </SelectContent>
-        </Select>
-
         {isDirty && (
           <Button variant="ghost" size="sm" onClick={handleClear}>
             Clear

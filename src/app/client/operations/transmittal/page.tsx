@@ -28,7 +28,7 @@ export default function TransmittalListPage() {
         order_by: params.order_by ?? "recent",
         status: params.status === "all" ? undefined : params.status,
         assigned_operation_admin: user?.id,
-        exclude_statuses: ["draft"],
+        exclude_statuses: ["draft", "resubmitted", "partially_returned"],
       },
     });
   }
