@@ -44,12 +44,6 @@ export function FileViewerModal({ file, onClose }: FileViewerModalProps) {
             <DialogTitle className="text-lg truncate pr-4">
               {file.name}
             </DialogTitle>
-            <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={handleDownload}>
-                <Download className="w-4 h-4 mr-2" />
-                Download
-              </Button>
-            </div>
           </div>
         </DialogHeader>
 

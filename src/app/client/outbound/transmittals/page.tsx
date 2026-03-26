@@ -27,7 +27,7 @@ export default function TransmittalListPage() {
         order_by: params.order_by ?? "recent",
         status: params.status === "all" ? undefined : params.status,
         assigned_billing_officer: user?.id,
-        exclude_statuses: ["pending"],
+        exclude_statuses: ["pending", "resubmitted", "partially_returned"],
       },
     });
   }
