@@ -70,6 +70,7 @@ import {
 import { useGetPresignedUrl } from "@/hooks/use-media";
 import { useDeleteTransmittalItem } from "@/hooks/use-transmittal";
 import { useDeleteS3Object } from "@/hooks/use-media";
+import { useCurrentUser } from "@/components/providers/auth-provider";
 
 export function FileViewerModal({ file, onClose }: FileViewerModalProps) {
   const [isDownloading, setIsDownloading] = useState(false);
@@ -637,13 +638,14 @@ function buildChain(data: Transmittal[]): Transmittal[] {
 
 export function HistoryDialog({ id }: { id: number }) {
   const { data, refetch, loading } = useFetchHistory();
+  const user = useCurrentUser();
 
   async function handleRefresh() {
     refetch({ query: { transmittal_id: id } });
   }
 
   useEffect(() => {
-    if (!id) {
+    if (!id && user?.client.id) {
       handleRefresh();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

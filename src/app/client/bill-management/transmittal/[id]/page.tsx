@@ -67,19 +67,20 @@ export default function TransmittalDetailPage() {
   }
 
   useEffect(() => {
-    if (!transmittalId && user?.client.id) {
-      return;
+    console.log("this runned.")
+    if (transmittalId && user?.client.id) {
+      refetchUsers({
+        query: { client_id: user?.client.id, role_id: OPERATIONS_ADMIN },
+      });
+      refetchTransmittal({
+        params: `${transmittalId}`,
+        query: { include_items: true },
+      });
+      
     }
-    refetchTransmittal({
-      params: `${transmittalId}`,
-      query: { include_items: true },
-    });
-    refetchUsers({
-      query: { client_id: user?.client.id, role_id: OPERATIONS_ADMIN },
-    });
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [transmittalId]);
+  }, [user?.client.id]);
 
   useEffect(() => {
     setFilteredItems(transmittalData?.transmittal_items ?? []);
@@ -173,7 +174,7 @@ export default function TransmittalDetailPage() {
                     )}
                   </PDFDownloadLink> */}
                   <RejectionReasonDialog transmittalData={transmittalData} />
-                  {hasHistory && (<HistoryDialog id={transmittalData.id} />) }
+                  {hasHistory && <HistoryDialog id={transmittalData.id} />}
                   {isDraft && (
                     <EditModal
                       transmittalData={transmittalData}
