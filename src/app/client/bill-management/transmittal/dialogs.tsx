@@ -354,6 +354,7 @@ export function SearchTransmittalComponent({
             <SelectItem value="forwarded">Forwarded</SelectItem>
             <SelectItem value="returned">Returned</SelectItem>
             <SelectItem value="partially_returned">Partially Returned</SelectItem>
+            <SelectItem value="resubmitted">Resubmitted</SelectItem>
           </SelectContent>
         </Select>
 

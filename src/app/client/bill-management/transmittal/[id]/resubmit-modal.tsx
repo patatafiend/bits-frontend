@@ -66,10 +66,9 @@ export function ResubmittModal({
   const { execute } = useResubmitTransmittal();
   const { execute: generateTMN } = useGenerateTMN();
   const { execute: addItemToTransmittal } = useAddItemToTransmittal();
-  const {
-    uploadFiles,
-    reset: resetUploads,
-  } = useMultiFileUpload({ concurrency: 3 });
+  const { uploadFiles, reset: resetUploads } = useMultiFileUpload({
+    concurrency: 3,
+  });
 
   // Map of item.id → replacement file
   const [replacements, setReplacements] = useState<
@@ -99,7 +98,7 @@ export function ResubmittModal({
   useEffect(() => {
     if (!transmittalData?.id) return;
     if (client_id) form.setValue("client_id", client_id);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [client_id, form]);
 
   function handleOpenChange(value: boolean) {
@@ -168,9 +167,14 @@ export function ResubmittModal({
           const urlObj = new URL(urls[index]);
           const s3Key = urlObj.pathname.substring(1);
 
+          const originalItem = (items as TransmittalItems[])?.find(
+            (item) => item.id === itemId,
+          );
+
           return {
             transmittal_id: newTransmittal.id,
             transmittal_item_number: null,
+            reference_number: originalItem?.reference_number,
             return_date: null,
             status: "resubmitted",
             file_name: r.file.name,
@@ -292,7 +296,7 @@ export function ResubmittModal({
                             }
                           >
                             <TableCell className="text-muted-foreground text-xs">
-                              {item.transmittal_item_number}
+                              {item.reference_number}
                             </TableCell>
                             <TableCell>
                               <div className="flex items-center gap-2">
