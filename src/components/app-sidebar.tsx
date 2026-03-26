@@ -14,7 +14,7 @@ import {
   SidebarFooter,
 } from "@/components/ui/sidebar";
 import { useState } from "react";
-import { ChevronRight, ReceiptText, UserPen } from "lucide-react";
+import { ChevronRight, ReceiptText, UserPen, Home } from "lucide-react";
 import { ComboBox } from "./combo-box";
 import Link from "next/link";
 import {
@@ -25,6 +25,7 @@ import {
 import { useCurrentUser } from "./providers/auth-provider";
 import { UserPayload } from "@/lib/types";
 import { NavUser } from "./nav-user";
+import { usePathname } from "next/navigation";
 
 type NavSubItem = {
   title: string;
@@ -149,6 +150,7 @@ export function AppSidebar() {
   const user = useCurrentUser();
   const isAdmin = user?.account_type === "admin_account";
   const [workspace, setWorkspace] = useState<"admin" | "billing">("billing");
+  const pathname = usePathname();
 
   const rawItems =
     workspace === "admin" ? clientData.adminMain : clientData.navMain;
@@ -169,15 +171,23 @@ export function AppSidebar() {
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            {isAdmin && (
-              <ComboBox
-                options={workspaceOptions}
-                value={workspace}
-                onValueChange={(value) =>
-                  setWorkspace(value as "admin" | "billing")
-                }
-              />
-            )}
+            <div className="flex flex-col gap-2">
+              {isAdmin && (
+                <ComboBox
+                  options={workspaceOptions}
+                  value={workspace}
+                  onValueChange={(value) =>
+                    setWorkspace(value as "admin" | "billing")
+                  }
+                />
+              )}
+              <SidebarMenuButton asChild isActive={pathname === "/client"}>
+                <Link href="/client">
+                  <Home className="w-4 h-4" />
+                  <span>Home</span>
+                </Link>
+              </SidebarMenuButton>
+            </div>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
