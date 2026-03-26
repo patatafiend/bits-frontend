@@ -9,6 +9,7 @@ import {
   PaginatedTransmittal,
   ItemActionUpdate,
   TransmittalItemAction,
+  TransmittalStats
 } from "@/lib/types";
 
 export function useCreateTransmittal() {
@@ -117,6 +118,7 @@ export function useEndorseTransmittal() {
 
 export function useFetchHistory() {
   return useServerFetch<Transmittal[]>(`/transmittals/resubmission-history`, {
+    fetchImmediately: false,
     method: "GET",
   });
 }
@@ -150,6 +152,7 @@ export function useReturnTransmittal() {
 
 export function useFetchItems() {
   return useServerFetch<TransmittalItems[]>(`/transmittals`, {
+    fetchImmediately: false,
     method: "GET",
   });
 }
@@ -167,4 +170,11 @@ export function useItemAction() {
       method: "POST",
     },
   );
+}
+
+export function useFetchTransmittalStats() {
+  return useServerFetch<TransmittalStats>(`/transmittals/stats`, {
+    fetchImmediately: false,
+    method: "GET",
+  });
 }
