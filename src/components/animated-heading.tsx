@@ -1,12 +1,8 @@
-"use client";
-
-import { useEffect, useRef } from "react";
-
-interface AnimatedHeadingProps {
+export type AnimatedHeadingProps = {
   children: string;
   className?: string;
   delay?: number;
-}
+};
 
 export function AnimatedHeading({
   children,
