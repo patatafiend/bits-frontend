@@ -360,3 +360,70 @@ export type TransmittalModalProps = {
   itemLoading?: boolean;
   items?: TransmittalItems[] | null;
 };
+
+export type TransmittalStats = {
+  total: number;
+  draft: number;
+  pending: number;
+  endorsed: number;
+  forwarded: number;
+  accepted: number;
+  sent: number;
+  rejected: number;
+  assigned_user: number;
+}
+
+export type BusinessUnit = {
+  id: number;
+  client_id: number;
+  name: string;
+  description?: string | null;
+  code?: string | null;
+  is_default: boolean;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+export type ClientDetail = {
+  id: number;
+  company_id: number;
+  system_type: string;
+  client_name: string;
+  client_email: string;
+  client_address: string;
+  client_phone: number | null;
+  client_tel?: string | null;
+  client_description?: string | null;
+  status: string;
+  is_blocked: boolean;
+  created_at: string;
+  updated_at: string;
+  business_units: BusinessUnit[];
+};
+
+export type CreateClient = {
+  company_id: number;
+  system_type: string;
+  client_name: string;
+  client_email: string;
+  client_address: string;
+  client_phone: number;
+  client_tel?: string | null;
+  client_description?: string | null;
+  status: string;
+};
+
+export type UpdateClient = Partial<CreateClient> & {
+  is_blocked?: boolean;
+};
+
+export type CreateBusinessUnit = {
+  name: string;
+  description?: string | null;
+  code?: string | null;
+};
+
+export type UpdateBusinessUnit = Partial<CreateBusinessUnit> & {
+  is_active?: boolean;
+};
