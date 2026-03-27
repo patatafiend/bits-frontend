@@ -8,11 +8,29 @@ import { Button } from "@/components/ui/button";
 import { useDropzone } from "react-dropzone";
 import { toast } from "sonner";
 
+const config = {
+  billing_statement: {
+    title: "Upload Billing Statement",
+    s3Location: "billing-statements",
+    accept: {
+      "image/*": [".png", ".jpg", ".jpeg"],
+      "application/pdf": [".pdf"],
+    },
+  },
+  proof_attachment: {
+    title: "Upload Proof",
+    s3Location: "transmittal-proofs",
+    accept: { "image/*": [".png", ".jpg", ".jpeg", ".webp"] },
+  },
+};
+
 export function UploadFile({
+  mode = "billing_statement",
   transmittalData,
   transmittalId,
   refetchTransmittal,
 }: UploadInvoiceFileProps) {
+  const { title, s3Location, accept } = config[mode];
   const { execute: addItemToTransmittal, loading: addingItem } =
     useAddItemToTransmittal();
 
@@ -32,15 +50,7 @@ export function UploadFile({
     onDrop: (acceptedFiles) => {
       addFiles(acceptedFiles);
     },
-    accept: {
-      "image/*": [".png", ".jpg", ".jpeg", ".gif", ".webp"],
-      "application/pdf": [".pdf"],
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": [
-        ".xlsx",
-      ],
-      "application/vnd.ms-excel": [".xls"],
-      "text/csv": [".csv"],
-    },
+    accept: accept,
     disabled: isAnyUploading || isAnyCompressing,
     multiple: true,
   });
@@ -49,30 +59,31 @@ export function UploadFile({
     if (files.length === 0 || !transmittalData) return;
 
     try {
-      const urls = await uploadAll("billing-statements");
+      const urls = await uploadAll(s3Location);
 
       if (!urls || urls.length === 0) {
         toast.error("Failed to upload files to S3. Please try again.");
         return;
       }
 
-      const items = urls.map((url, index) => {
-        const urlObj = new URL(url);
-        const s3Key = urlObj.pathname.substring(1);
-        const file = files[index].file;
+      const items = files
+        .filter((f) => f.url)
+        .map((f) => {
+          const s3Key = new URL(f.url!).pathname.substring(1);
 
-        return {
-          transmittal_id: transmittalData.id,
-          transmittal_item_number: null,
-          return_date: null,
-          status: "draft",
-          file_name: file.name,
-          file_key: s3Key,
-          file_size: file.size.toString(),
-          file_type: file.type,
-          s3_bucket: `${process.env.NEXT_PUBLIC_AWS_S3_BUCKET}`,
-        };
-      });
+          return {
+            transmittal_id: transmittalData.id,
+            transmittal_item_number: null,
+            return_date: null,
+            status: "draft",
+            category: mode,
+            file_name: f.file.name,
+            file_key: s3Key,
+            file_size: f.file.size.toString(),
+            file_type: f.file.type,
+            s3_bucket: `${process.env.NEXT_PUBLIC_AWS_S3_BUCKET}`,
+          };
+        });
 
       const { error: dbError } = await addItemToTransmittal({
         body: items,
@@ -105,7 +116,7 @@ export function UploadFile({
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Upload className="w-5 h-5" />
-          Upload Billing Statement
+          {title}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">

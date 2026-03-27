@@ -54,22 +54,6 @@ export default function useFileUpload() {
       setFile(selected);
     }
     if (compress && selected) {
-      // Compress image if larger than 5MB
-      // if (selected.size > 5 * 1024 * 1024) {
-      //   setCompressing(true);
-      //   compressImage(selected).then((compressed) => {
-      //     setCompressing(false);
-      //     console.log(
-      //       `Compressed image from ${(selected!.size / 1024 / 1024).toFixed(
-      //         2,
-      //       )} MB to ${(compressed.size / 1024 / 1024).toFixed(2)} MB`,
-      //     );
-      //     setFile(compressed);
-      //   });
-      // } else {
-      //   setFile(selected);
-      // }
-
       setProgress(0);
       setError(null);
       setFileUrl(null);

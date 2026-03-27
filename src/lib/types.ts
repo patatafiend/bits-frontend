@@ -334,7 +334,9 @@ export type AddTransmittalItemPayload = {
   s3_bucket: string;
 };
 
+type UploadMode = "billing_statement" | "proof_attachment"
 export type UploadInvoiceFileProps = {
+  mode?: UploadMode;
   transmittalData: TransmittalWithItems | null;
   transmittalId?: number;
   refetchTransmittal: ({
