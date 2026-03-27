@@ -143,6 +143,19 @@ const clientData: { navMain: NavItem[]; adminMain: NavItem[] } = {
         },
       ],
     },
+    {
+      title: "Client Management",
+      url: "/client/admin/client-management",
+      icon: ReceiptText,
+      isActive: true,
+      permission: "client:read",
+      items: [
+        {
+          title: "Clients",
+          url: "/client/admin/client-management/manage-client",
+        },
+      ],
+    },
   ],
 };
 
