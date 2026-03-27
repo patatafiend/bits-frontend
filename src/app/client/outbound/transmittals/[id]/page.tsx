@@ -18,6 +18,7 @@ import { StatusBadge } from "@/components/status-badge";
 import { formatDate } from "@/lib/utils";
 import { SearchTransmittalItemsComponent } from "@/app/client/operations/transmittal/[id]/dialogs";
 import { TransmittalItems } from "@/lib/types";
+import { UploadFile } from "@/app/client/bill-management/transmittal/[id]/upload-file";
 
 export default function TransmittalDetailPage() {
   const params = useParams();
@@ -30,7 +31,7 @@ export default function TransmittalDetailPage() {
   } = useFetchTransmittal();
   const { execute: updateStatus, loading: loadingUpdate } =
     useForwardTransmittal();
-    const [filteredItems, setFilteredItems] = useState<TransmittalItems[]>([]);
+  const [filteredItems, setFilteredItems] = useState<TransmittalItems[]>([]);
 
   function refetchTransmittals() {
     refetchTransmittal({
@@ -51,11 +52,11 @@ export default function TransmittalDetailPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [transmittalId]);
 
-    useEffect(() => {
+  useEffect(() => {
     setFilteredItems(transmittalData?.transmittal_items ?? []);
   }, [transmittalData]);
 
-    function handleFilter({
+  function handleFilter({
     search,
     status,
   }: {
@@ -148,7 +149,9 @@ export default function TransmittalDetailPage() {
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Transmittal Date</p>
+                  <p className="text-sm text-muted-foreground">
+                    Transmittal Date
+                  </p>
                   <p className="font-medium">
                     {formatDate(transmittalData.transmittal_date)}
                   </p>
@@ -198,6 +201,12 @@ export default function TransmittalDetailPage() {
             </CardContent>
           </Card>
         )}
+        <UploadFile
+          mode="proof_attachment"
+          transmittalData={transmittalData}
+          transmittalId={transmittalId ? Number(transmittalId) : undefined}
+          refetchTransmittal={refetchTransmittal}
+        />
       </div>
     </div>
   );

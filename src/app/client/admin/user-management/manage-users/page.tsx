@@ -16,14 +16,24 @@ import { useFetchUsers } from "@/hooks/use-user";
 import { Plus, RefreshCcw } from "lucide-react";
 import Link from "next/link";
 import { useEffect } from "react";
+import { useCurrentUser } from "@/components/providers/auth-provider";
 
 export default function ManageUsers() {
   const { data: usersData, error, loading, refetch } = useFetchUsers();
+  const user = useCurrentUser();
+
+  function refetchUsers() {
+    refetch({
+      query: { client_id: user?.client.id },
+    });
+  }
 
   useEffect(() => {
-    refetch();
+    if (user?.client.id) {
+      refetchUsers();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [user?.client.id]);
 
   return (
     <div>
@@ -32,7 +42,7 @@ export default function ManageUsers() {
           <div>
             <h1 className="text-xl font-bold flex items-center gap-2">
               Manage Users
-              <RefreshCcw onClick={() => refetch()} size={16} />
+              <RefreshCcw onClick={() => refetchUsers()} size={16} />
             </h1>
           </div>
           <div>
@@ -68,11 +78,13 @@ export default function ManageUsers() {
                     <TableRow key={user.id}>
                       <TableCell className="whitespace-nowrap">
                         <Avatar>
-                          <AvatarImage
-                            className="w-8 h-8"
-                            src={user.profile_url || ""}
-                            alt="User Avatar"
-                          />
+                          {user.profile_url && (
+                            <AvatarImage
+                              className="w-8 h-8"
+                              src={user.profile_url}
+                              alt="User Avatar"
+                            />
+                          )}
                           <AvatarFallback>
                             {user.username && (
                               <span>
