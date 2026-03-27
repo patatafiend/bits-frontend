@@ -8,8 +8,8 @@ export function useFetchUsers() {
   });
 }
 
-export function useFetchUser(userId: string) {
-  return useServerFetch<User>(`/user/${userId}`, {
+export function useFetchUser() {
+  return useServerFetch<User>(`/user/`, {
     fetchImmediately: true,
     method: "GET",
   });
