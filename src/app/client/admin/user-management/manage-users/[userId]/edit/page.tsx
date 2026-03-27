@@ -6,6 +6,7 @@ import { useParams } from "next/navigation";
 import { Suspense, useEffect } from "react";
 import { UserForm } from "../../forms";
 import { toast } from "sonner";
+import { useCurrentUser } from "@/components/providers/auth-provider";
 
 export default function Page() {
   return (
@@ -16,21 +17,26 @@ export default function Page() {
 }
 
 function EditUserPage() {
-  const params = useParams<{ userId: string }>();
-  const { refetch, data, loading } = useFetchUser(params.userId);
+  const params = useParams();
+  const userId = params.userId;
+  const { refetch, data, loading } = useFetchUser();
   const { loading: updatingUser, execute } = useUpdateUser();
+  const user = useCurrentUser();
 
   useEffect(() => {
-    if (params.userId) {
-      refetch({ params: `/${params.userId}` });
+    if (user?.client.id) {
+      refetch({
+        params: `/${userId}`,
+      });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [user?.client.id]);
 
   return (
     <div>
       {data && (
         <UserForm
+        data={data}
           loading={loading || updatingUser}
           mfa_enabled={data.mfa_enabled}
           defaulValues={{

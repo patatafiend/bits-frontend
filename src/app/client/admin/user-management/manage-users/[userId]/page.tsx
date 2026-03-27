@@ -17,18 +17,27 @@ import { DrawerDialog } from "@/components/drawer-dialog";
 import Link from "next/link";
 import { useEffect } from "react";
 import { toast } from "sonner";
+import { useCurrentUser } from "@/components/providers/auth-provider";
 
 export default function UserDetailsPage() {
-  const params = useParams<{ userId: string }>();
+  const params = useParams();
   const userId = params.userId;
-  const { data: userData, refetch: refetchUser } = useFetchUser(userId);
+  const { data: userData, refetch } = useFetchUser();
   const {
     execute: deactivateUser,
     loading: userLoading,
     error,
   } = useDeactivateUser();
+  const user = useCurrentUser();
   //   const signins = userData?.data?.signins || [];
   //   const devices = userData?.data?.devices || [];
+
+  function refetchUser() {
+    refetch({
+      params: `/${userId}`,
+      query: { id: userId },
+    });
+  }
 
   useEffect(() => {
     if (error) {
@@ -36,7 +45,11 @@ export default function UserDetailsPage() {
         description: error.message,
       });
     }
-  }, [error]);
+    if (userId) {
+      refetchUser();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [error, user?.client.id]);
 
   return (
     <div>
@@ -65,8 +78,8 @@ export default function UserDetailsPage() {
 }
 
 function UserProfile({ user, className }: { user: User; className?: string }) {
-  const getInitials = (firstName: string, lastName: string) => {
-    return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
+  const getInitials = (firstName?: string, lastName?: string) => {
+    return `${firstName?.charAt(0) ?? ""}${lastName?.charAt(0) ?? ""}`.toUpperCase();
   };
 
   return (
@@ -182,14 +195,14 @@ function DangerZone({
               <h3 className="font-medium text-destructive">Deactivate User</h3>
               {!user.is_blocked ? (
                 <p className="text-sm text-muted-foreground">
-                  This will disable the users account. They will not be
-                  able to sign in or access any resources until the account is
+                  This will disable the users account. They will not be able to
+                  sign in or access any resources until the account is
                   reactivated. This action can be reversed.
                 </p>
               ) : (
                 <p>
-                  This will reactivate the users account, allowing them to
-                  sign in and access resources again.
+                  This will reactivate the users account, allowing them to sign
+                  in and access resources again.
                 </p>
               )}
             </div>

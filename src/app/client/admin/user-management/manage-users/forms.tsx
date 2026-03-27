@@ -31,6 +31,7 @@ import { useForm, useWatch } from "react-hook-form";
 import { useRef } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useFetchRoles } from "@/hooks/use-role-permission";
+import { User } from "@/lib/types";
 
 const formSchema = z.object({
   username: z.string().min(2).max(100),
@@ -100,12 +101,14 @@ const buildDefaultValues = (
 });
 
 export function UserForm({
+  data,
   defaulValues,
   onSubmitSuccess,
   loading,
   isEdit,
   mfa_enabled,
 }: {
+  data: User;
   defaulValues?: Partial<z.infer<typeof formSchema>>;
   onSubmitSuccess?: (values: z.infer<typeof formSchema>) => void;
   loading?: boolean;
@@ -165,6 +168,7 @@ export function UserForm({
                     <SelectImageDialog
                       value={field.value}
                       onChange={field.onChange}
+                      userId={data.id}
                     />
                   </FormControl>
                   <FormMessage />
@@ -355,9 +359,11 @@ export function UserForm({
 function SelectImageDialog({
   onChange,
   value,
+  userId,
 }: {
   onChange: (url: string) => void;
   value: string;
+  userId: number;
 }) {
   const [open, setOpen] = useState(false);
   const {
@@ -370,15 +376,6 @@ function SelectImageDialog({
     compressing,
   } = useFileUpload();
 
-  // useEffect(() => {
-  //   const storedUrl = localStorage.getItem("uploadedImageUrl");
-  //   console.log("Stored URL:", storedUrl);
-  //   if (storedUrl) {
-  //     onChange(storedUrl);
-  //   }
-  //   // eslint-disable-next-line react-hooks/exhaustive-deps
-  // }, []);
-
   const onDrop = useCallback(
     (acceptedFiles: File[]) => {
       handleFileChange(acceptedFiles);
@@ -389,11 +386,19 @@ function SelectImageDialog({
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     multiple: false,
-    maxSize: 15 * 1024 * 1024, // 15 MB
+    maxSize: 15 * 1024 * 1024,
     accept: {
       "image/*": [".png", ".jpg", ".jpeg", ".gif"],
     },
   });
+
+  async function handleConfirm() {
+    const url = await uploadFileToS3(`profiles/${userId}`);
+    if (url) {
+      onChange(url);
+      setOpen(false);
+    }
+  }
 
   return (
     <div>
@@ -406,41 +411,42 @@ function SelectImageDialog({
           <Pencil className="h-6 w-6 text-white" />
         </AvatarFallback>
       </Avatar>
+
       <ControlledDialog
         title="Select Image"
         description=""
         open={open}
         setOpen={setOpen}
       >
-        <div>
-          <div className="w-full max-w-md border-2 border-dashed rounded-2xl">
+        <div className="space-y-4">
+          <div className="w-full max-w-md border-2 border-dashed rounded-2xl overflow-hidden">
             <div
               {...getRootProps()}
               className={`flex flex-col items-center justify-center p-8 cursor-pointer transition ${
-                !isDragActive ? "bg-muted" : "bg-background"
+                isDragActive ? "bg-background" : "bg-muted"
               }`}
             >
               <input {...getInputProps()} />
-              {isDragActive ? (
-                <p className="text-muted-foreground">Drop the files here...</p>
-              ) : (
-                <p className="text-muted-foreground">
-                  Drag & drop files here, or click to select
-                </p>
-              )}
+              <p className="text-muted-foreground text-sm">
+                {isDragActive
+                  ? "Drop the image here..."
+                  : "Drag & drop or click to select"}
+              </p>
+
+              {/* Preview: new file > existing value > browse button */}
               {file ? (
                 <Image
-                  className="mt-4 rounded-lg"
+                  className="mt-4 rounded-lg object-cover"
                   src={URL.createObjectURL(file)}
-                  alt="Uploaded Image"
+                  alt="Preview"
                   width={400}
                   height={400}
                 />
               ) : value ? (
                 <Image
-                  className="mt-4 rounded-lg"
+                  className="mt-4 rounded-lg object-cover"
                   src={value}
-                  alt="Uploaded Image"
+                  alt="Current profile"
                   width={400}
                   height={400}
                 />
@@ -451,26 +457,25 @@ function SelectImageDialog({
               )}
             </div>
           </div>
+
           {progress > 0 && <Progress value={progress} />}
-          {error && <p className="text-red-500 text-center mt-2">{error}</p>}
           {compressing && (
-            <p className="text-blue-500 text-center mt-2">
-              Compressing image, please wait...
+            <p className="text-blue-500 text-sm text-center">
+              Compressing image...
             </p>
           )}
+          {error && <p className="text-red-500 text-sm text-center">{error}</p>}
+
           <Button
-            disabled={uploading || !file || compressing}
-            onClick={() =>
-              uploadFileToS3("/public/profile").then((url) => {
-                if (url) {
-                  setOpen(false);
-                  onChange(url);
-                }
-              })
-            }
-            className="w-full mt-4"
+            className="w-full"
+            disabled={!file || uploading || compressing}
+            onClick={handleConfirm}
           >
-            Confirm
+            {uploading
+              ? "Uploading..."
+              : compressing
+                ? "Compressing..."
+                : "Confirm"}
           </Button>
         </div>
       </ControlledDialog>
