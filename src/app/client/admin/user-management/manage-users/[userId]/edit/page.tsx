@@ -36,7 +36,6 @@ function EditUserPage() {
     <div>
       {data && (
         <UserForm
-        data={data}
           loading={loading || updatingUser}
           mfa_enabled={data.mfa_enabled}
           defaulValues={{

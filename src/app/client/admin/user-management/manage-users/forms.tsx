@@ -13,6 +13,7 @@ import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import RoleComboBox from "@/components/role-combo-box";
+import ClientComboBox from "@/components/client-combobox";
 // import { MultiSelectRef, MultiSelect } from "@/components/ui/multi-select";
 import AccountTypeSelect from "@/components/account-type-select";
 //import { useCreateRole } from "@/hooks/use-role-permission";
@@ -31,7 +32,11 @@ import { useForm, useWatch } from "react-hook-form";
 import { useRef } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useFetchRoles } from "@/hooks/use-role-permission";
+import { useFetchBusinessUnits, useFetchClients } from "@/hooks/use-client";
 import { User } from "@/lib/types";
+import { useMemo } from "react";
+import { useCurrentUser } from "@/components/providers/auth-provider";
+import { MultiSelect } from "@/components/ui/multi-select";
 
 const formSchema = z.object({
   username: z.string().min(2).max(100),
@@ -69,9 +74,14 @@ const formSchema = z.object({
   profile_url: z.string().url(),
   warehouses: z.array(z.number()).optional(),
   role_id: z.number({ message: "Please select a role" }).min(1).optional(),
+  client_id: z.number({ message: "Please select a client" }).min(1).optional(),
+  business_unit_ids: z.array(z.string()).optional(),
   is_blocked: z.boolean(),
   allow_skip_mfa: z.boolean(),
 });
+
+const DEFAULT_AVATAR =
+  "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y";
 
 const BASE_FORM_DEFAULTS: Partial<z.infer<typeof formSchema>> = {
   username: "",
@@ -87,7 +97,18 @@ const BASE_FORM_DEFAULTS: Partial<z.infer<typeof formSchema>> = {
   warehouses: [],
   allow_skip_mfa: false,
   role_id: undefined,
+  client_id: undefined,
+  business_unit_ids: [],
   is_blocked: false,
+};
+
+const isValidUrl = (v?: string | null) => {
+  try {
+    new URL(v ?? "");
+    return true;
+  } catch {
+    return false;
+  }
 };
 
 const buildDefaultValues = (
@@ -95,50 +116,81 @@ const buildDefaultValues = (
 ): Partial<z.infer<typeof formSchema>> => ({
   ...BASE_FORM_DEFAULTS,
   ...overrides,
+  profile_url: isValidUrl(overrides?.profile_url)
+    ? overrides!.profile_url
+    : DEFAULT_AVATAR,
   warehouses: overrides?.warehouses ?? BASE_FORM_DEFAULTS.warehouses,
   role_id: overrides?.role_id ?? BASE_FORM_DEFAULTS.role_id,
+  client_id: overrides?.client_id ?? BASE_FORM_DEFAULTS.client_id,
+  business_unit_ids: overrides?.business_unit_ids ?? [],
   password: overrides?.password ?? BASE_FORM_DEFAULTS.password,
 });
 
 export function UserForm({
-  data,
   defaulValues,
   onSubmitSuccess,
   loading,
   isEdit,
   mfa_enabled,
 }: {
-  data: User;
   defaulValues?: Partial<z.infer<typeof formSchema>>;
   onSubmitSuccess?: (values: z.infer<typeof formSchema>) => void;
   loading?: boolean;
   isEdit?: boolean;
   mfa_enabled?: boolean;
 }) {
-  const { data: roles, loading: loadingRoles } = useFetchRoles();
-
-  // const multiSelectRef = useRef<MultiSelectRef>(null);
-  const defaultsSignatureRef = useRef<string | undefined>(undefined);
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: buildDefaultValues(defaulValues),
   });
 
+  const user = useCurrentUser();
+  const { data: roles, loading: loadingRoles } = useFetchRoles();
+  const {
+    data: clients,
+    loading: loadingClients,
+    refetch: refetchClients,
+  } = useFetchClients();
+  const {
+    data: businessUnits,
+    loading: loadingBusinessUnits,
+    refetch: refetchBusinessUnits,
+  } = useFetchBusinessUnits();
+
+  // const multiSelectRef = useRef<MultiSelectRef>(null);
+  const defaultsSignatureRef = useRef<string | undefined>(undefined);
+
   const accountType = useWatch({
     control: form.control,
     name: "account_type",
   });
+  const clientId = useWatch({ control: form.control, name: "client_id" });
 
   useEffect(() => {
     const nextValues = buildDefaultValues(defaulValues);
     const signature = JSON.stringify(nextValues);
-
     if (defaultsSignatureRef.current !== signature) {
       defaultsSignatureRef.current = signature;
       form.reset(nextValues);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [defaulValues]);
+
+  useEffect(() => {
+    if (user?.company?.id) {
+      refetchClients({ query: { company_id: user.company.id } });
+    }
+  }, [user?.company?.id]);
+
+  // Effect 2 — fetch BUs when client changes
+  useEffect(() => {
+    if (clients) {
+      refetchBusinessUnits({ params: `${clientId}/business_units` });
+      form.setValue("business_unit_ids", []);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clientId]);
+
   async function onSubmit(values: z.infer<typeof formSchema>) {
     if (onSubmitSuccess) {
       onSubmitSuccess(values);
@@ -168,7 +220,6 @@ export function UserForm({
                     <SelectImageDialog
                       value={field.value}
                       onChange={field.onChange}
-                      userId={data.id}
                     />
                   </FormControl>
                   <FormMessage />
@@ -319,28 +370,83 @@ export function UserForm({
                 )}
               />
               {accountType !== "company_account" && (
-                <Loader loading={loadingRoles}>
-                  <FormField
-                    control={form.control}
-                    name="role_id"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Role</FormLabel>
-                        <FormControl>
-                          <RoleComboBox
-                            roles={Array.isArray(roles) ? roles : null}
-                            allowEmpty={false}
-                            value={field?.value?.toString() || ""}
-                            onValueChange={(accType: string) => {
-                              field.onChange(Number(accType));
-                            }}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </Loader>
+                <>
+                  <Loader loading={loadingClients}>
+                    <FormField
+                      control={form.control}
+                      name="client_id"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Client</FormLabel>
+                          <FormControl>
+                            <ClientComboBox
+                              clientData={
+                                Array.isArray(clients) ? clients : null
+                              }
+                              value={field.value}
+                              onValueChange={field.onChange}
+                              allowNull={true}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </Loader>
+                  {clientId && (
+                    <Loader loading={loadingBusinessUnits}>
+                      <FormField
+                        control={form.control}
+                        name="business_unit_ids"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Business units</FormLabel>
+                            <FormControl>
+                              <MultiSelect
+                                modalPopover
+                                placeholder="Select business units"
+                                options={(businessUnits ?? [])
+                                  .filter((bu) => bu.is_active)
+                                  .map((bu) => ({
+                                    value: bu.id.toString(),
+                                    label: bu.code
+                                      ? `${bu.name} (${bu.code})`
+                                      : bu.name,
+                                  }))}
+                                onValueChange={field.onChange}
+                                value={field.value ?? []}
+                                defaultValue={field.value ?? []}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </Loader>
+                  )}
+                  <Loader loading={loadingRoles}>
+                    <FormField
+                      control={form.control}
+                      name="role_id"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Role</FormLabel>
+                          <FormControl>
+                            <RoleComboBox
+                              roles={Array.isArray(roles) ? roles : null}
+                              allowEmpty={false}
+                              value={field?.value?.toString() || ""}
+                              onValueChange={(accType: string) => {
+                                field.onChange(Number(accType));
+                              }}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </Loader>
+                </>
               )}
             </div>
 
@@ -359,11 +465,9 @@ export function UserForm({
 function SelectImageDialog({
   onChange,
   value,
-  userId,
 }: {
   onChange: (url: string) => void;
   value: string;
-  userId: number;
 }) {
   const [open, setOpen] = useState(false);
   const {
@@ -393,12 +497,17 @@ function SelectImageDialog({
   });
 
   async function handleConfirm() {
-    const url = await uploadFileToS3(`profiles/${userId}`);
+    const url = await uploadFileToS3(`profiles`);
     if (url) {
       onChange(url);
       setOpen(false);
     }
   }
+
+  const previewUrl = useMemo(
+    () => (file ? URL.createObjectURL(file) : null),
+    [file],
+  );
 
   return (
     <div>
@@ -406,7 +515,7 @@ function SelectImageDialog({
         onClick={() => setOpen(true)}
         className="h-20 w-20 mb-4 hover:cursor-pointer bg-primary"
       >
-        <AvatarImage src={value} />
+        <AvatarImage src={value?.startsWith("http") ? value : DEFAULT_AVATAR} />
         <AvatarFallback>
           <Pencil className="h-6 w-6 text-white" />
         </AvatarFallback>
@@ -434,10 +543,10 @@ function SelectImageDialog({
               </p>
 
               {/* Preview: new file > existing value > browse button */}
-              {file ? (
+              {previewUrl ? (
                 <Image
                   className="mt-4 rounded-lg object-cover"
-                  src={URL.createObjectURL(file)}
+                  src={previewUrl}
                   alt="Preview"
                   width={400}
                   height={400}

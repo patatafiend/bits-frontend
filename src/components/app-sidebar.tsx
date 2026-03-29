@@ -148,7 +148,7 @@ const clientData: { navMain: NavItem[]; adminMain: NavItem[] } = {
       url: "/client/admin/client-management",
       icon: ReceiptText,
       isActive: true,
-      permission: "client:read",
+      accountTypes: ["company_account"],
       items: [
         {
           title: "Clients",
@@ -161,7 +161,7 @@ const clientData: { navMain: NavItem[]; adminMain: NavItem[] } = {
 
 export function AppSidebar() {
   const user = useCurrentUser();
-  const isAdmin = user?.account_type === "admin_account";
+  const isAdmin = user?.account_type === "admin_account" || user?.account_type === "company_account";
   const [workspace, setWorkspace] = useState<"admin" | "billing">("billing");
   const pathname = usePathname();
 

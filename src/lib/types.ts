@@ -60,6 +60,8 @@ export type CreateUser = {
   phone_number?: string;
   password?: string;
   role_id?: number;
+  client_id?: number;
+  business_unit_id?: [];
 };
 
 export type Option = {
@@ -334,7 +336,7 @@ export type AddTransmittalItemPayload = {
   s3_bucket: string;
 };
 
-type UploadMode = "billing_statement" | "proof_attachment"
+type UploadMode = "billing_statement" | "proof_attachment";
 export type UploadInvoiceFileProps = {
   mode?: UploadMode;
   transmittalData: TransmittalWithItems | null;
@@ -373,7 +375,7 @@ export type TransmittalStats = {
   sent: number;
   rejected: number;
   assigned_user: number;
-}
+};
 
 export type BusinessUnit = {
   id: number;
@@ -394,7 +396,7 @@ export type ClientDetail = {
   client_name: string;
   client_email: string;
   client_address: string;
-  client_phone: number | null;
+  client_phone: string | null;
   client_tel?: string | null;
   client_description?: string | null;
   status: string;
@@ -406,11 +408,11 @@ export type ClientDetail = {
 
 export type CreateClient = {
   company_id: number;
-  system_type: string;
+  system_type?: string;
   client_name: string;
   client_email: string;
   client_address: string;
-  client_phone: number;
+  client_phone: string;
   client_tel?: string | null;
   client_description?: string | null;
   status: string;

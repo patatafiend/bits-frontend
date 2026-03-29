@@ -23,6 +23,7 @@ import {
   FieldSeparator,
   FieldSet,
 } from "@/components/ui/field";
+import { useCurrentUser } from "@/components/providers/auth-provider";
 
 export type ClientModalProps = {
   client_id?: number;
@@ -37,16 +38,21 @@ export function ClientModal({
   onOpenChange,
   onSubmit,
 }: ClientModalProps) {
-  const { execute , loading} = useCreateClient();
+  const { execute, loading } = useCreateClient();
+  const user = useCurrentUser();
 
   const formSchema = z.object({
     client_name: z.string().min(1, "Transmittal Number is required"),
-    client_email: z.string().optional(),
-    client_phone: z.number().min(1, "Phone number required!"),
+    client_email: z.string().email().optional(),
+    client_phone: z
+      .string()
+      .nullable()
+      .optional()
+      .refine(
+        (val) => !val || /^\d+$/.test(val),
+        "Phone must contain digits only",
+      ),
     client_address: z.string().min(5, "Address required!"),
-    company_id: z.number().min(1, "Company id required!"),
-    system_type: z.string().optional(),
-    status: z.string().min(1, ""),
   });
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -54,15 +60,16 @@ export function ClientModal({
   });
 
   async function handleSubmit(data: z.infer<typeof formSchema>) {
+    console.log("Submitting", data);
     const { error } = await execute({
       body: {
         client_name: data.client_name,
         client_email: data.client_email || "",
-        client_phone: data.client_phone,
-        client_address: data.client_address,
-        company_id: data.company_id,
-        system_type: data.system_type || "",
-        status: data.status,
+        client_phone: data.client_phone || "",
+        client_address: data.client_address || "",
+        company_id: user?.company.id || 0,
+        system_type: "",
+        status: "active",
       },
     });
     if (!error) {
@@ -146,7 +153,7 @@ export function ClientModal({
                     <Input
                       type="text"
                       placeholder=""
-                      {...form.register("client_name")}
+                      {...form.register("client_address")}
                     />
                   </div>
                 </FieldContent>
@@ -167,7 +174,9 @@ export function ClientModal({
               >
                 Cancel
               </Button>
-              <Button type="submit" loading={loading}>Save Client</Button>
+              <Button type="submit" loading={loading}>
+                Save Client
+              </Button>
             </div>
           </FieldSet>
         </form>
@@ -182,12 +191,19 @@ export function ClientUpdateModal({
   onSubmit,
   clientData,
 }: ClientModalProps) {
-  const { execute , loading} = useCreateClient();
+  const { execute, loading } = useCreateClient();
 
   const formSchema = z.object({
     client_name: z.string().min(1, "Transmittal Number is required"),
     client_email: z.string().optional(),
-    client_phone: z.number().min(1, "Phone number required!"),
+    client_phone: z
+      .string()
+      .nullable()
+      .optional()
+      .refine(
+        (val) => !val || /^\d+$/.test(val),
+        "Phone must contain digits only",
+      ),
     client_address: z.string().min(5, "Address required!"),
     company_id: z.number().min(1, "Company id required!"),
     system_type: z.string().optional(),
@@ -199,7 +215,7 @@ export function ClientUpdateModal({
     defaultValues: {
       client_name: clientData?.client_name,
       client_email: clientData?.client_email,
-      client_phone: clientData?.client_phone || 0,
+      client_phone: clientData?.client_phone || undefined,
       client_address: clientData?.client_address,
       company_id: clientData?.company_id,
       system_type: "",
@@ -212,7 +228,7 @@ export function ClientUpdateModal({
       body: {
         client_name: data?.client_name,
         client_email: data?.client_email || "",
-        client_phone: data.client_phone,
+        client_phone: data.client_phone || "",
         client_address: data?.client_address,
         company_id: data.company_id,
         system_type: data.system_type || "",
@@ -300,7 +316,7 @@ export function ClientUpdateModal({
                     <Input
                       type="text"
                       placeholder="INV-2024-001"
-                      {...form.register("client_name")}
+                      {...form.register("client_address")}
                     />
                   </div>
                 </FieldContent>
@@ -321,7 +337,9 @@ export function ClientUpdateModal({
               >
                 Cancel
               </Button>
-              <Button type="submit" loading={loading}>Save Client</Button>
+              <Button type="submit" loading={loading}>
+                Save Client
+              </Button>
             </div>
           </FieldSet>
         </form>

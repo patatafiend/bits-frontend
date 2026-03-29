@@ -158,7 +158,7 @@ export function ClientList({
                     <StatusBadge status={client.status} />
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <Link href={`/clients/${client.id}`}>
+                    <Link href={`manage-client/${client.id}`}>
                       <Button variant="outline" size="sm">
                         View
                       </Button>
