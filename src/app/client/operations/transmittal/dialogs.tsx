@@ -32,6 +32,8 @@ import {
   PaginationNext,
 } from "@/components/ui/pagination";
 import { StatusBadge } from "@/components/status-badge";
+import BusinessUnitComboBox from "@/components/business-units";
+import { useFetchBusinessUnits } from "@/hooks/use-client";
 
 export function TransmittalList({
   data,
@@ -73,9 +75,7 @@ export function TransmittalList({
                 <StatusBadge status={transmittal.status} />
               </TableCell>
               <TableCell className="text-right">
-                <Link
-                  href={`/client/operations/transmittal/${transmittal.id}`}
-                >
+                <Link href={`/client/operations/transmittal/${transmittal.id}`}>
                   <Button variant="ghost" size="sm">
                     <Eye className="w-4 h-4 mr-2" />
                     View
@@ -130,28 +130,44 @@ export function SearchTransmittalComponent({
   data,
   onFilter,
   loading,
+  client_id,
 }: {
   data: PaginatedTransmittal;
   loading: boolean;
+  client_id?: number;
   onFilter: (params: {
     search?: string;
     status?: string;
+    business_unit_id?: number;
     limit?: number;
     skip?: number;
     order_by?: string;
   }) => void;
 }) {
+  const { data: businessUnitData, refetch: refetchBusinessUnits } =
+    useFetchBusinessUnits();
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [businessUnitFilter, setBusinessUnitFilter] = useState<number | null>(
+    null,
+  );
   const [orderBy, setOrderBy] = useState("recent");
   const [limit, setLimit] = useState(10);
   const [page, setPage] = useState(1);
+
+  useEffect(() => {
+    if (client_id) {
+      refetchBusinessUnits({ params: `${client_id}/business_units` });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [client_id]);
 
   useEffect(() => {
     const timeout = setTimeout(() => {
       onFilter({
         search: query,
         status: statusFilter,
+        business_unit_id: businessUnitFilter ?? undefined,
         limit: limit,
         skip: (page - 1) * limit,
         order_by: orderBy,
@@ -159,7 +175,7 @@ export function SearchTransmittalComponent({
     }, 350);
     return () => clearTimeout(timeout);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query, statusFilter, page, orderBy, limit]);
+  }, [query, statusFilter, businessUnitFilter, page, orderBy, limit]);
 
   function handleQueryChange(e: React.ChangeEvent<HTMLInputElement>) {
     setQuery(e.target.value);
@@ -181,16 +197,26 @@ export function SearchTransmittalComponent({
     setPage(1);
   }
 
+  function handleBusinessUnitChange(value: number | null) {
+    setBusinessUnitFilter(value);
+    setPage(1);
+  }
+
   function handleClear() {
     setQuery("");
     setStatusFilter("all");
+    setBusinessUnitFilter(null);
     setOrderBy("recent");
     setLimit(10);
     setPage(1);
   }
 
   const isDirty =
-    query || statusFilter !== "all" || orderBy !== "recent" || limit !== 10;
+    query ||
+    statusFilter !== "all" ||
+    businessUnitFilter !== null ||
+    orderBy !== "recent" ||
+    limit !== 10;
 
   return (
     <div className="space-y-4">
@@ -213,6 +239,15 @@ export function SearchTransmittalComponent({
             <SelectItem value="forwarded">Forwarded</SelectItem>
           </SelectContent>
         </Select>
+
+        {/* <BusinessUnitComboBox
+          value={businessUnitFilter}
+          onValueChange={handleBusinessUnitChange}
+          businessUnitData={businessUnitData ?? null}
+          allowNull
+          placeholder="Business unit"
+          className="w-56"
+        /> */}
 
         <Select value={orderBy} onValueChange={handleOrderByChange}>
           <SelectTrigger className="w-40">
