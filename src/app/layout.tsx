@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { Toaster } from "sonner";
 import { AuthProvider } from "@/components/providers/auth-provider";
+import { GlobalFilterProvider } from "@/components/providers/global-filter-provider";
 import { ThemeProvider } from "next-themes";
 import { Plus_Jakarta_Sans, Geologica, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
@@ -43,7 +44,9 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <AuthProvider>{children}</AuthProvider>
+          <AuthProvider>
+            <GlobalFilterProvider>{children}</GlobalFilterProvider>
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>

@@ -33,7 +33,6 @@ import { useRef } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useFetchRoles } from "@/hooks/use-role-permission";
 import { useFetchBusinessUnits, useFetchClients } from "@/hooks/use-client";
-import { User } from "@/lib/types";
 import { useMemo } from "react";
 import { useCurrentUser } from "@/components/providers/auth-provider";
 import { MultiSelect } from "@/components/ui/multi-select";
@@ -180,9 +179,9 @@ export function UserForm({
     if (user?.company?.id) {
       refetchClients({ query: { company_id: user.company.id } });
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.company?.id]);
 
-  // Effect 2 — fetch BUs when client changes
   useEffect(() => {
     if (clients) {
       refetchBusinessUnits({ params: `${clientId}/business_units` });
