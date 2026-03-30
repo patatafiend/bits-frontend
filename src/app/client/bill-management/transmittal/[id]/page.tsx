@@ -121,7 +121,7 @@ export default function TransmittalDetailPage() {
     transmittalData?.resubmitted_as_id || transmittalData?.resubmitted_from_id;
 
   return (
-    <div className="container mx-auto py-8 max-w-4xl">
+    <div className="container mx-auto py-8">
       <Link href="/client/bill-management/transmittal">
         <Button variant="ghost" className="mb-4">
           <ArrowLeft className="w-4 h-4 mr-2" />

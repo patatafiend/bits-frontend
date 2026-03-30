@@ -430,8 +430,8 @@ export function EditModal({
       .email("Invalid email")
       .optional()
       .or(z.literal("")),
-    billing_receiver_name: z.string().min(1, "Billing receiver name required!"),
-    billing_receiver_company: z.string().min(1, "Billing company required!"),
+    billing_receiver_name: z.string().optional(),
+    billing_receiver_company: z.string().optional(),
   });
   const form = useForm({
     resolver: zodResolver(formSchema),

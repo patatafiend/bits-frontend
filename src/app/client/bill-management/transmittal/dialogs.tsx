@@ -52,6 +52,8 @@ import {
   PaginationNext,
 } from "@/components/ui/pagination";
 import { StatusBadge } from "@/components/status-badge";
+import BusinessUnitComboBox from "@/components/business-units";
+import { useFetchBusinessUnits } from "@/hooks/use-client";
 
 export function TransmittalList({
   data,
@@ -154,11 +156,14 @@ export function TransmittalModal({
 }: TransmittalModalProps) {
   const { execute } = useCreateTransmittal();
   const { execute: generateTMN } = useGenerateTMN();
+  const { data: businessUnitData, refetch: refetchBusinessUnits } =
+    useFetchBusinessUnits();
 
   const formSchema = z.object({
     transmittal_number: z.string().min(1, "Transmittal Number is required"),
     resubmitted_from_id: z.number().optional(),
-    client_id: z.number().min(1, "client id required"),
+    client_id: z.number().min(1, "Client ID is required"),
+    business_unit_id: z.number().min(1, "Business Unit is required"),
     status: z.string().optional(),
   });
 
@@ -168,15 +173,20 @@ export function TransmittalModal({
       transmittal_number: "",
       resubmitted_from_id: undefined,
       client_id: client_id,
+      business_unit_id: undefined,
       status: "Draft",
     },
   });
 
+  // Fetch business units only when the modal is open for the active client.
   useEffect(() => {
-    if (client_id) {
+    if (open && client_id) {
       form.setValue("client_id", client_id);
+      form.setValue("business_unit_id", undefined as unknown as number);
+      refetchBusinessUnits({ params: `${client_id}/business_units` });
     }
-  }, [client_id, form]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [client_id, open]);
 
   async function handleSubmit(data: z.infer<typeof formSchema>) {
     const { error } = await execute({
@@ -184,6 +194,7 @@ export function TransmittalModal({
         transmittal_number: data.transmittal_number,
         status: "Draft",
         client_id: data.client_id,
+        business_unit_id: data.business_unit_id,
         resubmitted_from_id: data.resubmitted_from_id ?? null,
       },
     });
@@ -210,7 +221,6 @@ export function TransmittalModal({
                 <FieldLabel>Transmittal Number</FieldLabel>
                 <FieldContent>
                   <div className="flex gap-2">
-                    {" "}
                     <Input
                       type="text"
                       placeholder="INV-2024-001"
@@ -244,6 +254,27 @@ export function TransmittalModal({
                   </FieldError>
                 )}
               </Field>
+
+              <Field>
+                <FieldLabel>Business Unit</FieldLabel>
+                <FieldContent>
+                  <BusinessUnitComboBox
+                    value={form.watch("business_unit_id") ?? null}
+                    onValueChange={(val) =>
+                      form.setValue("business_unit_id", val as number, {
+                        shouldValidate: true,
+                      })
+                    }
+                    businessUnitData={businessUnitData ?? null}
+                    placeholder="Select business unit..."
+                  />
+                </FieldContent>
+                {form.formState.errors.business_unit_id && (
+                  <FieldError>
+                    {form.formState.errors.business_unit_id.message}
+                  </FieldError>
+                )}
+              </Field>
             </FieldGroup>
             <FieldSeparator />
 
@@ -268,28 +299,44 @@ export function SearchTransmittalComponent({
   data,
   onFilter,
   loading,
+  client_id,
 }: {
   data: PaginatedTransmittal;
   loading: boolean;
+  client_id?: number;
   onFilter: (params: {
     search?: string;
     status?: string;
+    business_unit_id?: number;
     limit?: number;
     skip?: number;
     order_by?: string;
   }) => void;
 }) {
+  const { data: businessUnitData, refetch: refetchBusinessUnits } =
+    useFetchBusinessUnits();
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [businessUnitFilter, setBusinessUnitFilter] = useState<number | null>(
+    null,
+  );
   const [orderBy, setOrderBy] = useState("recent");
   const [limit, setLimit] = useState(10);
   const [page, setPage] = useState(1);
+
+  useEffect(() => {
+    if (client_id) {
+      refetchBusinessUnits({ params: `${client_id}/business_units` });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [client_id]);
 
   useEffect(() => {
     const timeout = setTimeout(() => {
       onFilter({
         search: query,
         status: statusFilter,
+        business_unit_id: businessUnitFilter ?? undefined,
         limit: limit,
         skip: (page - 1) * limit,
         order_by: orderBy,
@@ -297,7 +344,7 @@ export function SearchTransmittalComponent({
     }, 350);
     return () => clearTimeout(timeout);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query, statusFilter, page, orderBy, limit]);
+  }, [query, statusFilter, businessUnitFilter, page, orderBy, limit]);
 
   function handleQueryChange(e: React.ChangeEvent<HTMLInputElement>) {
     setQuery(e.target.value);
@@ -319,16 +366,26 @@ export function SearchTransmittalComponent({
     setPage(1);
   }
 
+  function handleBusinessUnitChange(value: number | null) {
+    setBusinessUnitFilter(value);
+    setPage(1);
+  }
+
   function handleClear() {
     setQuery("");
     setStatusFilter("all");
+    setBusinessUnitFilter(null);
     setOrderBy("recent");
     setLimit(10);
     setPage(1);
   }
 
   const isDirty =
-    query || statusFilter !== "all" || orderBy !== "recent" || limit !== 10;
+    query ||
+    statusFilter !== "all" ||
+    businessUnitFilter !== null ||
+    orderBy !== "recent" ||
+    limit !== 10;
 
   return (
     <div className="space-y-4">
@@ -353,10 +410,22 @@ export function SearchTransmittalComponent({
             <SelectItem value="rejected">Rejected</SelectItem>
             <SelectItem value="forwarded">Forwarded</SelectItem>
             <SelectItem value="returned">Returned</SelectItem>
-            <SelectItem value="partially_returned">Partially Returned</SelectItem>
+            <SelectItem value="partially_returned">
+              Partially Returned
+            </SelectItem>
             <SelectItem value="resubmitted">Resubmitted</SelectItem>
           </SelectContent>
         </Select>
+
+        <BusinessUnitComboBox
+          value={businessUnitFilter}
+          onValueChange={handleBusinessUnitChange}
+          businessUnitData={businessUnitData ?? null}
+          allowNull
+          nullLabel="All"
+          placeholder="Business unit"
+          className="w-56"
+        />
 
         <Select value={orderBy} onValueChange={handleOrderByChange}>
           <SelectTrigger className="w-40">

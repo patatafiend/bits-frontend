@@ -46,7 +46,6 @@ import {
 } from "lucide-react";
 import { TransmittalItems } from "@/lib/types";
 
-// Track replacement file per item
 type ReplacementFile = {
   file: File;
   uploaded: boolean;
@@ -70,7 +69,6 @@ export function ResubmittModal({
     concurrency: 3,
   });
 
-  // Map of item.id → replacement file
   const [replacements, setReplacements] = useState<
     Record<number, ReplacementFile>
   >({});
@@ -81,6 +79,7 @@ export function ResubmittModal({
     resubmitted_as_id: z.number().optional(),
     resubmitted_from_id: z.number().optional(),
     client_id: z.number().min(1, "client id required"),
+    business_unit_id: z.number().min(1, "Business Unit is required"),
     status: z.string().optional(),
   });
 
@@ -135,12 +134,12 @@ export function ResubmittModal({
       );
       return;
     }
-    // 1. Create the resubmitted transmittal
     const { data: newTransmittal, error } = await execute({
       body: {
         transmittal_number: data.transmittal_number,
         status: "Draft",
         client_id: data.client_id,
+        business_unit_id: data.business_unit_id,
         resubmitted_from_id: Number(transmittalData?.id) ?? null,
       },
     });
@@ -149,8 +148,6 @@ export function ResubmittModal({
       toast.error(`Error: ${error.message}`);
       return;
     }
-
-    // 2. Upload replacement files if any
     const replacementEntries = Object.entries(replacements);
     if (replacementEntries.length > 0 && newTransmittal?.id) {
       const filesToUpload = replacementEntries.map(([, r]) => r.file);
@@ -161,7 +158,6 @@ export function ResubmittModal({
           "Transmittal created but failed to upload replacement files.",
         );
       } else {
-        // Build items payload — map back to original items for metadata
         const itemPayload = replacementEntries.map(([itemIdStr, r], index) => {
           const itemId = Number(itemIdStr);
           const urlObj = new URL(urls[index]);
@@ -256,7 +252,6 @@ export function ResubmittModal({
 
             <FieldSeparator />
 
-            {/* Returned Items Section */}
             <div className="space-y-2">
               <h3 className="text-sm font-medium text-muted-foreground">
                 Returned Items
@@ -312,7 +307,6 @@ export function ResubmittModal({
                               </Badge>
                             </TableCell>
                             <TableCell>
-                              {/* Hidden file input */}
                               <Input
                                 type="file"
                                 className="hidden"
@@ -323,7 +317,6 @@ export function ResubmittModal({
                                 onChange={(e) => {
                                   const file = e.target.files?.[0];
                                   if (file) handleFileSelect(item.id, file);
-                                  // Reset input so same file can be re-selected
                                   e.target.value = "";
                                 }}
                               />

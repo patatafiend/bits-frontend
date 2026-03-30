@@ -7,15 +7,21 @@ import { FileText, Plus, RefreshCw } from "lucide-react";
 import { useFetchTransmittals } from "@/hooks/use-transmittal";
 import { SearchTransmittalComponent, TransmittalModal } from "./dialogs";
 import { useCurrentUser } from "@/components/providers/auth-provider";
+import { useGlobalFilters } from "@/components/providers/global-filter-provider";
 
 export default function TransmittalListPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const { data: transmittals, refetch, loading } = useFetchTransmittals();
   const user = useCurrentUser();
+  const { selectedClientId, selectedBusinessUnitId } = useGlobalFilters();
+  const isAdmin =
+    user?.account_type === "company_account" ||
+    user?.account_type === "admin_account";
 
   function refetchTransmittals(params: {
     search?: string;
     status?: string;
+    business_unit_id?: number;
     skip?: number;
     limit?: number;
     order_by?: string;
@@ -26,7 +32,12 @@ export default function TransmittalListPage() {
         skip: params.skip ?? 0,
         limit: params.limit ?? 10,
         search: params.search ?? "",
-        client_id: user?.client.id,
+        client_id: isAdmin
+          ? selectedClientId ?? user?.client.id
+          : user?.client.id,
+        business_unit_id: isAdmin
+          ? params.business_unit_id ?? selectedBusinessUnitId ?? undefined
+          : params.business_unit_id,
         order_by: params.order_by ?? "recent",
         status: params.status === "all" ? undefined : params.status,
       },
@@ -63,6 +74,9 @@ export default function TransmittalListPage() {
               data={transmittals ?? { items: [], total: 0 }}
               onFilter={refetchTransmittals}
               loading={loading}
+              client_id={
+                isAdmin ? selectedClientId ?? user?.client.id : user?.client.id
+              }
             />
           )}
         </CardContent>
