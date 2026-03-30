@@ -175,20 +175,23 @@ export function useMultiFileUpload(options?: Options) {
     }
   }
 
-  async function uploadAll(location: string) {
+  async function uploadAll(
+    location: string,
+  ): Promise<{ url: string; file: File }[]> {
     // Filter files that need uploading (not already uploaded, not currently processing)
     const filesToUpload = files.filter(
       (f) => !f.url && !f.uploading && !f.compressing,
     );
 
     if (filesToUpload.length === 0) {
-      // Return already uploaded URLs
-      const existingUrls = files.filter((f) => f.url).map((f) => f.url!);
-      return existingUrls;
+      // Map existing uploads to the same shape
+      return files
+        .filter((f) => f.url)
+        .map((f) => ({ url: f.url!, file: f.file }));
     }
 
     const queue = [...filesToUpload];
-    const results: string[] = [];
+    const results: { url: string; file: File }[] = [];
     const errors: string[] = [];
 
     async function worker() {
@@ -198,7 +201,7 @@ export function useMultiFileUpload(options?: Options) {
 
         try {
           const url = await uploadSingleFile(next.id, location);
-          if (url) results.push(url);
+          if (url) results.push({ url, file: next.file });
         } catch (err) {
           console.log(err);
           errors.push(next.file.name);
@@ -216,7 +219,8 @@ export function useMultiFileUpload(options?: Options) {
     const existingUrls = files
       .filter((f) => f.url && !filesToUpload.includes(f))
       .map((f) => f.url!);
-    const allUrls = [...existingUrls, ...results];
+
+    const allUrls = [...existingUrls, ...results.map((r) => r.url)];
 
     // Show summary toast
     if (errors.length === 0) {
@@ -236,7 +240,7 @@ export function useMultiFileUpload(options?: Options) {
       }
     });
 
-    return allUrls;
+    return results;
   }
 
   async function uploadFiles(rawFiles: File[], location: string) {

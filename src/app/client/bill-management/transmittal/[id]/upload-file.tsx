@@ -59,31 +59,28 @@ export function UploadFile({
     if (files.length === 0 || !transmittalData) return;
 
     try {
-      const urls = await uploadAll(s3Location);
+      const results = await uploadAll(s3Location);
 
-      if (!urls || urls.length === 0) {
+      if (!results || results.length === 0) {
         toast.error("Failed to upload files to S3. Please try again.");
         return;
       }
 
-      const items = files
-        .filter((f) => f.url)
-        .map((f) => {
-          const s3Key = new URL(f.url!).pathname.substring(1);
-
-          return {
-            transmittal_id: transmittalData.id,
-            transmittal_item_number: null,
-            return_date: null,
-            status: "draft",
-            category: mode,
-            file_name: f.file.name,
-            file_key: s3Key,
-            file_size: f.file.size.toString(),
-            file_type: f.file.type,
-            s3_bucket: `${process.env.NEXT_PUBLIC_AWS_S3_BUCKET}`,
-          };
-        });
+      const items = results.map(({ url, file }) => {
+        const s3Key = new URL(url).pathname.substring(1);
+        return {
+          transmittal_id: transmittalData.id,
+          transmittal_item_number: null,
+          return_date: null,
+          status: "draft",
+          category: mode,
+          file_name: file.name,
+          file_key: s3Key,
+          file_size: file.size.toString(),
+          file_type: file.type,
+          s3_bucket: `${process.env.NEXT_PUBLIC_AWS_S3_BUCKET}`,
+        };
+      });
 
       const { error: dbError } = await addItemToTransmittal({
         body: items,
@@ -102,7 +99,7 @@ export function UploadFile({
         query: { include_items: true },
       });
       reset();
-      toast.success(`Successfully uploaded ${urls.length} file(s)!`);
+      toast.success(`Successfully uploaded ${results.length} file(s)!`);
     } catch (err) {
       console.error("Unexpected error during upload:", err);
       toast.error(
