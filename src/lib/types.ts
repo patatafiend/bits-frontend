@@ -300,6 +300,7 @@ export type TransmittalItems = {
   s3_bucket: string;
   uploaded_by: string;
   uploaded_at: string;
+  category: string;
 };
 
 export type TransmittalItemAction = {

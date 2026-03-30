@@ -43,6 +43,7 @@ export default function ClientProvider() {
 
   const isAdmin =
     user?.account_type == "company_account" ||
+    user?.account_type == "super_admin_account" ||
     user?.account_type == "admin_account";
 
   return (

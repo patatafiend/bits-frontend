@@ -156,7 +156,11 @@ const clientData: { navMain: NavItem[]; adminMain: NavItem[] } = {
 
 export function AppSidebar() {
   const user = useCurrentUser();
-  const isAdmin = user?.account_type === "admin_account" || user?.account_type === "company_account";
+  const isAdmin =
+    user?.account_type === "admin_account" ||
+    user?.account_type === "company_account" ||
+    user?.account_type === "super_admin_account";
+    
   const [workspace, setWorkspace] = useState<"admin" | "billing">("billing");
   const pathname = usePathname();
 

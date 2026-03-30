@@ -4,7 +4,7 @@ import { useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, RefreshCw } from "lucide-react";
+import { ArrowLeft, ImageIcon, RefreshCw } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -26,6 +26,9 @@ import { Label } from "@/components/ui/label";
 import { formatDate } from "@/lib/utils";
 import { TransmittalItems } from "@/lib/types";
 import { SearchTransmittalItemsComponent } from "./dialogs";
+import Image from "next/image";
+import { useGetPresignedUrl } from "@/hooks/use-media";
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 // import { PDFDownloadLink } from "@react-pdf/renderer";
 // import { TransmittalPDF } from "./export-to-pdf";
 
@@ -67,7 +70,7 @@ export default function TransmittalDetailPage() {
   }
 
   useEffect(() => {
-    console.log("this runned.")
+    console.log("this runned.");
     if (transmittalId && user?.client.id) {
       refetchUsers({
         query: { client_id: user?.client.id, role_id: OPERATIONS_ADMIN },
@@ -76,7 +79,6 @@ export default function TransmittalDetailPage() {
         params: `${transmittalId}`,
         query: { include_items: true },
       });
-      
     }
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -315,6 +317,7 @@ export default function TransmittalDetailPage() {
               </div>
 
               <Separator />
+              <ProofImageViewer items={transmittalData.transmittal_items} />
 
               <div className="space-y-2">
                 <h3 className="text-sm font-medium">Uploaded Files</h3>
@@ -341,4 +344,74 @@ export default function TransmittalDetailPage() {
       </div>
     </div>
   );
+}
+
+function ProofImage({ item }: { item: TransmittalItems }) {
+  const { url, loading } = useSignedUrl(item.file_key);
+
+  if (loading)
+    return <div className="w-20 h-20 bg-muted animate-pulse rounded-lg" />;
+  if (!url) return null;
+
+  return (
+    <Dialog>
+      <DialogTrigger asChild>
+        <div className="relative w-20 h-20 cursor-pointer rounded-lg overflow-hidden border hover:opacity-80 transition">
+          <Image src={url} alt={item.file_name} fill className="object-cover" />
+        </div>
+      </DialogTrigger>
+      <DialogContent className="max-w-2xl">
+        <div className="relative w-full aspect-video">
+          <Image
+            src={url}
+            alt={item.file_name}
+            fill
+            className="object-contain"
+          />
+        </div>
+        <p className="text-sm text-muted-foreground text-center">
+          {item.file_name}
+        </p>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+export function ProofImageViewer({ items }: { items: TransmittalItems[] }) {
+  const proofs = items.filter((i) => i.category === "proof_attachment");
+
+  if (proofs.length === 0) return null;
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center gap-2">
+        <ImageIcon className="w-4 h-4" />
+        <h3 className="text-sm font-medium">Proof of Delivery</h3>
+      </div>
+      <div className="flex flex-wrap gap-3">
+        {proofs.map((item) => (
+          <ProofImage key={item.id} item={item} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export function useSignedUrl(fileKey: string | null) {
+  const [url, setUrl] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const { execute } = useGetPresignedUrl();
+
+  useEffect(() => {
+    if (!fileKey) return;
+    execute({ params: `/${fileKey}` })
+      .then(({ data }) => {
+        if (data?.url) setUrl(data.url);
+      })
+      .finally(() => setLoading(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fileKey]);
+
+  return { url, loading };
 }

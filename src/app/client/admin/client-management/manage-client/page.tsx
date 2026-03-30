@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Plus, RefreshCw } from "lucide-react";
-import { useFetchTransmittals } from "@/hooks/use-transmittal";
 import { ClientModal } from "./modals";
 import { useCurrentUser } from "@/components/providers/auth-provider";
 import { useFetchClients } from "@/hooks/use-client";

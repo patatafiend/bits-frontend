@@ -17,7 +17,15 @@ const variants: Record<string, { badge: string; dot: string }> = {
     badge: "bg-green-50 text-green-700 border-green-200",
     dot: "bg-green-500",
   },
+  active: {
+    badge: "bg-green-50 text-green-700 border-green-200",
+    dot: "bg-green-500",
+  },
   rejected: {
+    badge: "bg-red-50 text-red-700 border-red-200",
+    dot: "bg-red-500",
+  },
+  inactive: {
     badge: "bg-red-50 text-red-700 border-red-200",
     dot: "bg-red-500",
   },
