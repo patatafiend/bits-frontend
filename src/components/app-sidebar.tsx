@@ -75,11 +75,6 @@ const clientData: { navMain: NavItem[]; adminMain: NavItem[] } = {
           url: "/client/bill-management/transmittal",
           permission: "billing:read",
         },
-        // {
-        //   title: "Bill Statements",
-        //   url: "/client/bill-management/bill-statements",
-        //   permission: "receiver:read",
-        // },
       ],
     },
     {
