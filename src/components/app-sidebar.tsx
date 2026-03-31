@@ -138,19 +138,19 @@ const clientData: { navMain: NavItem[]; adminMain: NavItem[] } = {
         },
       ],
     },
-    {
-      title: "Client Management",
-      url: "/client/admin/client-management",
-      icon: ReceiptText,
-      isActive: true,
-      accountTypes: ["company_account"],
-      items: [
-        {
-          title: "Clients",
-          url: "/client/admin/client-management/manage-client",
-        },
-      ],
-    },
+    // {
+    //   title: "Client Management",
+    //   url: "/client/admin/client-management",
+    //   icon: ReceiptText,
+    //   isActive: true,
+    //   accountTypes: ["company_account"],
+    //   items: [
+    //     {
+    //       title: "Clients",
+    //       url: "/client/admin/client-management/manage-client",
+    //     },
+    //   ],
+    // },
   ],
 };
 

@@ -125,15 +125,32 @@ export default function HomePage() {
 }
 
 export function AdminDashboard() {
+  const { data, refetch } = useFetchTransmittalStats();
+  const user = useCurrentUser();
+
+  function refetchStats() {
+    refetch({
+      query: { client: user?.client },
+    });
+  }
+  useEffect(() => {
+    if (user) {
+      refetchStats();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   return (
     <DashboardShell
       title="Admin Dashboard"
       subtitle="Manage users and user roles"
       icon={<Shield className="w-5 h-5" />}
     >
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-2">
-        <StatCard title="Users" value="-" />
-        <StatCard title="Roles" value="-" />
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <StatCard title="Transmittals" value={data?.total} />
+        <StatCard title="Pending" value={data?.pending} />
+        <StatCard title="Endorsed" value={data?.endorsed} />
+        <StatCard title="Forwarded" value={data?.forwarded} />
+        <StatCard title="Sent" value={data?.sent} />
       </div>
       <div className="grid gap-4 lg:grid-cols-2">
         <ActionCard
@@ -152,12 +169,12 @@ export function AdminDashboard() {
 }
 
 export function BillingAdminDashboard() {
-    const { data, refetch } = useFetchTransmittalStats();
+  const { data, refetch } = useFetchTransmittalStats();
   const user = useCurrentUser();
 
   function refetchStats() {
     refetch({
-      query: { client: user?.client },
+      query: { client: user?.client.id },
     });
   }
   useEffect(() => {
@@ -194,7 +211,7 @@ export function BillingOfficerDashboard() {
 
   function refetchStats() {
     refetch({
-      query: { client: user?.client, assigned_billing_officer: user?.id },
+      query: { client: user?.client.id, assigned_billing_officer: user?.id },
     });
   }
   useEffect(() => {
@@ -228,7 +245,7 @@ export function OperationsDashboard() {
 
   function refetchStats() {
     refetch({
-      query: { client: user?.client, assigned_operation_admin: user?.id },
+      query: { client: user?.client.id, assigned_operation_admin: user?.id },
     });
   }
   useEffect(() => {
@@ -246,7 +263,7 @@ export function OperationsDashboard() {
     >
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-2">
         <StatCard title="Assigned" value={data?.pending} />
-        <StatCard title="In Progress" value={data?.endorsed} />
+        <StatCard title="Pending" value={data?.endorsed} />
       </div>
       <ActionCard
         title="Operations Transmittals"
