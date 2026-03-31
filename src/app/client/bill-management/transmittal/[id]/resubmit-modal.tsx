@@ -45,6 +45,8 @@ import {
   CheckCircle,
 } from "lucide-react";
 import { TransmittalItems } from "@/lib/types";
+import BusinessUnitComboBox from "@/components/business-units";
+import { useFetchBusinessUnits } from "@/hooks/use-client";
 
 type ReplacementFile = {
   file: File;
@@ -65,6 +67,8 @@ export function ResubmittModal({
   const { execute } = useResubmitTransmittal();
   const { execute: generateTMN } = useGenerateTMN();
   const { execute: addItemToTransmittal } = useAddItemToTransmittal();
+  const { data: businessUnitData, refetch: refetchBusinessUnits } =
+    useFetchBusinessUnits();
   const { uploadFiles, reset: resetUploads } = useMultiFileUpload({
     concurrency: 3,
   });
@@ -90,15 +94,22 @@ export function ResubmittModal({
       resubmitted_as_id: undefined,
       resubmitted_from_id: undefined,
       client_id: client_id,
-      status: "Draft",
+      business_unit_id: transmittalData?.business_unit_id,
+      status: "Resubmitted",
     },
   });
 
   useEffect(() => {
-    if (!transmittalData?.id) return;
-    if (client_id) form.setValue("client_id", client_id);
+    if (!open || !client_id) return;
+    form.setValue("client_id", client_id);
+    form.setValue(
+      "business_unit_id",
+      transmittalData?.business_unit_id as number,
+      { shouldValidate: true },
+    );
+    refetchBusinessUnits({ params: `${client_id}/business_units` });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [client_id, form]);
+  }, [client_id, open, transmittalData?.business_unit_id]);
 
   function handleOpenChange(value: boolean) {
     if (!value) {
@@ -164,7 +175,8 @@ export function ResubmittModal({
           const s3Key = urlObj.pathname.substring(1);
 
           const originalItem = (items as TransmittalItems[])?.find(
-            (item) => item.id === itemId,
+            (item) =>
+              item.id === itemId && item.category === "billing_statement",
           );
 
           return {
@@ -173,6 +185,7 @@ export function ResubmittModal({
             reference_number: originalItem?.reference_number,
             return_date: null,
             status: "resubmitted",
+            category: "billing_statement",
             file_name: r.file.name,
             file_key: s3Key,
             file_size: r.file.size.toString(),
@@ -202,7 +215,9 @@ export function ResubmittModal({
   }
 
   const returnedItems = (items as TransmittalItems[])?.filter(
-    (item) => item.status?.toLowerCase() === "returned",
+    (item) =>
+      item.status?.toLowerCase() === "returned" &&
+      item.category === "billing_statement",
   );
 
   return (
@@ -245,6 +260,27 @@ export function ResubmittModal({
                 {form.formState.errors.transmittal_number && (
                   <FieldError>
                     {form.formState.errors.transmittal_number.message}
+                  </FieldError>
+                )}
+              </Field>
+
+              <Field>
+                <FieldLabel>Business Unit</FieldLabel>
+                <FieldContent>
+                  <BusinessUnitComboBox
+                    value={form.watch("business_unit_id") ?? null}
+                    onValueChange={(val) =>
+                      form.setValue("business_unit_id", val as number, {
+                        shouldValidate: true,
+                      })
+                    }
+                    businessUnitData={businessUnitData ?? null}
+                    placeholder="Select business unit..."
+                  />
+                </FieldContent>
+                {form.formState.errors.business_unit_id && (
+                  <FieldError>
+                    {form.formState.errors.business_unit_id.message}
                   </FieldError>
                 )}
               </Field>
