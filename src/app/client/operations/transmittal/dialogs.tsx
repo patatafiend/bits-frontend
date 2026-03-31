@@ -240,14 +240,13 @@ export function SearchTransmittalComponent({
           </SelectContent>
         </Select>
 
-        {/* <BusinessUnitComboBox
+        <BusinessUnitComboBox
           value={businessUnitFilter}
           onValueChange={handleBusinessUnitChange}
           businessUnitData={businessUnitData ?? null}
-          allowNull
           placeholder="Business unit"
           className="w-56"
-        /> */}
+        />
 
         <Select value={orderBy} onValueChange={handleOrderByChange}>
           <SelectTrigger className="w-40">

@@ -2,12 +2,10 @@
 
 import { Button } from "@/components/ui/button";
 import {
-  FileText,
   CheckCircle,
   AlertCircle,
 } from "lucide-react";
-import { useState } from "react";
-import { toast } from "sonner";
+import { useState } from "react"
 import {
   Dialog,
   DialogContent,
@@ -15,89 +13,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Download } from "lucide-react";
-import { FileViewerModalProps, TransmittalWithItems } from "@/lib/types";
+import { TransmittalWithItems } from "@/lib/types";
 import { DrawerDialog } from "@/components/drawer-dialog";
-
-export function FileViewerModal({ file, onClose }: FileViewerModalProps) {
-  if (!file) return null;
-
-  const isImage = file.type.startsWith("image/");
-  const isPDF = file.type == "application/pdf";
-  const isSpreadsheet =
-    file.type.includes("spreadsheet") ||
-    file.type.includes("excels") ||
-    file.name.match(/\.(xlsx|xls|csv)$/i);
-
-  const handleDownload = () => {
-    const link = document.createElement("a");
-    link.href = file.url;
-    link.download = file.name;
-    link.click();
-  };
-
-  return (
-    <Dialog open={!!file} onOpenChange={onClose}>
-      <DialogContent className="max-w-5xl h-[85vh] flex flex-col">
-        <DialogHeader>
-          <div className="flex items-center justify-between pr-8">
-            <DialogTitle className="text-lg truncate pr-4">
-              {file.name}
-            </DialogTitle>
-          </div>
-        </DialogHeader>
-
-        <div className="flex-1 overflow-auto bg-muted/30 rounded-lg">
-          {isImage ? (
-            <div className="flex items-center justify-center h-full p-4">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={file.url}
-                alt={file.name}
-                className="max-w-full max-h-full object-contain"
-                onError={(e) => {
-                  toast.error("Image failed to load. URL may have expired.");
-                  e.currentTarget.src = "";
-                }}
-              />
-            </div>
-          ) : isPDF ? (
-            <iframe
-              src={file.url}
-              className="w-full h-full border-0"
-              title={file.name}
-            />
-          ) : isSpreadsheet ? (
-            <div className="flex flex-col items-center justify-center h-full p-8 text-center">
-              <FileText className="w-16 h-16 text-muted-foreground mb-4" />
-              <p className="text-lg font-medium mb-2">Spreadsheet Preview</p>
-              <p className="text-sm text-muted-foreground mb-4">
-                Download to view in Excel or Google Sheets
-              </p>
-              <Button onClick={handleDownload}>
-                <Download className="w-4 h-4 mr-2" />
-                Download Spreadsheet
-              </Button>
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center h-full p-8 text-center">
-              <FileText className="w-16 h-16 text-muted-foreground mb-4" />
-              <p className="text-lg font-medium mb-2">Preview not available</p>
-              <p className="text-sm text-muted-foreground mb-4">
-                This file type cannot be previewed in the browser
-              </p>
-              <Button onClick={handleDownload}>
-                <Download className="w-4 h-4 mr-2" />
-                Download File
-              </Button>
-            </div>
-          )}
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
 export function RejectionReasonDialog({
   transmittalData,
 }: {

@@ -966,6 +966,8 @@ export function SearchTransmittalItemsComponent({
     transmittalData.status === "returned" ||
     transmittalData.status === "rejected" ||
     transmittalData.status === "partially_returned";
+
+  const billingItems = data.filter((i) => i.category === "billing_statement" || !i.category);
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2">
@@ -996,13 +998,13 @@ export function SearchTransmittalItemsComponent({
 
       {loading ? (
         <Loader loading={loading} />
-      ) : data.length === 0 ? (
+      ) : billingItems.length === 0 ? (
         <p className="text-sm text-muted-foreground py-4 text-center">
           No transmittals match your search.
         </p>
       ) : (
         <div className="rounded-xl border bg-card overflow-hidden">
-          {data.map((item, index) => (
+          {billingItems.map((item, index) => (
             <div
               key={item.id}
               className={`group flex items-center justify-between px-4 py-3 transition-colors hover:bg-muted/50 ${

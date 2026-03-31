@@ -28,7 +28,12 @@ import { TransmittalItems } from "@/lib/types";
 import { SearchTransmittalItemsComponent } from "./dialogs";
 import Image from "next/image";
 import { useGetPresignedUrl } from "@/hooks/use-media";
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 // import { PDFDownloadLink } from "@react-pdf/renderer";
 // import { TransmittalPDF } from "./export-to-pdf";
 
@@ -361,6 +366,7 @@ function ProofImage({ item }: { item: TransmittalItems }) {
         </div>
       </DialogTrigger>
       <DialogContent className="max-w-2xl">
+        <DialogTitle className="sr-only">Proof image preview</DialogTitle>
         <div className="relative w-full aspect-video">
           <Image
             src={url}
@@ -386,7 +392,7 @@ export function ProofImageViewer({ items }: { items: TransmittalItems[] }) {
     <div className="space-y-3">
       <div className="flex items-center gap-2">
         <ImageIcon className="w-4 h-4" />
-        <h3 className="text-sm font-medium">Proof of Delivery</h3>
+        <h3 className="text-sm font-medium">Proof Image</h3>
       </div>
       <div className="flex flex-wrap gap-3">
         {proofs.map((item) => (
@@ -410,7 +416,7 @@ export function useSignedUrl(fileKey: string | null) {
         if (data?.url) setUrl(data.url);
       })
       .finally(() => setLoading(false));
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fileKey]);
 
   return { url, loading };

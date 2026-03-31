@@ -40,6 +40,7 @@ function EditUserPage() {
           mfa_enabled={data.mfa_enabled}
           defaulValues={{
             ...data,
+            client_id: data.client_id,
             account_type:
               data.account_type === "company_account" ||
               data.account_type === "admin_account" ||

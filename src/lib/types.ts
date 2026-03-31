@@ -47,6 +47,7 @@ export type User = {
   role?: string | undefined;
   role_id?: number | undefined;
   mfa_enabled: boolean;
+  client_id: number;
   client: Client;
   business_unit_id?: [];
 };

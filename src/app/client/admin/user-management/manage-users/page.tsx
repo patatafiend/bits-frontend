@@ -17,14 +17,16 @@ import { Plus, RefreshCcw } from "lucide-react";
 import Link from "next/link";
 import { useEffect } from "react";
 import { useCurrentUser } from "@/components/providers/auth-provider";
+import { useGlobalFilters } from "@/components/providers/global-filter-provider";
 
 export default function ManageUsers() {
   const { data: usersData, error, loading, refetch } = useFetchUsers();
   const user = useCurrentUser();
+  const { selectedClientId } = useGlobalFilters();
 
   function refetchUsers() {
     refetch({
-      query: { client_id: user?.client.id },
+      query: { client_id: selectedClientId },
     });
   }
 

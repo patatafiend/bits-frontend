@@ -16,7 +16,7 @@ import {
   TransmittalWithItems,
   User,
   Transmittal,
-  TransmittalItems
+  TransmittalItems,
 } from "@/lib/types";
 import { Edit } from "lucide-react";
 import z from "zod";
@@ -40,7 +40,7 @@ import { Input } from "@/components/ui/input";
 import { useGetPresignedUrl } from "@/hooks/use-media";
 import Loader from "@/components/ui/loader";
 import { StatusBadge } from "@/components/status-badge";
-
+import { useCurrentUser } from "@/components/providers/auth-provider";
 
 export function FileViewerModal({ file, onClose }: FileViewerModalProps) {
   if (!file) return null;
@@ -355,6 +355,7 @@ export function SearchTransmittalItemsComponent({
     name: string;
     type: string;
   } | null>(null);
+  const user = useCurrentUser();
 
   useEffect(() => {
     const timeout = setTimeout(() => {
@@ -405,6 +406,58 @@ export function SearchTransmittalItemsComponent({
     setViewingFile({ url: data.url, name: fileName, type: fileType });
   }
   const isDirty = query;
+  const proofItems = data.filter(
+    (item) => item.category === "proof_attachment",
+  );
+  const transmittalItems = data.filter(
+    (item) => item.category !== "proof_attachment",
+  );
+
+  function renderItemRows(items: TransmittalItems[]) {
+    return items.map((item, index) => (
+      <div
+        key={item.id}
+        className={`group flex items-center justify-between px-4 py-3 transition-colors hover:bg-muted/50 ${
+          index !== items.length - 1 ? "border-b" : ""
+        }`}
+      >
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-muted">
+            <FileText className="w-4 h-4 text-muted-foreground" />
+          </div>
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-xs text-muted-foreground font-mono">
+                {item.reference_number}
+              </span>
+              <p className="text-sm font-medium truncate">{item.file_name}</p>
+              {item.status && <StatusBadge status={item.status} />}
+            </div>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {(parseInt(item.file_size) / 1024 / 1024).toFixed(2)} MB ·
+              uploaded {new Date(item.uploaded_at).toLocaleDateString()}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-1 ml-4 opacity-0 group-hover:opacity-100 transition-opacity">
+          {user?.role == "operations admin" && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() =>
+                handleViewFile(item.file_key, item.file_name, item.file_type)
+              }
+              disabled={loadingUrl}
+            >
+              {loadingUrl ? "Loading..." : "View"}
+            </Button>
+          )}
+        </div>
+      </div>
+    ));
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2">
@@ -429,53 +482,24 @@ export function SearchTransmittalItemsComponent({
           No transmittals match your search.
         </p>
       ) : (
-        <div className="rounded-xl border bg-card overflow-hidden">
-          {data.map((item, index) => (
-            <div
-              key={item.id}
-              className={`group flex items-center justify-between px-4 py-3 transition-colors hover:bg-muted/50 ${
-                index !== data.length - 1 ? "border-b" : ""
-              }`}
-            >
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-muted">
-                  <FileText className="w-4 h-4 text-muted-foreground" />
-                </div>
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-xs text-muted-foreground font-mono">
-                      {item.reference_number}
-                    </span>
-                    <p className="text-sm font-medium truncate">
-                      {item.file_name}
-                    </p>
-                    {item.status && <StatusBadge status={item.status} />}
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    {(parseInt(item.file_size) / 1024 / 1024).toFixed(2)} MB ·
-                    uploaded {new Date(item.uploaded_at).toLocaleDateString()}
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-1 ml-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() =>
-                    handleViewFile(
-                      item.file_key,
-                      item.file_name,
-                      item.file_type,
-                    )
-                  }
-                  disabled={loadingUrl}
-                >
-                  {loadingUrl ? "Loading..." : "View"}
-                </Button>
+        <div className="space-y-4">
+          {proofItems.length > 0 && (
+            <div className="space-y-2">
+              <h3 className="text-sm font-medium">Proof Images</h3>
+              <div className="rounded-xl border bg-card overflow-hidden">
+                {renderItemRows(proofItems)}
               </div>
             </div>
-          ))}
+          )}
+
+          {transmittalItems.length > 0 && (
+            <div className="space-y-2">
+              <h3 className="text-sm font-medium">Transmittal Items</h3>
+              <div className="rounded-xl border bg-card overflow-hidden">
+                {renderItemRows(transmittalItems)}
+              </div>
+            </div>
+          )}
         </div>
       )}
       <FileViewerModal

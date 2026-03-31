@@ -4,7 +4,7 @@ import { useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, RefreshCw } from "lucide-react";
+import { ArrowLeft, ImageIcon, RefreshCw } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -19,6 +19,14 @@ import { formatDate } from "@/lib/utils";
 import { SearchTransmittalItemsComponent } from "@/app/client/operations/transmittal/[id]/dialogs";
 import { TransmittalItems } from "@/lib/types";
 import { UploadFile } from "@/app/client/bill-management/transmittal/[id]/upload-file";
+import Image from "next/image";
+import { useGetPresignedUrl } from "@/hooks/use-media";
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 export default function TransmittalDetailPage() {
   const params = useParams();
@@ -190,6 +198,8 @@ export default function TransmittalDetailPage() {
               </div>
 
               <Separator />
+              <ProofImageViewer items={transmittalData.transmittal_items} />
+
               <div className="space-y-2">
                 <h3 className="text-sm font-medium">Uploaded Files</h3>
                 <SearchTransmittalItemsComponent
@@ -201,13 +211,86 @@ export default function TransmittalDetailPage() {
             </CardContent>
           </Card>
         )}
-        <UploadFile
-          mode="proof_attachment"
-          transmittalData={transmittalData}
-          transmittalId={transmittalId ? Number(transmittalId) : undefined}
-          refetchTransmittal={refetchTransmittal}
-        />
+        {transmittalData?.status == "endorsed" && (
+          <UploadFile
+            mode="proof_attachment"
+            transmittalData={transmittalData}
+            transmittalId={transmittalId ? Number(transmittalId) : undefined}
+            refetchTransmittal={refetchTransmittal}
+          />
+        )}
       </div>
     </div>
   );
+}
+
+function ProofImage({ item }: { item: TransmittalItems }) {
+  const { url, loading } = useSignedUrl(item.file_key);
+
+  if (loading)
+    return <div className="w-20 h-20 bg-muted animate-pulse rounded-lg" />;
+  if (!url) return null;
+
+  return (
+    <Dialog>
+      <DialogTrigger asChild>
+        <div className="relative w-20 h-20 cursor-pointer rounded-lg overflow-hidden border hover:opacity-80 transition">
+          <Image src={url} alt={item.file_name} fill className="object-cover" />
+        </div>
+      </DialogTrigger>
+      <DialogContent className="max-w-2xl">
+        <DialogTitle className="sr-only">Proof image preview</DialogTitle>
+        <div className="relative w-full aspect-video">
+          <Image
+            src={url}
+            alt={item.file_name}
+            fill
+            className="object-contain"
+          />
+        </div>
+        <p className="text-sm text-muted-foreground text-center">
+          {item.file_name}
+        </p>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+export function ProofImageViewer({ items }: { items: TransmittalItems[] }) {
+  const proofs = items.filter((i) => i.category === "proof_attachment");
+
+  if (proofs.length === 0) return null;
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center gap-2">
+        <ImageIcon className="w-4 h-4" />
+        <h3 className="text-sm font-medium">Proof Image</h3>
+      </div>
+      <div className="flex flex-wrap gap-3">
+        {proofs.map((item) => (
+          <ProofImage key={item.id} item={item} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export function useSignedUrl(fileKey: string | null) {
+  const [url, setUrl] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const { execute } = useGetPresignedUrl();
+
+  useEffect(() => {
+    if (!fileKey) return;
+    execute({ params: `/${fileKey}` })
+      .then(({ data }) => {
+        if (data?.url) setUrl(data.url);
+      })
+      .finally(() => setLoading(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fileKey]);
+
+  return { url, loading };
 }

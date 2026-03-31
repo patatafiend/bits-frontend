@@ -6,14 +6,17 @@ import { FileText, RefreshCw } from "lucide-react";
 import { useFetchTransmittals } from "@/hooks/use-transmittal";
 import { SearchTransmittalComponent } from "./dialogs";
 import { useCurrentUser } from "@/components/providers/auth-provider";
+import { useGlobalFilters } from "@/components/providers/global-filter-provider";
 
 export default function TransmittalListPage() {
   const { data: transmittals, refetch, loading } = useFetchTransmittals();
+  const { selectedBusinessUnitId } = useGlobalFilters();
   const user = useCurrentUser();
 
   function refetchTransmittals(params: {
     search?: string;
     status?: string;
+    business_unit_id?: number;
     skip?: number;
     limit?: number;
     order_by?: string;
@@ -27,6 +30,7 @@ export default function TransmittalListPage() {
         client_id: user?.client.id,
         order_by: params.order_by ?? "recent",
         status: params.status === "all" ? undefined : params.status,
+        business_unit_id: selectedBusinessUnitId,
         assigned_operation_admin: user?.id,
         exclude_statuses: ["draft", "resubmitted", "partially_returned"],
       },
@@ -59,6 +63,7 @@ export default function TransmittalListPage() {
               data={transmittals ?? { items: [], total: 0 }}
               onFilter={refetchTransmittals}
               loading={loading}
+              client_id={user.client.id ?? undefined}
             />
           )}
         </CardContent>
