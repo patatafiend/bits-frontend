@@ -148,7 +148,7 @@ export function ResubmittModal({
     const { data: newTransmittal, error } = await execute({
       body: {
         transmittal_number: data.transmittal_number,
-        status: "Draft",
+        status: "Resubmitted",
         client_id: data.client_id,
         business_unit_id: data.business_unit_id,
         resubmitted_from_id: Number(transmittalData?.id) ?? null,
