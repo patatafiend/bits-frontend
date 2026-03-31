@@ -130,7 +130,6 @@ export function AdminDashboard() {
 
   function refetchStats() {
     refetch({
-      query: { client: user?.client },
     });
   }
   useEffect(() => {
@@ -174,7 +173,7 @@ export function BillingAdminDashboard() {
 
   function refetchStats() {
     refetch({
-      query: { client: user?.client.id },
+      query: { client_id: user?.client.id },
     });
   }
   useEffect(() => {
@@ -211,7 +210,7 @@ export function BillingOfficerDashboard() {
 
   function refetchStats() {
     refetch({
-      query: { client: user?.client.id, assigned_billing_officer: user?.id },
+      query: { client_id: user?.client.id, assigned_billing_officer: user?.id },
     });
   }
   useEffect(() => {
@@ -245,7 +244,7 @@ export function OperationsDashboard() {
 
   function refetchStats() {
     refetch({
-      query: { client: user?.client.id, assigned_operation_admin: user?.id },
+      query: { client_id: user?.client.id, assigned_operation_admin: user?.id },
     });
   }
   useEffect(() => {
@@ -263,7 +262,7 @@ export function OperationsDashboard() {
     >
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-2">
         <StatCard title="Assigned" value={data?.pending} />
-        <StatCard title="Pending" value={data?.endorsed} />
+        <StatCard title="Endorsed" value={data?.endorsed} />
       </div>
       <ActionCard
         title="Operations Transmittals"
