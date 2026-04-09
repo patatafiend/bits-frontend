@@ -1,9 +1,18 @@
 $ErrorActionPreference = "Stop"
 
-$HostName = "54.179.62.80"
+$HostName = "13.212.196.15"
 $RemoteUser = "ec2-user"
-$Key = "$env:USERPROFILE\.ssh\id_ed25519"
+$Key = $env:DEPLOY_SSH_KEY
 $RemoteBase = "/home/ec2-user/workspace/standalone-build"
+
+if (-not [string]::IsNullOrWhiteSpace($Key) -and !(Test-Path $Key)) {
+  throw "SSH key file not found: $Key. Set DEPLOY_SSH_KEY to a valid private key path."
+}
+
+$SshKeyArgs = @()
+if (-not [string]::IsNullOrWhiteSpace($Key)) {
+  $SshKeyArgs = @("-i", $Key)
+}
 
 Write-Host "Building app locally..."
 bun run build
@@ -29,12 +38,12 @@ Remove-Item -Force ".\release\standalone.tar.gz" -ErrorAction SilentlyContinue
 tar -czf ".\release\standalone.tar.gz" -C ".\release" "standalone"
 
 Write-Host "Ensuring remote folder exists..."
-ssh -i $Key "$RemoteUser@$HostName" "mkdir -p $RemoteBase"
+ssh @SshKeyArgs "$RemoteUser@$HostName" "mkdir -p $RemoteBase"
 
 Write-Host "Uploading release..."
-scp -i $Key ".\release\standalone.tar.gz" "$RemoteUser@$HostName`:$RemoteBase/standalone.tar.gz"
+scp @SshKeyArgs ".\release\standalone.tar.gz" "$RemoteUser@$HostName`:$RemoteBase/standalone.tar.gz"
 
 Write-Host "Extracting and reloading with PM2..."
-ssh -i $Key "$RemoteUser@$HostName" "cd $RemoteBase && rm -rf current && mkdir -p current && tar -xzf standalone.tar.gz -C current --strip-components=1 && ~/.bun/bin/pm2 startOrReload ecosystem.config.js --env production && ~/.bun/bin/pm2 save"
+ssh @SshKeyArgs "$RemoteUser@$HostName" "cd $RemoteBase && rm -rf current && mkdir -p current && tar -xzf standalone.tar.gz -C current --strip-components=1 && ~/.bun/bin/pm2 startOrReload ecosystem.config.js --env production && ~/.bun/bin/pm2 save"
 
 Write-Host "Done."
