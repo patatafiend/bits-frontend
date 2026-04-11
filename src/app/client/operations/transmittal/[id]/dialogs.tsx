@@ -31,11 +31,13 @@ import {
   FormControl,
   FormMessage,
 } from "@/components/ui/form";
+import BusinessUnitComboBox from "@/components/business-units";
 import UserComboBox from "@/components/user-combobox";
 import {
   useAssignOfficer,
   useEndorseTransmittal,
 } from "@/hooks/use-transmittal";
+import { useFetchBusinessUnits } from "@/hooks/use-client";
 import { Input } from "@/components/ui/input";
 import { useGetPresignedUrl } from "@/hooks/use-media";
 import Loader from "@/components/ui/loader";
@@ -248,22 +250,37 @@ export function EditModal({
   transmittalData,
   userData,
   onSubmit,
+  onBusinessUnitChange,
 }: {
   transmittalData: TransmittalWithItems;
   userData: User[] | null;
   onSubmit: () => void;
+  onBusinessUnitChange?: (value: number | null) => void;
 }) {
   const { execute, loading } = useAssignOfficer();
+  const { data: businessUnitData, refetch: refetchBusinessUnits } =
+    useFetchBusinessUnits();
   const formSchema = z.object({
     assigned_billing_officer: z.number().nullable().optional(),
+    business_unit_id: z.number().nullable().optional(),
   });
-  const form = useForm({
+  const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       assigned_billing_officer:
         transmittalData.assigned_billing_officer ?? undefined,
+      business_unit_id: transmittalData.business_unit_id ?? undefined,
     },
   });
+
+  useEffect(() => {
+    if (transmittalData.client_id) {
+      refetchBusinessUnits({
+        params: `${transmittalData.client_id}/business_units`,
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [transmittalData.client_id]);
 
   async function handleSubmit(
     data: z.infer<typeof formSchema>,
@@ -274,6 +291,7 @@ export function EditModal({
       body: {
         id: transmittalData.id,
         assigned_billing_officer: data.assigned_billing_officer || null,
+        business_unit_id: data.business_unit_id ?? undefined,
       },
     });
     if (error) {
@@ -305,6 +323,29 @@ export function EditModal({
             className="space-y-6"
           >
             <Form {...form}>
+              <FormField
+                control={form.control}
+                name="business_unit_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Business Unit</FormLabel>
+                    <FormControl>
+                      <BusinessUnitComboBox
+                        value={field.value ?? null}
+                        onValueChange={(value) => {
+                          field.onChange(value);
+                          onBusinessUnitChange?.(value);
+                        }}
+                        businessUnitData={businessUnitData ?? null}
+                        allowNull
+                        nullLabel="Unassigned"
+                        placeholder="Select business unit"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               <FormField
                 control={form.control}
                 name="assigned_billing_officer"

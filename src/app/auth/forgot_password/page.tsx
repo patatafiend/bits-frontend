@@ -37,7 +37,7 @@ export default function ForgotPasswordPage() {
 }
 
 export function ForgotPasswordComponent() {
-  const { execute, loading, error } = useForgotPassword();
+  const { execute, loading } = useForgotPassword();
 
   const forgotPasswordSchema = z.object({
     email: z.string().email("Please enter a valid email address"),
@@ -72,7 +72,7 @@ export function ForgotPasswordComponent() {
         <div className="flex flex-col gap-2">
           <h1 className="text-3xl font-bold tracking-tight">Reset Password</h1>
           <p className="text-muted-foreground text-sm">
-            Enter your email address and we'll send you a link to reset your
+            Enter your email address and we will send you a link to reset your
             password
           </p>
         </div>

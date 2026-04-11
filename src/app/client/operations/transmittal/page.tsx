@@ -30,7 +30,7 @@ export default function TransmittalListPage() {
         client_id: user?.client.id,
         order_by: params.order_by ?? "recent",
         status: params.status === "all" ? undefined : params.status,
-        business_unit_id: selectedBusinessUnitId,
+        business_unit_id: params.business_unit_id,
         assigned_operation_admin: user?.id,
         exclude_statuses: ["draft", "resubmitted", "partially_returned"],
       },

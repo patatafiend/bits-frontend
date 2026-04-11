@@ -26,7 +26,9 @@ export default async function middleware(request: NextRequest) {
     logger(request, { blocked: true });
     return new NextResponse("Not Found", { status: 404 });
   }
-  const ip = request.headers.get("x-forwarded-for");
+  const ip =
+    request.headers.get("x-real-ip") ||
+    request.headers.get("x-forwarded-for")?.split(",")[0].trim();
   try {
     await limiter.consume(ip || "unknown");
   } catch {
@@ -41,9 +43,11 @@ export default async function middleware(request: NextRequest) {
 
 function logger(
   request: NextRequest,
-  additionalInfo?: Record<string, unknown>
+  additionalInfo?: Record<string, unknown>,
 ) {
-  const ip = request.headers.get("x-forwarded-for");
+  const ip =
+    request.headers.get("x-real-ip") ||
+    request.headers.get("x-forwarded-for")?.split(",")[0].trim();
   const uaHeader = request.headers.get("user-agent");
   const parser = new UAParser(uaHeader || undefined);
   const parserResults = parser.getResult();

@@ -12,12 +12,19 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { Card, CardContent } from "@/components/ui/card";
 import { useSearchParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, Suspense } from "react";
 
 export default function PasswordResetPage() {
+  return (
+    <Suspense fallback={null}>
+      <PasswordResetComponent />
+    </Suspense>
+  );
+}
+
+export function PasswordResetComponent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const [isReady, setIsReady] = useState(false);
 
   const token = searchParams.get("token");
 
@@ -27,10 +34,9 @@ export default function PasswordResetPage() {
       router.push("/signin");
       return;
     }
-    setIsReady(true);
   }, [token, router]);
 
-  if (!isReady) {
+  if (!token) {
     return null;
   }
 
@@ -98,7 +104,7 @@ export function ResetPasswordComponent({ token }: ResetPasswordComponentProps) {
 
     if (response.error) {
       toast.error(
-        (response.error as any)?.message || "Failed to reset password",
+        response.error.message || "Failed to reset password",
       );
       return;
     }

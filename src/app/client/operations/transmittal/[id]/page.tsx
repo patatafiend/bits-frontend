@@ -9,10 +9,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useCurrentUser } from "@/components/providers/auth-provider";
-import {
-  EditModal,
-  EndorseTransmittalComponent,
-} from "./dialogs";
+import { EditModal, EndorseTransmittalComponent } from "./dialogs";
 import { HistoryDialog } from "@/app/client/bill-management/transmittal/[id]/dialogs";
 import { useFetchTransmittal } from "@/hooks/use-transmittal";
 import { useFetchUsers } from "@/hooks/use-user";
@@ -63,7 +60,7 @@ export default function TransmittalDetailPage() {
     setFilteredItems(transmittalData?.transmittal_items ?? []);
   }, [transmittalData]);
 
-    function handleFilter({
+  function handleFilter({
     search,
     status,
   }: {
@@ -151,6 +148,16 @@ export default function TransmittalDetailPage() {
                       <EditModal
                         transmittalData={transmittalData}
                         userData={userData}
+                        onBusinessUnitChange={(selectedBusinessUnitId) => {
+                          refetchUsers({
+                            query: {
+                              client_id: user?.client.id,
+                              role_id: BILLING_OFFICER,
+                              business_unit_id:
+                                selectedBusinessUnitId ?? undefined,
+                            },
+                          });
+                        }}
                         onSubmit={() => {
                           refetchUsers({
                             query: {

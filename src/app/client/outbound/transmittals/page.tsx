@@ -13,6 +13,7 @@ export default function TransmittalListPage() {
   function refetchTransmittals(params: {
     search?: string;
     status?: string;
+    business_unit_id?: number;
     skip?: number;
     limit?: number;
     order_by?: string;
@@ -24,6 +25,7 @@ export default function TransmittalListPage() {
         limit: params.limit ?? 10,
         search: params.search ?? "",
         client_id: user?.client.id,
+        business_unit_id: params.business_unit_id,
         order_by: params.order_by ?? "recent",
         status: params.status === "all" ? undefined : params.status,
         assigned_billing_officer: user?.id,
@@ -58,6 +60,7 @@ export default function TransmittalListPage() {
               data={transmittals ?? { items: [], total: 0 }}
               onFilter={refetchTransmittals}
               loading={loading}
+              client_id={user.client.id}
             />
           )}
         </CardContent>
