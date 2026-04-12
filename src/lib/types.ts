@@ -332,6 +332,11 @@ export type CreateTransmittal = {
 
 export type UpdateTransmittal = Partial<Transmittal>;
 
+export type SendTransmittalRequest = {
+  billing_receiver_id: number;
+  cc_emails?: string[] | null;
+};
+
 export type AddTransmittalItemPayload = {
   transmittal_id: number;
   status: string;

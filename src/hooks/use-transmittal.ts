@@ -9,7 +9,8 @@ import {
   PaginatedTransmittal,
   ItemActionUpdate,
   TransmittalItemAction,
-  TransmittalStats
+  TransmittalStats,
+  SendTransmittalRequest,
 } from "@/lib/types";
 
 export function useCreateTransmittal() {
@@ -78,7 +79,7 @@ export type TransmittalResponse = {
 };
 
 export function useSendTransmittal() {
-  return useServerAction<TransmittalResponse, Transmittal>(`/transmittals`, {
+  return useServerAction<TransmittalResponse, SendTransmittalRequest>(`/transmittals`, {
     method: "POST",
   });
 }

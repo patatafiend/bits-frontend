@@ -2,14 +2,15 @@ import { CreateReceiver, Receiver, UpdateReceiver } from "@/lib/types";
 import { useServerAction, useServerFetch } from "./use-server";
 
 export function useFetchReceivers() {
-  return useServerFetch<Receiver[]>(`/invoices/receivers/client/`, {
+  return useServerFetch<Receiver[]>(`/transmittals/receivers/client`, {
+    fetchImmediately: false,
     method: "GET",
   });
 }
 
 export function useCreateReceiver() {
   return useServerAction<Receiver, CreateReceiver>(
-    `/invoices/receivers/create/`,
+    `/transmittals/receivers/create`,
     {
       method: "POST",
     },
@@ -17,8 +18,7 @@ export function useCreateReceiver() {
 }
 
 export function useUpdateReceiver() {
-  return useServerAction<Receiver, UpdateReceiver>(`/invoices/receivers/`, {
+  return useServerAction<Receiver, UpdateReceiver>(`/transmittals/receivers/`, {
     method: "PUT",
   });
 }
-

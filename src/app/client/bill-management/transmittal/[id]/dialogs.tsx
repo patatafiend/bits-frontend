@@ -48,6 +48,8 @@ import {
   useSendTransmittal,
   useUpdateTransmittal,
 } from "@/hooks/use-transmittal";
+import { useFetchReceivers } from "@/hooks/use-receiver";
+import ReceiverComboBox from "@/components/receiver-combobox";
 import {
   Table,
   TableHeader,
@@ -58,6 +60,7 @@ import {
 } from "@/components/ui/table";
 import { format } from "date-fns";
 import Link from "next/link";
+import { Receiver } from "@/lib/types";
 import { StatusBadge } from "@/components/status-badge";
 import Loader from "@/components/ui/loader";
 import {
@@ -185,16 +188,74 @@ export function SendTransmittalComponent({
   onSend: () => void;
 }) {
   const { execute: sendTransmittal, loading } = useSendTransmittal();
+  const {
+    data: receivers,
+    refetch: refetchReceivers,
+    loading: receiversLoading,
+  } = useFetchReceivers();
   const [open, setOpen] = useState(false);
+  const [billingReceiverId, setBillingReceiverId] = useState<number | null>(
+    null,
+  );
+  const [ccEmails, setCcEmails] = useState("");
+  const [receiverError, setReceiverError] = useState("");
+  const user = useCurrentUser();
+
   const isDisabled =
     transmittalData.status === "sent" || transmittalData.status === "accepted";
   const hasItems = (transmittalData.transmittal_items?.length ?? 0) > 0;
 
+  // Fetch receivers when dialog opens
+  useEffect(() => {
+    if (open && hasItems) {
+      refetchReceivers({
+        params: `${user?.client.id}`,
+        query: {
+          client_id: `${user?.client.id}`,
+          is_active: true,
+          receive_invoices: true,
+        },
+      });
+    }
+    // Reset form when dialog opens
+    if (open) {
+      setBillingReceiverId(null);
+      setCcEmails("");
+      setReceiverError("");
+    }
+  }, [open, hasItems, transmittalData.client_id]);
+
   const handleSend = async () => {
+    // Validate receiver selection
+    if (!billingReceiverId) {
+      setReceiverError("Please select a billing receiver");
+      return;
+    }
+
+    // Parse CC emails
+    const ccList =
+      ccEmails
+        ?.split(",")
+        .map((email) => email.trim().toLowerCase())
+        .filter((email) => email && email.includes("@")) ?? [];
+
+    // Validate CC emails format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    for (const email of ccList) {
+      if (!emailRegex.test(email)) {
+        toast.error(`Invalid email format: ${email}`);
+        return;
+      }
+    }
+
     const { error } = await sendTransmittal({
-      body: transmittalData,
+      body: {
+        billing_receiver_id: billingReceiverId,
+        cc_emails: ccList.length > 0 ? ccList : null,
+      },
       params: `/${transmittalData.id}/send`,
     });
+
     if (error) {
       toast.error(error.message || "Failed to send transmittal");
       return;
@@ -203,6 +264,8 @@ export function SendTransmittalComponent({
     onSend();
     toast.success("Transmittal sent successfully!");
   };
+
+  const selectedReceiver = receivers?.find((r) => r.id === billingReceiverId);
 
   return (
     <>
@@ -218,14 +281,53 @@ export function SendTransmittalComponent({
         <DialogContent className="w-[calc(100%-2rem)] sm:max-w-lg rounded-lg">
           <DialogHeader>
             <DialogTitle>
-              {hasItems
-                ? "Confirm Send Transmittal"
-                : "Cannot Send Transmittal"}
+              {hasItems ? "Send Transmittal" : "Cannot Send Transmittal"}
             </DialogTitle>
           </DialogHeader>
 
           {hasItems ? (
             <div className="space-y-4">
+              {/* Receiver Selection */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium">
+                  Billing Receiver <span className="text-destructive">*</span>
+                </label>
+                {receiversLoading ? (
+                  <div className="h-10 bg-muted animate-pulse rounded-md" />
+                ) : (
+                  <ReceiverComboBox
+                    value={billingReceiverId ? String(billingReceiverId) : ""}
+                    onValueChange={(val) => {
+                      setBillingReceiverId(val ? Number(val) : null);
+                      setReceiverError("");
+                    }}
+                    receiverData={receivers ?? []}
+                    placeholder="Select a receiver..."
+                  />
+                )}
+                {receiverError && (
+                  <p className="text-xs text-destructive">{receiverError}</p>
+                )}
+              </div>
+
+              {/* CC Emails */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium">
+                  CC Emails (Optional)
+                </label>
+                <Input
+                  type="text"
+                  placeholder="email1@example.com, email2@example.com"
+                  value={ccEmails}
+                  onChange={(e) => setCcEmails(e.target.value)}
+                  className="text-sm"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Separate multiple emails with commas
+                </p>
+              </div>
+
+              {/* Confirmation Details */}
               <div className="rounded-lg border p-3 space-y-1 text-sm">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Transmittal</span>
@@ -247,6 +349,14 @@ export function SendTransmittalComponent({
                     {transmittalData.transmittal_items.length} attached
                   </span>
                 </div>
+                {selectedReceiver && (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Recipient</span>
+                    <span className="font-medium">
+                      {selectedReceiver.receiver_name}
+                    </span>
+                  </div>
+                )}
               </div>
 
               <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
@@ -259,7 +369,7 @@ export function SendTransmittalComponent({
                 </Button>
                 <Button
                   onClick={handleSend}
-                  disabled={loading}
+                  disabled={loading || receiversLoading}
                   className="w-full sm:w-auto"
                 >
                   {loading ? "Sending..." : "Confirm Send"}
@@ -967,7 +1077,9 @@ export function SearchTransmittalItemsComponent({
     transmittalData.status === "rejected" ||
     transmittalData.status === "partially_returned";
 
-  const billingItems = data.filter((i) => i.category === "billing_statement" || !i.category);
+  const billingItems = data.filter(
+    (i) => i.category === "billing_statement" || !i.category,
+  );
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2">

@@ -75,7 +75,6 @@ export default function TransmittalDetailPage() {
   }
 
   useEffect(() => {
-    console.log("this runned.");
     if (transmittalId && user?.client.id) {
       refetchUsers({
         query: { client_id: user?.client.id, role_id: OPERATIONS_ADMIN },
