@@ -24,6 +24,9 @@ const config = {
   },
 };
 
+const MAX_UPLOAD_SIZE_BYTES = 10 * 1024 * 1024;
+const MAX_UPLOAD_SIZE_LABEL = "10 MB";
+
 export function UploadFile({
   mode = "billing_statement",
   transmittalData,
@@ -44,13 +47,37 @@ export function UploadFile({
     isAnyCompressing,
     hasErrors,
     allCompleted,
-  } = useMultiFileUpload({ concurrency: 3 });
+  } = useMultiFileUpload({
+    concurrency: 3,
+    maxFileSizeBytes: MAX_UPLOAD_SIZE_BYTES,
+  });
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop: (acceptedFiles) => {
       addFiles(acceptedFiles);
     },
+    onDropRejected: (rejections) => {
+      const oversizedFiles = rejections
+        .filter((rejection) =>
+          rejection.errors.some((error) => error.code === "file-too-large"),
+        )
+        .map((rejection) => rejection.file.name);
+
+      if (oversizedFiles.length === 0) return;
+
+      if (oversizedFiles.length === 1) {
+        toast.error(
+          `${oversizedFiles[0]} exceeds the ${MAX_UPLOAD_SIZE_LABEL} upload limit.`,
+        );
+        return;
+      }
+
+      toast.error(
+        `${oversizedFiles.length} files exceed the ${MAX_UPLOAD_SIZE_LABEL} upload limit.`,
+      );
+    },
     accept: accept,
+    maxSize: MAX_UPLOAD_SIZE_BYTES,
     disabled: isAnyUploading || isAnyCompressing,
     multiple: true,
   });
@@ -135,7 +162,7 @@ export function UploadFile({
                 Drag & drop files here, or click to select
               </p>
               <p className="text-xs text-muted-foreground">
-                Supports: Images, PDF, Excel
+                Supports: Images, PDF, Excel. Max 10 MB per file.
               </p>
             </div>
           )}

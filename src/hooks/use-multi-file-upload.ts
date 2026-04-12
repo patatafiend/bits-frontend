@@ -15,10 +15,16 @@ export type UploadItem = {
 
 type Options = {
   concurrency?: number;
+  maxFileSizeBytes?: number;
 };
+
+const DEFAULT_MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024;
 
 export function useMultiFileUpload(options?: Options) {
   const concurrency = options?.concurrency ?? 3;
+  const maxFileSizeBytes =
+    options?.maxFileSizeBytes ?? DEFAULT_MAX_FILE_SIZE_BYTES;
+  const maxFileSizeLabel = `${(maxFileSizeBytes / 1024 / 1024).toFixed(0)} MB`;
 
   const [files, setFiles] = useState<UploadItem[]>([]);
 
@@ -33,6 +39,36 @@ export function useMultiFileUpload(options?: Options) {
         (h) => h !== handler,
       );
     };
+  }
+
+  function splitFilesBySize(candidates: File[]) {
+    const validFiles: File[] = [];
+    const oversizedFiles: File[] = [];
+
+    for (const file of candidates) {
+      if (file.size > maxFileSizeBytes) {
+        oversizedFiles.push(file);
+      } else {
+        validFiles.push(file);
+      }
+    }
+
+    return { validFiles, oversizedFiles };
+  }
+
+  function notifyOversizedFiles(oversizedFiles: File[]) {
+    if (oversizedFiles.length === 0) return;
+
+    if (oversizedFiles.length === 1) {
+      toast.error(
+        `${oversizedFiles[0].name} exceeds the ${maxFileSizeLabel} upload limit.`,
+      );
+      return;
+    }
+
+    toast.error(
+      `${oversizedFiles.length} files exceed the ${maxFileSizeLabel} upload limit.`,
+    );
   }
 
   function addFiles(
@@ -51,7 +87,14 @@ export function useMultiFileUpload(options?: Options) {
       }
     }
 
-    const mapped: UploadItem[] = filesToAdd.map((file) => ({
+    const { validFiles, oversizedFiles } = splitFilesBySize(filesToAdd);
+    notifyOversizedFiles(oversizedFiles);
+
+    if (validFiles.length === 0) {
+      return;
+    }
+
+    const mapped: UploadItem[] = validFiles.map((file) => ({
       id: crypto.randomUUID(),
       file,
       progress: 0,
@@ -125,6 +168,10 @@ export function useMultiFileUpload(options?: Options) {
         );
         fileToUpload = compressed;
         updateFile(id, { compressing: false, file: compressed });
+      }
+
+      if (fileToUpload.size > maxFileSizeBytes) {
+        throw new Error(`File exceeds the ${maxFileSizeLabel} upload limit`);
       }
 
       // Get presigned URL if not provided
@@ -244,8 +291,15 @@ export function useMultiFileUpload(options?: Options) {
   }
 
   async function uploadFiles(rawFiles: File[], location: string) {
+    const { validFiles, oversizedFiles } = splitFilesBySize(rawFiles);
+    notifyOversizedFiles(oversizedFiles);
+
+    if (validFiles.length === 0) {
+      return [];
+    }
+
     // Map raw files to UploadItems
-    const items: UploadItem[] = rawFiles.map((file) => ({
+    const items: UploadItem[] = validFiles.map((file) => ({
       id: crypto.randomUUID(),
       file,
       progress: 0,

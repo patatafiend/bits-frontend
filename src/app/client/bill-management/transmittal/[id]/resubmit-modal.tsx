@@ -55,6 +55,9 @@ type ReplacementFile = {
   error?: string;
 };
 
+const MAX_UPLOAD_SIZE_BYTES = 10 * 1024 * 1024;
+const MAX_UPLOAD_SIZE_LABEL = "10 MB";
+
 export function ResubmittModal({
   client_id,
   open,
@@ -71,6 +74,7 @@ export function ResubmittModal({
     useFetchBusinessUnits();
   const { uploadFiles, reset: resetUploads } = useMultiFileUpload({
     concurrency: 3,
+    maxFileSizeBytes: MAX_UPLOAD_SIZE_BYTES,
   });
 
   const [replacements, setReplacements] = useState<
@@ -120,6 +124,13 @@ export function ResubmittModal({
   }
 
   function handleFileSelect(itemId: number, file: File) {
+    if (file.size > MAX_UPLOAD_SIZE_BYTES) {
+      toast.error(
+        `${file.name} exceeds the ${MAX_UPLOAD_SIZE_LABEL} upload limit.`,
+      );
+      return;
+    }
+
     setReplacements((prev) => ({
       ...prev,
       [itemId]: { file, uploaded: false },
@@ -164,9 +175,9 @@ export function ResubmittModal({
       const filesToUpload = replacementEntries.map(([, r]) => r.file);
 
       const urls = await uploadFiles(filesToUpload, "billing-statements");
-      if (!urls || urls.length === 0) {
+      if (!urls || urls.length !== replacementEntries.length) {
         toast.error(
-          "Transmittal created but failed to upload replacement files.",
+          `Transmittal created but some replacement files were skipped. Each file must be ${MAX_UPLOAD_SIZE_LABEL} or smaller.`,
         );
       } else {
         const itemPayload = replacementEntries.map(([itemIdStr, r], index) => {

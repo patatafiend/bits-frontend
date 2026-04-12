@@ -60,7 +60,6 @@ import {
 } from "@/components/ui/table";
 import { format } from "date-fns";
 import Link from "next/link";
-import { Receiver } from "@/lib/types";
 import { StatusBadge } from "@/components/status-badge";
 import Loader from "@/components/ui/loader";
 import {
@@ -217,13 +216,8 @@ export function SendTransmittalComponent({
         },
       });
     }
-    // Reset form when dialog opens
-    if (open) {
-      setBillingReceiverId(null);
-      setCcEmails("");
-      setReceiverError("");
-    }
-  }, [open, hasItems, transmittalData.client_id]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, hasItems]);
 
   const handleSend = async () => {
     // Validate receiver selection
@@ -232,14 +226,12 @@ export function SendTransmittalComponent({
       return;
     }
 
-    // Parse CC emails
     const ccList =
       ccEmails
         ?.split(",")
         .map((email) => email.trim().toLowerCase())
         .filter((email) => email && email.includes("@")) ?? [];
 
-    // Validate CC emails format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     for (const email of ccList) {
       if (!emailRegex.test(email)) {
@@ -662,19 +654,6 @@ export function EditModal({
                   </FormItem>
                 )}
               />
-              <FormField
-                control={form.control}
-                name="billing_receiver_company"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Recipient Company</FormLabel>
-                    <FormControl>
-                      <Input type="text" placeholder="CMI" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
               <Button type="submit" loading={loading} className="w-full">
                 Update Transmittal
               </Button>
@@ -683,50 +662,6 @@ export function EditModal({
         )}
       </DrawerDialog>
     </div>
-  );
-}
-
-export function RejectionReasonDialog({
-  transmittalData,
-}: {
-  transmittalData: TransmittalWithItems;
-}) {
-  if (
-    transmittalData.status !== "rejected" ||
-    !transmittalData.rejection_reason
-  ) {
-    return null;
-  }
-
-  return (
-    <DrawerDialog
-      title="Transmittal Rejected"
-      description=""
-      responsive
-      className="max-w-md"
-      renderTrigger={
-        <Button
-          variant="outline"
-          size="sm"
-          className="text-destructive border-destructive hover:text-destructive"
-        >
-          <AlertCircle className="w-4 h-4 mr-2" />
-          Notes
-        </Button>
-      }
-    >
-      <div className="space-y-3 px-4 sm:px-0 pb-4">
-        <p className="text-sm text-muted-foreground break-all">
-          {transmittalData.rejection_reason}
-        </p>
-        {transmittalData.response_date && (
-          <p className="text-xs text-muted-foreground">
-            Rejected on{" "}
-            {new Date(transmittalData.response_date).toLocaleDateString()}
-          </p>
-        )}
-      </div>
-    </DrawerDialog>
   );
 }
 
@@ -1165,6 +1100,7 @@ export function SearchTransmittalItemsComponent({
                     onConfirm={() => handleDeleteItem(item.id, item.file_key)}
                   />
                 )}
+                <ItemRejectionReasonDialog item={item} />
                 {canReturn && (
                   <ItemAction item={item} onClick={refetchTransmittals} />
                 )}
@@ -1178,6 +1114,42 @@ export function SearchTransmittalItemsComponent({
         onClose={() => setViewingFile(null)}
       />
     </div>
+  );
+}
+
+function ItemRejectionReasonDialog({ item }: { item: TransmittalItems }) {
+  if (item.status !== "rejected" || !item.rejection_reason) {
+    return null;
+  }
+
+  return (
+    <DrawerDialog
+      title="Item Rejected"
+      description=""
+      responsive
+      className="max-w-md"
+      renderTrigger={
+        <Button
+          variant="outline"
+          size="sm"
+          className="text-destructive border-destructive hover:text-destructive"
+        >
+          <AlertCircle className="w-4 h-4 mr-2" />
+          Notes
+        </Button>
+      }
+    >
+      <div className="space-y-3 px-4 sm:px-0 pb-4">
+        <p className="text-sm text-muted-foreground break-all">
+          {item.rejection_reason}
+        </p>
+        {item.return_date && (
+          <p className="text-xs text-muted-foreground">
+            Rejected on {new Date(item.return_date).toLocaleDateString()}
+          </p>
+        )}
+      </div>
+    </DrawerDialog>
   );
 }
 

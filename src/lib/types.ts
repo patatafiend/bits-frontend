@@ -293,6 +293,7 @@ export type TransmittalItems = {
   transmittal_item_number: string;
   reference_number: string;
   status: string;
+  rejection_reason?: string | null;
   return_date: string;
   file_name: string;
   file_key: string;
@@ -309,6 +310,7 @@ export type TransmittalItemAction = {
   transmittal_id: number;
   transmittal_item_number: string;
   status: string;
+  rejection_reason?: string | null;
   return_date: string;
   action: string;
   file_name: string;

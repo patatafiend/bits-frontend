@@ -1,4 +1,4 @@
-import { CreateReceiver, Receiver, UpdateReceiver } from "@/lib/types";
+import { CreateReceiver, Receiver, UpdateReceiver, TransmittalWithItems, TransmittalItemAction, ItemActionUpdate } from "@/lib/types";
 import { useServerAction, useServerFetch } from "./use-server";
 
 export function useFetchReceivers() {
@@ -21,4 +21,20 @@ export function useUpdateReceiver() {
   return useServerAction<Receiver, UpdateReceiver>(`/transmittals/receivers/`, {
     method: "PUT",
   });
+}
+
+export function useFetchReceiverTransmittal() {
+  return useServerFetch<TransmittalWithItems>(`/transmittals/receiver`, {
+    fetchImmediately: false,
+    method: "GET",
+  });
+}
+
+export function useReceiverItemAction() {
+  return useServerAction<TransmittalItemAction, ItemActionUpdate>(
+    `/transmittals/receiver/`,
+    {
+      method: "PUT",
+    },
+  );
 }

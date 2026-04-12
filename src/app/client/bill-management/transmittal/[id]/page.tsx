@@ -11,7 +11,6 @@ import { toast } from "sonner";
 import { useCurrentUser } from "@/components/providers/auth-provider";
 import {
   EditModal,
-  RejectionReasonDialog,
   PostTransmittalComponent,
   SendTransmittalComponent,
   HistoryDialog,
@@ -179,7 +178,6 @@ export default function TransmittalDetailPage() {
                       </Button>
                     )}
                   </PDFDownloadLink> */}
-                  <RejectionReasonDialog transmittalData={transmittalData} />
                   {hasHistory && <HistoryDialog id={transmittalData.id} />}
                   {isDraft && (
                     <EditModal
