@@ -152,8 +152,6 @@ export function SearchTransmittalComponent({
   const { data: businessUnitData, refetch: refetchBusinessUnits } =
     useFetchBusinessUnits();
   const [query, setQuery] = useState("");
-  const [billingTransmittalNumberFilter, setBillingTransmittalNumberFilter] =
-    useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [businessUnitFilter, setBusinessUnitFilter] = useState<number | null>(
     null,
@@ -171,10 +169,14 @@ export function SearchTransmittalComponent({
 
   useEffect(() => {
     const timeout = setTimeout(() => {
+      const normalizedQuery = query.trim();
+      const isBillingQuery = /^btm/i.test(normalizedQuery);
+
       onFilter({
-        search: query,
-        billing_transmittal_number:
-          billingTransmittalNumberFilter || undefined,
+        search: isBillingQuery ? undefined : normalizedQuery || undefined,
+        billing_transmittal_number: isBillingQuery
+          ? normalizedQuery
+          : undefined,
         status: statusFilter,
         business_unit_id: businessUnitFilter ?? undefined,
         limit: limit,
@@ -186,7 +188,6 @@ export function SearchTransmittalComponent({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     query,
-    billingTransmittalNumberFilter,
     statusFilter,
     businessUnitFilter,
     page,
@@ -196,13 +197,6 @@ export function SearchTransmittalComponent({
 
   function handleQueryChange(e: React.ChangeEvent<HTMLInputElement>) {
     setQuery(e.target.value);
-    setPage(1);
-  }
-
-  function handleBillingTransmittalNumberChange(
-    e: React.ChangeEvent<HTMLInputElement>,
-  ) {
-    setBillingTransmittalNumberFilter(e.target.value);
     setPage(1);
   }
 
@@ -228,7 +222,6 @@ export function SearchTransmittalComponent({
 
   function handleClear() {
     setQuery("");
-    setBillingTransmittalNumberFilter("");
     setStatusFilter("all");
     setBusinessUnitFilter(null);
     setOrderBy("recent");
@@ -238,7 +231,6 @@ export function SearchTransmittalComponent({
 
   const isDirty =
     query ||
-    billingTransmittalNumberFilter ||
     statusFilter !== "all" ||
     businessUnitFilter !== null ||
     orderBy !== "recent" ||
@@ -249,17 +241,10 @@ export function SearchTransmittalComponent({
       <div className="flex items-center gap-2">
         <Input
           type="text"
-          placeholder="Search by transmittal number or date..."
+          placeholder="Search transmittal, billing TM, or date..."
           value={query}
           onChange={handleQueryChange}
-          className="max-w-sm"
-        />
-        <Input
-          type="text"
-          placeholder="Billing TM Number"
-          value={billingTransmittalNumberFilter}
-          onChange={handleBillingTransmittalNumberChange}
-          className="max-w-xs"
+          className="max-w-md"
         />
         <Select value={statusFilter} onValueChange={handleStatusChange}>
           <SelectTrigger className="w-40">
