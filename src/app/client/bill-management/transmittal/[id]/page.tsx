@@ -308,14 +308,6 @@ export default function TransmittalDetailPage() {
                     {transmittalData.billing_receiver_name ?? "—"}
                   </p>
                 </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">
-                    Receiver Company
-                  </p>
-                  <p className="font-medium">
-                    {transmittalData.billing_receiver_company ?? "—"}
-                  </p>
-                </div>
               </div>
 
               <Separator />
