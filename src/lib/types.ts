@@ -50,6 +50,7 @@ export type User = {
   client_id: number;
   client: Client;
   business_unit_id?: [];
+  business_units?: BusinessUnit[];
 };
 
 export type CreateUser = {

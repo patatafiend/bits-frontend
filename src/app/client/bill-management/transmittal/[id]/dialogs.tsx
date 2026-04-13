@@ -624,36 +624,6 @@ export function EditModal({
                   </FormItem>
                 )}
               />
-              <FormField
-                control={form.control}
-                name="billing_receiver_email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Recipient Email</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="email"
-                        placeholder="receiver@example.com"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="billing_receiver_name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Recipient Name</FormLabel>
-                    <FormControl>
-                      <Input type="text" placeholder="Jhon" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
               <Button type="submit" loading={loading} className="w-full">
                 Update Transmittal
               </Button>

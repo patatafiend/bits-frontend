@@ -64,12 +64,11 @@ export default function ManageUsers() {
                   <TableHead>Profile</TableHead>
                   <TableHead>ID</TableHead>
                   <TableHead>Username</TableHead>
-                  <TableHead>First Name</TableHead>
-                  <TableHead>Middle Name</TableHead>
-                  <TableHead>Last Name</TableHead>
+                  <TableHead>Full Name</TableHead>
                   <TableHead>Phone Number</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Role</TableHead>
+                  <TableHead>Business Unit</TableHead>
                   <TableHead>Details</TableHead>
                 </TableRow>
               </TableHeader>
@@ -102,13 +101,9 @@ export default function ManageUsers() {
                         {user.username}
                       </TableCell>
                       <TableCell className="whitespace-nowrap">
-                        {user.first_name}
-                      </TableCell>
-                      <TableCell className="whitespace-nowrap">
-                        {user.middle_name}
-                      </TableCell>
-                      <TableCell className="whitespace-nowrap">
-                        {user.last_name}
+                        {[user.first_name, user.middle_name, user.last_name]
+                          .filter((namePart) => namePart?.trim())
+                          .join(" ")}
                       </TableCell>
                       <TableCell className="whitespace-nowrap">
                         {user.phone_number}
@@ -119,10 +114,26 @@ export default function ManageUsers() {
                       <TableCell className="whitespace-nowrap">
                         {user.role}
                       </TableCell>
+                      <TableCell className="max-w-xs whitespace-normal">
+                        {user.business_units?.length ? (
+                          <div className="flex flex-wrap gap-1">
+                            {user.business_units.map((businessUnit) => (
+                              <span
+                                key={businessUnit.id}
+                                className="rounded bg-muted px-2 py-0.5 text-xs"
+                              >
+                                {businessUnit.name}
+                              </span>
+                            ))}
+                          </div>
+                        ) : (
+                          "-"
+                        )}
+                      </TableCell>
                       <TableCell className="whitespace-nowrap">
                         <Link href={`manage-users/${user.id}`}>
                           <Button variant="link" size="sm">
-                            View Details
+                            View
                           </Button>
                         </Link>
                         <Link href={`manage-users/${user.id}/edit`}>
