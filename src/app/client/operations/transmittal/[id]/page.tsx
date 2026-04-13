@@ -189,6 +189,14 @@ export default function TransmittalDetailPage() {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">
+                    Billing Transmittal Number
+                  </p>
+                  <p className="font-medium">
+                    {transmittalData.billing_transmittal_number ?? "-"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">
                     Transmittal Date
                   </p>
                   <p className="font-medium">

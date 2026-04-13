@@ -12,6 +12,7 @@ export default function TransmittalListPage() {
 
   function refetchTransmittals(params: {
     search?: string;
+    billing_transmittal_number?: string;
     status?: string;
     business_unit_id?: number;
     skip?: number;
@@ -24,6 +25,8 @@ export default function TransmittalListPage() {
         skip: params.skip ?? 0,
         limit: params.limit ?? 10,
         search: params.search ?? "",
+        billing_transmittal_number:
+          params.billing_transmittal_number || undefined,
         client_id: user?.client.id,
         business_unit_id: params.business_unit_id,
         order_by: params.order_by ?? "recent",

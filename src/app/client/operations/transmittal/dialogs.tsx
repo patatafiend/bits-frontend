@@ -57,6 +57,7 @@ export function TransmittalList({
         <TableHeader>
           <TableRow>
             <TableHead>Transmittal Number</TableHead>
+            <TableHead>Billing TM Number</TableHead>
             <TableHead>Date</TableHead>
             <TableHead>Created By</TableHead>
             <TableHead>Status</TableHead>
@@ -68,6 +69,9 @@ export function TransmittalList({
             <TableRow key={transmittal.id}>
               <TableCell className="font-medium">
                 {transmittal.transmittal_number}
+              </TableCell>
+              <TableCell>
+                {transmittal.billing_transmittal_number ?? "-"}
               </TableCell>
               <TableCell>{transmittal.transmittal_date}</TableCell>
               <TableCell>{transmittal.created_by}</TableCell>
@@ -137,6 +141,7 @@ export function SearchTransmittalComponent({
   client_id?: number;
   onFilter: (params: {
     search?: string;
+    billing_transmittal_number?: string;
     status?: string;
     business_unit_id?: number;
     limit?: number;
@@ -147,6 +152,8 @@ export function SearchTransmittalComponent({
   const { data: businessUnitData, refetch: refetchBusinessUnits } =
     useFetchBusinessUnits();
   const [query, setQuery] = useState("");
+  const [billingTransmittalNumberFilter, setBillingTransmittalNumberFilter] =
+    useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [businessUnitFilter, setBusinessUnitFilter] = useState<number | null>(
     null,
@@ -166,6 +173,8 @@ export function SearchTransmittalComponent({
     const timeout = setTimeout(() => {
       onFilter({
         search: query,
+        billing_transmittal_number:
+          billingTransmittalNumberFilter || undefined,
         status: statusFilter,
         business_unit_id: businessUnitFilter ?? undefined,
         limit: limit,
@@ -175,10 +184,25 @@ export function SearchTransmittalComponent({
     }, 350);
     return () => clearTimeout(timeout);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query, statusFilter, businessUnitFilter, page, orderBy, limit]);
+  }, [
+    query,
+    billingTransmittalNumberFilter,
+    statusFilter,
+    businessUnitFilter,
+    page,
+    orderBy,
+    limit,
+  ]);
 
   function handleQueryChange(e: React.ChangeEvent<HTMLInputElement>) {
     setQuery(e.target.value);
+    setPage(1);
+  }
+
+  function handleBillingTransmittalNumberChange(
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) {
+    setBillingTransmittalNumberFilter(e.target.value);
     setPage(1);
   }
 
@@ -204,6 +228,7 @@ export function SearchTransmittalComponent({
 
   function handleClear() {
     setQuery("");
+    setBillingTransmittalNumberFilter("");
     setStatusFilter("all");
     setBusinessUnitFilter(null);
     setOrderBy("recent");
@@ -213,6 +238,7 @@ export function SearchTransmittalComponent({
 
   const isDirty =
     query ||
+    billingTransmittalNumberFilter ||
     statusFilter !== "all" ||
     businessUnitFilter !== null ||
     orderBy !== "recent" ||
@@ -227,6 +253,13 @@ export function SearchTransmittalComponent({
           value={query}
           onChange={handleQueryChange}
           className="max-w-sm"
+        />
+        <Input
+          type="text"
+          placeholder="Billing TM Number"
+          value={billingTransmittalNumberFilter}
+          onChange={handleBillingTransmittalNumberChange}
+          className="max-w-xs"
         />
         <Select value={statusFilter} onValueChange={handleStatusChange}>
           <SelectTrigger className="w-40">

@@ -522,6 +522,9 @@ export function EditModal({
 }) {
   const { execute, loading } = useUpdateTransmittal();
   const formSchema = z.object({
+    billing_transmittal_number: z
+      .string()
+      .min(1, "Billing Transmittal Number is required"),
     transmittal_date: z
       .string()
       .default(new Date().toISOString().split("T")[0]),
@@ -538,6 +541,8 @@ export function EditModal({
   const form = useForm({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      billing_transmittal_number:
+        transmittalData.billing_transmittal_number ?? "",
       transmittal_date: transmittalData.transmittal_date,
       //billing_receiver_id: transmittalData.billing_receiver_id ?? null,
       assigned_operation_admin:
@@ -556,6 +561,7 @@ export function EditModal({
       params: `/${transmittalData.id}`,
       body: {
         id: transmittalData.id,
+        billing_transmittal_number: data.billing_transmittal_number,
         transmittal_date: data.transmittal_date,
         assigned_operation_admin: data.assigned_operation_admin || null,
         billing_receiver_email: data.billing_receiver_email || null,
@@ -592,6 +598,23 @@ export function EditModal({
             className="space-y-6"
           >
             <Form {...form}>
+              <FormField
+                control={form.control}
+                name="billing_transmittal_number"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Billing Transmittal Number</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        type="text"
+                        placeholder="BTM-2024-001"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               <FormField
                 control={form.control}
                 name="transmittal_date"

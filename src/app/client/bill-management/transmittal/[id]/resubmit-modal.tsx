@@ -84,6 +84,9 @@ export function ResubmittModal({
 
   const formSchema = z.object({
     transmittal_number: z.string().min(1, "Transmittal Number is required"),
+    billing_transmittal_number: z
+      .string()
+      .min(1, "Billing Transmittal Number is required"),
     resubmitted_as_id: z.number().optional(),
     resubmitted_from_id: z.number().optional(),
     client_id: z.number().min(1, "client id required"),
@@ -95,6 +98,8 @@ export function ResubmittModal({
     resolver: zodResolver(formSchema),
     defaultValues: {
       transmittal_number: "",
+      billing_transmittal_number:
+        transmittalData?.billing_transmittal_number ?? "",
       resubmitted_as_id: undefined,
       resubmitted_from_id: undefined,
       client_id: client_id,
@@ -111,9 +116,18 @@ export function ResubmittModal({
       transmittalData?.business_unit_id as number,
       { shouldValidate: true },
     );
+    form.setValue(
+      "billing_transmittal_number",
+      transmittalData?.billing_transmittal_number ?? "",
+    );
     refetchBusinessUnits({ params: `${client_id}/business_units` });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [client_id, open, transmittalData?.business_unit_id]);
+  }, [
+    client_id,
+    open,
+    transmittalData?.business_unit_id,
+    transmittalData?.billing_transmittal_number,
+  ]);
 
   function handleOpenChange(value: boolean) {
     if (!value) {
@@ -159,6 +173,7 @@ export function ResubmittModal({
     const { data: newTransmittal, error } = await execute({
       body: {
         transmittal_number: data.transmittal_number,
+        billing_transmittal_number: data.billing_transmittal_number,
         status: "Resubmitted",
         client_id: data.client_id,
         business_unit_id: data.business_unit_id,
@@ -271,6 +286,25 @@ export function ResubmittModal({
                 {form.formState.errors.transmittal_number && (
                   <FieldError>
                     {form.formState.errors.transmittal_number.message}
+                  </FieldError>
+                )}
+              </Field>
+
+              <Field>
+                <FieldLabel>Billing Transmittal Number</FieldLabel>
+                <FieldContent>
+                  <Input
+                    type="text"
+                    placeholder="BTM-2024-001"
+                    {...form.register("billing_transmittal_number")}
+                  />
+                </FieldContent>
+                {form.formState.errors.billing_transmittal_number && (
+                  <FieldError>
+                    {
+                      form.formState.errors.billing_transmittal_number
+                        .message
+                    }
                   </FieldError>
                 )}
               </Field>

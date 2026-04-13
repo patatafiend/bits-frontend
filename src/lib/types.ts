@@ -230,6 +230,7 @@ export type InvoiceModalProps = {
 export type Transmittal = {
   id: number;
   transmittal_number: string;
+  billing_transmittal_number?: string | null;
   client_id: number;
   billing_receiver_id: number;
   status: string;
@@ -260,6 +261,7 @@ export type Transmittal = {
 export type TransmittalWithItems = {
   id: number;
   transmittal_number: string;
+  billing_transmittal_number?: string | null;
   client_id: number;
   billing_receiver_id: number;
   status: string;
@@ -327,6 +329,7 @@ export type ItemActionUpdate = Partial<TransmittalItemAction>;
 
 export type CreateTransmittal = {
   transmittal_number: string;
+  billing_transmittal_number: string;
   resubmitted_from_id: number | null;
   client_id: number;
   business_unit_id: number;

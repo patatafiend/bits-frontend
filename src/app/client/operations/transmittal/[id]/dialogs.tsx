@@ -261,12 +261,17 @@ export function EditModal({
   const { data: businessUnitData, refetch: refetchBusinessUnits } =
     useFetchBusinessUnits();
   const formSchema = z.object({
+    billing_transmittal_number: z
+      .string()
+      .min(1, "Billing Transmittal Number is required"),
     assigned_billing_officer: z.number().nullable().optional(),
     business_unit_id: z.number().nullable().optional(),
   });
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      billing_transmittal_number:
+        transmittalData.billing_transmittal_number ?? "",
       assigned_billing_officer:
         transmittalData.assigned_billing_officer ?? undefined,
       business_unit_id: transmittalData.business_unit_id ?? undefined,
@@ -290,6 +295,7 @@ export function EditModal({
       params: `/${transmittalData.id}`,
       body: {
         id: transmittalData.id,
+        billing_transmittal_number: data.billing_transmittal_number,
         assigned_billing_officer: data.assigned_billing_officer || null,
         business_unit_id: data.business_unit_id ?? undefined,
       },
@@ -323,6 +329,23 @@ export function EditModal({
             className="space-y-6"
           >
             <Form {...form}>
+              <FormField
+                control={form.control}
+                name="billing_transmittal_number"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Billing Transmittal Number</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        type="text"
+                        placeholder="BTM-2024-001"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               <FormField
                 control={form.control}
                 name="business_unit_id"
