@@ -6,11 +6,9 @@ import { FileText, RefreshCw } from "lucide-react";
 import { useFetchTransmittals } from "@/hooks/use-transmittal";
 import { SearchTransmittalComponent } from "./dialogs";
 import { useCurrentUser } from "@/components/providers/auth-provider";
-import { useGlobalFilters } from "@/components/providers/global-filter-provider";
 
 export default function TransmittalListPage() {
   const { data: transmittals, refetch, loading } = useFetchTransmittals();
-  const { selectedBusinessUnitId } = useGlobalFilters();
   const user = useCurrentUser();
 
   function refetchTransmittals(params: {
