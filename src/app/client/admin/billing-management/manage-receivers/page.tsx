@@ -6,14 +6,16 @@ import { Loader } from "lucide-react";
 import { useFetchReceivers } from "@/hooks/use-receiver";
 import { useCurrentUser } from "@/components/providers/auth-provider";
 import { ReceiverList } from "./dialogs";
+import { useGlobalFilters } from "@/components/providers/global-filter-provider";
 
 export default function ReceiversPage() {
   const { data, loading, refetch } = useFetchReceivers();
   const user = useCurrentUser();
+  const { selectedClientId } = useGlobalFilters();
 
   function refetchReceivers() {
     refetch({
-      params: `${user?.client.id}`,
+      params: `${selectedClientId}`,
     });
   }
 

@@ -400,6 +400,7 @@ export type BusinessUnit = {
   name: string;
   description?: string | null;
   code?: string | null;
+  business_unit_email?: string | null;
   is_default: boolean;
   is_active: boolean;
   created_at: string;
@@ -443,8 +444,10 @@ export type CreateBusinessUnit = {
   name: string;
   description?: string | null;
   code?: string | null;
+  business_unit_email?: string | null;
 };
 
 export type UpdateBusinessUnit = Partial<CreateBusinessUnit> & {
+  business_unit_email?: string | null;
   is_active?: boolean;
 };

@@ -39,6 +39,11 @@ const businessUnitSchema = z.object({
   name: z.string().min(1, "Business unit name is required"),
   code: z.string().nullable().optional(),
   description: z.string().nullable().optional(),
+  business_unit_email: z
+    .string()
+    .email("Invalid email address")
+    .nullable()
+    .optional(),
 });
 
 type BusinessUnitFormValues = z.infer<typeof businessUnitSchema>;
@@ -84,6 +89,7 @@ function BusinessUnitModal({
       name: "",
       code: null,
       description: null,
+      business_unit_email: null,
     },
   });
 
@@ -96,8 +102,14 @@ function BusinessUnitModal({
               name: editData.name,
               code: editData.code ?? null,
               description: editData.description ?? null,
+              business_unit_email: editData.business_unit_email ?? null,
             }
-          : { name: "", code: null, description: null },
+          : {
+              name: "",
+              code: null,
+              description: null,
+              business_unit_email: null,
+            },
       );
     }
   }, [open, editData, form]);
@@ -204,6 +216,26 @@ function BusinessUnitModal({
               )}
             />
 
+            <FormField
+              control={form.control}
+              name="business_unit_email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Email</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="email"
+                      placeholder="e.g. finance@company.com"
+                      {...field}
+                      value={field.value ?? ""}
+                      onChange={(e) => field.onChange(e.target.value || null)}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             <div className="flex justify-end gap-2 pt-2">
               <Button
                 type="button"
@@ -300,6 +332,9 @@ export function BusinessUnitsSection({ clientId }: { clientId: number }) {
                   Description
                 </th>
                 <th className="px-4 py-2.5 text-left font-medium text-muted-foreground">
+                  Email
+                </th>
+                <th className="px-4 py-2.5 text-left font-medium text-muted-foreground">
                   Status
                 </th>
                 <th className="px-4 py-2.5 text-right font-medium text-muted-foreground">
@@ -311,7 +346,7 @@ export function BusinessUnitsSection({ clientId }: { clientId: number }) {
               {loading && (
                 <tr>
                   <td
-                    colSpan={5}
+                    colSpan={6}
                     className="px-4 py-8 text-center text-muted-foreground"
                   >
                     Loading...
@@ -321,7 +356,7 @@ export function BusinessUnitsSection({ clientId }: { clientId: number }) {
               {!loading && (!units || units.length === 0) && (
                 <tr>
                   <td
-                    colSpan={5}
+                    colSpan={6}
                     className="px-4 py-8 text-center text-muted-foreground"
                   >
                     No business units yet. Add one to get started.
@@ -349,6 +384,9 @@ export function BusinessUnitsSection({ clientId }: { clientId: number }) {
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">
                       {bu.description ?? "—"}
+                    </td>
+                    <td className="px-4 py-3 text-muted-foreground">
+                      {bu.business_unit_email ?? "—"}
                     </td>
                     <td className="px-4 py-3">
                       <StatusBadge isActive={bu.is_active} />

@@ -331,23 +331,6 @@ export function EditModal({
             <Form {...form}>
               <FormField
                 control={form.control}
-                name="billing_transmittal_number"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Billing Transmittal Number</FormLabel>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        type="text"
-                        placeholder="BTM-2024-001"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
                 name="business_unit_id"
                 render={({ field }) => (
                   <FormItem>

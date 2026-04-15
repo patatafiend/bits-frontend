@@ -204,7 +204,6 @@ export function SendTransmittalComponent({
     transmittalData.status === "sent" || transmittalData.status === "accepted";
   const hasItems = (transmittalData.transmittal_items?.length ?? 0) > 0;
 
-  // Fetch receivers when dialog opens
   useEffect(() => {
     if (open && hasItems) {
       refetchReceivers({
@@ -220,7 +219,6 @@ export function SendTransmittalComponent({
   }, [open, hasItems]);
 
   const handleSend = async () => {
-    // Validate receiver selection
     if (!billingReceiverId) {
       setReceiverError("Please select a billing receiver");
       return;

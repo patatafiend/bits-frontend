@@ -6,6 +6,7 @@ import { useForm } from "react-hook-form";
 import z from "zod";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import ClientComboBox from "@/components/client-combobox";
 import ControlledDialog from "@/components/controlled-dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -17,6 +18,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import Loader from "@/components/ui/loader";
 import {
   Table,
   TableBody,
@@ -25,12 +27,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Loader, Plus } from "lucide-react";
-import {
-  useCreateReceiver,
-  useFetchReceivers,
-  useUpdateReceiver,
-} from "@/hooks/use-receiver";
+import { Plus } from "lucide-react";
+import { useCreateReceiver, useUpdateReceiver } from "@/hooks/use-receiver";
+import { useFetchClients } from "@/hooks/use-client";
 import { Receiver, UpdateReceiver, UserPayload } from "@/lib/types";
 
 export function ReceiverList({
@@ -299,6 +298,21 @@ export function AddReceiverDialog({
 }) {
   const [open, setOpen] = useState(false);
   const { execute, loading: addingReceiver } = useCreateReceiver();
+  const {
+    data: clients,
+    loading: loadingClients,
+    refetch: refetchClients,
+  } = useFetchClients();
+
+  useEffect(() => {
+    if (user?.company?.id) {
+      refetchClients({ query: { company_id: user.company.id } });
+      return;
+    }
+
+    refetchClients();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.company?.id]);
 
   const formSchema = z.object({
     receiver_name: z
@@ -320,7 +334,7 @@ export function AddReceiverDialog({
       receiver_phone: "",
       receiver_positon: "",
       is_active: true,
-      client_id: user?.client.id,
+      client_id: user?.client?.id,
     },
   });
 
@@ -332,7 +346,7 @@ export function AddReceiverDialog({
         receiver_phone: values.receiver_phone,
         receiver_position: values.receiver_positon,
         created_by: user?.username,
-        client_id: Number(user?.client?.id),
+        client_id: values.client_id,
         is_active: true,
       },
     });
@@ -385,6 +399,26 @@ export function AddReceiverDialog({
                 </FormItem>
               )}
             />
+            <Loader loading={loadingClients}>
+              <FormField
+                control={form.control}
+                name="client_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Client</FormLabel>
+                    <FormControl>
+                      <ClientComboBox
+                        clientData={Array.isArray(clients) ? clients : null}
+                        value={field.value}
+                        onValueChange={field.onChange}
+                        allowNull={false}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </Loader>
             <FormField
               control={form.control}
               name="receiver_email"
