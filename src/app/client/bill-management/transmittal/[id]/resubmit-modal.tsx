@@ -211,7 +211,7 @@ export function ResubmittModal({
             reference_number: originalItem?.reference_number,
             return_date: null,
             status: "resubmitted",
-            category: "billing_statement",
+            category: "billing_statement" as const,
             file_name: r.file.name,
             file_key: s3Key,
             file_size: r.file.size.toString(),
@@ -301,10 +301,7 @@ export function ResubmittModal({
                 </FieldContent>
                 {form.formState.errors.billing_transmittal_number && (
                   <FieldError>
-                    {
-                      form.formState.errors.billing_transmittal_number
-                        .message
-                    }
+                    {form.formState.errors.billing_transmittal_number.message}
                   </FieldError>
                 )}
               </Field>
