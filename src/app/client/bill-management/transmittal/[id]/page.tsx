@@ -14,8 +14,13 @@ import {
   PostTransmittalComponent,
   SendTransmittalComponent,
   HistoryDialog,
+  ForwardTransmittalDialog,
 } from "./dialogs";
-import { useFetchTransmittal, useFetchItems } from "@/hooks/use-transmittal";
+import {
+  useFetchTransmittal,
+  useFetchItems,
+  useForwardTransmittal,
+} from "@/hooks/use-transmittal";
 import { useFetchUsers } from "@/hooks/use-user";
 import { ResubmittModal } from "./resubmit-modal";
 import { StatusBadge } from "@/components/status-badge";
@@ -44,6 +49,7 @@ export default function TransmittalDetailPage() {
   const transmittalId = params.id;
   const [modalOpen, setModalOpen] = useState(false);
   const [isSendMode, setIsSendMode] = useState(false);
+  const [isForwardMode, setIsForwardMode] = useState(false);
 
   const user = useCurrentUser();
   const {
@@ -60,6 +66,8 @@ export default function TransmittalDetailPage() {
     refetch: refetchItems,
     loading: itemLoading,
   } = useFetchItems();
+  const { execute: forwardTransmittal, loading: forwardingLoading } =
+    useForwardTransmittal();
 
   const [filteredItems, setFilteredItems] = useState<TransmittalItems[]>([]);
 
@@ -136,6 +144,21 @@ export default function TransmittalDetailPage() {
     });
 
     setFilteredItems(result);
+  }
+
+  async function handleForwardStatus(status: string) {
+    const { error } = await forwardTransmittal({
+      params: `/${transmittalData?.id}`,
+      body: { status },
+    });
+
+    if (error) {
+      toast.error(`Failed to forward transmittal: ${error.message}`);
+    } else {
+      toast.success("Transmittal forwarded successfully!");
+    }
+
+    refetchTransmittals();
   }
 
   //const isRejected = transmittalData?.status === "rejected";
@@ -233,6 +256,13 @@ export default function TransmittalDetailPage() {
                       }}
                     />
                   )}
+                  {isDraft && isForwardMode && (
+                    <ForwardTransmittalDialog
+                      onConfirm={() => handleForwardStatus("forwarded")}
+                      loading={forwardingLoading}
+                      disabled={transmittalLoading || forwardingLoading}
+                    />
+                  )}
                   {isReturned && (
                     <>
                       <Button
@@ -256,18 +286,33 @@ export default function TransmittalDetailPage() {
                   )}
                   {isDraft && (
                     <>
-                      <div className="flex items-center gap-2 ml-auto">
-                        <Switch
-                          id="send-mode"
-                          checked={isSendMode}
-                          onCheckedChange={setIsSendMode}
-                        />
-                        <Label
-                          htmlFor="send-mode"
-                          className="cursor-pointer text-sm"
-                        >
-                          {isSendMode ? "Email" : "Operations"}
-                        </Label>
+                      <div className="flex items-center gap-4 ml-auto">
+                        <div className="flex items-center gap-2">
+                          <Switch
+                            id="forward-mode"
+                            checked={isForwardMode}
+                            onCheckedChange={setIsForwardMode}
+                          />
+                          <Label
+                            htmlFor="forward-mode"
+                            className="cursor-pointer text-sm"
+                          >
+                            Forward
+                          </Label>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Switch
+                            id="send-mode"
+                            checked={isSendMode}
+                            onCheckedChange={setIsSendMode}
+                          />
+                          <Label
+                            htmlFor="send-mode"
+                            className="cursor-pointer text-sm"
+                          >
+                            {isSendMode ? "Email" : "Operations"}
+                          </Label>
+                        </div>
                       </div>
                       {isSendMode ? (
                         <SendTransmittalComponent
@@ -377,6 +422,14 @@ export default function TransmittalDetailPage() {
         )}
         {isDraft && (
           <UploadFile
+            transmittalData={transmittalData}
+            transmittalId={transmittalId ? Number(transmittalId) : undefined}
+            refetchTransmittal={refetchTransmittal}
+          />
+        )}
+        {isDraft && isForwardMode && (
+          <UploadFile
+            mode="proof_attachment"
             transmittalData={transmittalData}
             transmittalId={transmittalId ? Number(transmittalId) : undefined}
             refetchTransmittal={refetchTransmittal}

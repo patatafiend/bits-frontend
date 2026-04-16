@@ -346,7 +346,10 @@ export type SendTransmittalRequest = {
 
 export type AddTransmittalItemPayload = {
   transmittal_id: number;
+  transmittal_item_number?: string | null;
+  return_date?: string | null;
   status: string;
+  category?: "billing_statement" | "proof_attachment";
   file_name: string;
   file_key: string;
   file_size: string;

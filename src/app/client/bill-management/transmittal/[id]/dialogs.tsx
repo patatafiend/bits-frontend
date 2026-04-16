@@ -7,12 +7,14 @@ import {
   RefreshCcw,
   ArrowRight,
   History,
+  CheckCircle,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -795,6 +797,56 @@ export function HistoryDialog({ id }: { id: number }) {
         </Table>
       </div>
     </DrawerDialog>
+  );
+}
+
+export function ForwardTransmittalDialog({
+  onConfirm,
+  loading,
+  disabled,
+}: {
+  onConfirm: () => void;
+  loading?: boolean;
+  disabled?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <>
+      <Button variant="success" onClick={() => setOpen(true)} disabled={disabled}>
+        Forwarded
+      </Button>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-green-600">
+              <CheckCircle className="w-5 h-5" />
+              Confirm
+            </DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Are you sure you want to tag this transmittal as forwarded? This action cannot
+            be undone.
+          </p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              className="bg-green-600 hover:bg-green-700"
+              onClick={() => {
+                onConfirm();
+                setOpen(false);
+              }}
+              disabled={loading}
+            >
+              {loading ? "Processing..." : "Confirm"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 

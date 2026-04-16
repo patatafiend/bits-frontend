@@ -10,13 +10,22 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useCurrentUser } from "@/components/providers/auth-provider";
 import { EditModal, EndorseTransmittalComponent } from "./dialogs";
-import { HistoryDialog } from "@/app/client/bill-management/transmittal/[id]/dialogs";
-import { useFetchTransmittal } from "@/hooks/use-transmittal";
+import {
+  ForwardTransmittalDialog,
+  HistoryDialog,
+} from "@/app/client/bill-management/transmittal/[id]/dialogs";
+import {
+  useFetchTransmittal,
+  useForwardTransmittal,
+} from "@/hooks/use-transmittal";
 import { useFetchUsers } from "@/hooks/use-user";
 import { StatusBadge } from "@/components/status-badge";
 import { formatDate } from "@/lib/utils";
 import { SearchTransmittalItemsComponent } from "./dialogs";
 import { TransmittalItems } from "@/lib/types";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { UploadFile } from "@/app/client/bill-management/transmittal/[id]/upload-file";
 // import { PDFDownloadLink } from "@react-pdf/renderer";
 // import { TransmittalPDF } from "./export-to-pdf";
 
@@ -25,12 +34,15 @@ const BILLING_OFFICER = 3;
 export default function TransmittalDetailPage() {
   const params = useParams();
   const transmittalId = params.id;
+  const [isForwardMode, setIsForwardMode] = useState(false);
   const user = useCurrentUser();
   const {
     data: transmittalData,
     refetch: refetchTransmittal,
     loading: transmittalLoading,
   } = useFetchTransmittal();
+  const { execute: forwardTransmittal, loading: forwardingLoading } =
+    useForwardTransmittal();
   const { data: userData, refetch: refetchUsers } = useFetchUsers();
   const [filteredItems, setFilteredItems] = useState<TransmittalItems[]>([]);
 
@@ -83,6 +95,21 @@ export default function TransmittalDetailPage() {
     });
 
     setFilteredItems(result);
+  }
+
+  async function handleForwardStatus(status: string) {
+    const { error } = await forwardTransmittal({
+      params: `/${transmittalData?.id}`,
+      body: { status },
+    });
+
+    if (error) {
+      toast.error(`Failed to forward transmittal: ${error.message}`);
+    } else {
+      toast.success("Transmittal forwarded successfully!");
+    }
+
+    refetchTransmittals();
   }
 
   const isPending = transmittalData?.status === "pending";
@@ -172,6 +199,26 @@ export default function TransmittalDetailPage() {
                         transmittalData={transmittalData}
                         onEndorse={refetchTransmittals}
                       />
+                      <div className="flex items-center gap-2 ml-auto">
+                        <Switch
+                          id="operations-forward-mode"
+                          checked={isForwardMode}
+                          onCheckedChange={setIsForwardMode}
+                        />
+                        <Label
+                          htmlFor="operations-forward-mode"
+                          className="cursor-pointer text-sm"
+                        >
+                          Forward
+                        </Label>
+                      </div>
+                      {isForwardMode && (
+                        <ForwardTransmittalDialog
+                          onConfirm={() => handleForwardStatus("forwarded")}
+                          loading={forwardingLoading}
+                          disabled={transmittalLoading || forwardingLoading}
+                        />
+                      )}
                     </>
                   )}
                 </div>
@@ -240,6 +287,14 @@ export default function TransmittalDetailPage() {
               </div>
             </CardContent>
           </Card>
+        )}
+        {isPending && isForwardMode && (
+          <UploadFile
+            mode="proof_attachment"
+            transmittalData={transmittalData}
+            transmittalId={transmittalId ? Number(transmittalId) : undefined}
+            refetchTransmittal={refetchTransmittal}
+          />
         )}
       </div>
     </div>
