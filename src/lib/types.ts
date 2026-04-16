@@ -203,6 +203,7 @@ export type UploadFileProps = {
 export type FileViewerModalProps = {
   file: { url: string; name: string; type: string } | null;
   onClose: () => void;
+  allowDownload?: boolean;
 };
 
 export type Receiver = {

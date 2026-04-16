@@ -37,6 +37,7 @@ import {
 // import { TransmittalPDF } from "./export-to-pdf";
 
 const OPERATIONS_ADMIN = 4;
+const BILLING_OFFICER = 3;
 
 export default function TransmittalDetailPage() {
   const params = useParams();
@@ -50,7 +51,10 @@ export default function TransmittalDetailPage() {
     refetch: refetchTransmittal,
     loading: transmittalLoading,
   } = useFetchTransmittal();
-  const { data: userData, refetch: refetchUsers } = useFetchUsers();
+  const { data: operationAdminUserData, refetch: refetchOperationAdminUsers } =
+    useFetchUsers();
+  const { data: billingOfficerUserData, refetch: refetchBillingOfficerUsers } =
+    useFetchUsers();
   const {
     data: items,
     refetch: refetchItems,
@@ -74,18 +78,36 @@ export default function TransmittalDetailPage() {
   }
 
   useEffect(() => {
-    if (transmittalId && user?.client.id) {
-      refetchUsers({
-        query: { client_id: user?.client.id, role_id: OPERATIONS_ADMIN },
-      });
-      refetchTransmittal({
-        params: `${transmittalId}`,
-        query: { include_items: true },
-      });
-    }
+    if (!transmittalId || !user?.client.id) return;
+
+    refetchTransmittal({
+      params: `${transmittalId}`,
+      query: { include_items: true },
+    });
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.client.id]);
+  }, [transmittalId, user?.client.id]);
+
+  useEffect(() => {
+    if (!transmittalData || !user?.client.id) return;
+
+    //const businessUnitId = transmittalData.business_unit_id ?? undefined;
+
+    refetchOperationAdminUsers({
+      query: {
+        client_id: user?.client.id,
+        role_id: OPERATIONS_ADMIN,
+      },
+    });
+    refetchBillingOfficerUsers({
+      query: {
+        client_id: user?.client.id,
+        role_id: BILLING_OFFICER,
+      },
+    });
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [transmittalData?.id, transmittalData?.business_unit_id, user?.client.id]);
 
   useEffect(() => {
     setFilteredItems(transmittalData?.transmittal_items ?? []);
@@ -149,10 +171,18 @@ export default function TransmittalDetailPage() {
                     size="sm"
                     onClick={() => {
                       refetchTransmittals();
-                      refetchUsers({
+                      refetchOperationAdminUsers({
                         query: {
                           client_id: user?.client.id,
                           role_id: OPERATIONS_ADMIN,
+                          //business_unit_id: transmittalData.business_unit_id,
+                        },
+                      });
+                      refetchBillingOfficerUsers({
+                        query: {
+                          client_id: user?.client.id,
+                          role_id: BILLING_OFFICER,
+                          //business_unit_id: transmittalData.business_unit_id,
                         },
                       });
                       toast.info("Refreshing transmittal data...");
@@ -182,12 +212,21 @@ export default function TransmittalDetailPage() {
                   {isDraft && (
                     <EditModal
                       transmittalData={transmittalData}
-                      userData={userData}
+                      operationAdminUserData={operationAdminUserData}
+                      billingOfficerUserData={billingOfficerUserData}
                       onSubmit={() => {
-                        refetchUsers({
+                        refetchOperationAdminUsers({
                           query: {
                             client_id: user?.client.id,
                             role_id: OPERATIONS_ADMIN,
+                            //business_unit_id: transmittalData.business_unit_id,
+                          },
+                        });
+                        refetchBillingOfficerUsers({
+                          query: {
+                            client_id: user?.client.id,
+                            role_id: BILLING_OFFICER,
+                            //business_unit_id: transmittalData.business_unit_id,
                           },
                         });
                         refetchTransmittals();

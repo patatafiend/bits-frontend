@@ -206,6 +206,8 @@ export default function TransmittalDetailPage() {
                   data={filteredItems}
                   loading={transmittalLoading}
                   onFilter={handleFilter}
+                  forceShowViewButton
+                  allowFileDownload={false}
                 />
               </div>
             </CardContent>

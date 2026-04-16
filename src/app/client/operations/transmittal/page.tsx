@@ -15,7 +15,6 @@ export default function TransmittalListPage() {
     search?: string;
     billing_transmittal_number?: string;
     status?: string;
-    business_unit_id?: number;
     skip?: number;
     limit?: number;
     order_by?: string;
@@ -31,7 +30,6 @@ export default function TransmittalListPage() {
         client_id: user?.client.id,
         order_by: params.order_by ?? "recent",
         status: params.status === "all" ? undefined : params.status,
-        business_unit_id: params.business_unit_id,
         assigned_operation_admin: user?.id,
         exclude_statuses: ["draft", "resubmitted", "partially_returned"],
       },

@@ -511,11 +511,13 @@ export function PostTransmittalComponent({
 
 export function EditModal({
   transmittalData,
-  userData,
+  operationAdminUserData,
+  billingOfficerUserData,
   onSubmit,
 }: {
   transmittalData: TransmittalWithItems;
-  userData: User[] | null;
+  operationAdminUserData: User[] | null;
+  billingOfficerUserData: User[] | null;
   onSubmit: () => void;
 }) {
   const { execute, loading } = useUpdateTransmittal();
@@ -528,6 +530,7 @@ export function EditModal({
       .default(new Date().toISOString().split("T")[0]),
     billing_receiver_id: z.number().optional(),
     assigned_operation_admin: z.number().nullable().optional(),
+    assigned_billing_officer: z.number().nullable().optional(),
     billing_receiver_email: z
       .string()
       .email("Invalid email")
@@ -545,6 +548,8 @@ export function EditModal({
       //billing_receiver_id: transmittalData.billing_receiver_id ?? null,
       assigned_operation_admin:
         transmittalData.assigned_operation_admin ?? undefined,
+      assigned_billing_officer:
+        transmittalData.assigned_billing_officer ?? undefined,
       billing_receiver_email: transmittalData.billing_receiver_email ?? "",
       billing_receiver_name: transmittalData.billing_receiver_name ?? "",
       billing_receiver_company: transmittalData.billing_receiver_company ?? "",
@@ -562,6 +567,7 @@ export function EditModal({
         billing_transmittal_number: data.billing_transmittal_number,
         transmittal_date: data.transmittal_date,
         assigned_operation_admin: data.assigned_operation_admin || null,
+        assigned_billing_officer: data.assigned_billing_officer || null,
         billing_receiver_email: data.billing_receiver_email || null,
         billing_receiver_name: data.billing_receiver_name,
         billing_receiver_company: data.billing_receiver_company,
@@ -636,7 +642,26 @@ export function EditModal({
                       <UserComboBox
                         value={field.value ?? null}
                         onValueChange={(val) => field.onChange(val)}
-                        userData={userData ?? []}
+                        userData={operationAdminUserData ?? []}
+                        allowNull
+                        nullLabel="Unassigned"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="assigned_billing_officer"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Billing Officer</FormLabel>
+                    <FormControl>
+                      <UserComboBox
+                        value={field.value ?? null}
+                        onValueChange={(val) => field.onChange(val)}
+                        userData={billingOfficerUserData ?? []}
                         allowNull
                         nullLabel="Unassigned"
                       />

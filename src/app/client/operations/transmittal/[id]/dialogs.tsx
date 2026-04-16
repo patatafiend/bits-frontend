@@ -44,7 +44,11 @@ import Loader from "@/components/ui/loader";
 import { StatusBadge } from "@/components/status-badge";
 import { useCurrentUser } from "@/components/providers/auth-provider";
 
-export function FileViewerModal({ file, onClose }: FileViewerModalProps) {
+export function FileViewerModal({
+  file,
+  onClose,
+  allowDownload = true,
+}: FileViewerModalProps) {
   if (!file) return null;
 
   const isImage = file.type.startsWith("image/");
@@ -69,12 +73,14 @@ export function FileViewerModal({ file, onClose }: FileViewerModalProps) {
             <DialogTitle className="text-lg truncate pr-4">
               {file.name}
             </DialogTitle>
-            <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={handleDownload}>
-                <Download className="w-4 h-4 mr-2" />
-                Download
-              </Button>
-            </div>
+            {allowDownload && (
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm" onClick={handleDownload}>
+                  <Download className="w-4 h-4 mr-2" />
+                  Download
+                </Button>
+              </div>
+            )}
           </div>
         </DialogHeader>
 
@@ -103,12 +109,16 @@ export function FileViewerModal({ file, onClose }: FileViewerModalProps) {
               <FileText className="w-16 h-16 text-muted-foreground mb-4" />
               <p className="text-lg font-medium mb-2">Spreadsheet Preview</p>
               <p className="text-sm text-muted-foreground mb-4">
-                Download to view in Excel or Google Sheets
+                {allowDownload
+                  ? "Download to view in Excel or Google Sheets"
+                  : "Preview is not available for spreadsheet files in the browser"}
               </p>
-              <Button onClick={handleDownload}>
-                <Download className="w-4 h-4 mr-2" />
-                Download Spreadsheet
-              </Button>
+              {allowDownload && (
+                <Button onClick={handleDownload}>
+                  <Download className="w-4 h-4 mr-2" />
+                  Download Spreadsheet
+                </Button>
+              )}
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center h-full p-8 text-center">
@@ -117,10 +127,12 @@ export function FileViewerModal({ file, onClose }: FileViewerModalProps) {
               <p className="text-sm text-muted-foreground mb-4">
                 This file type cannot be previewed in the browser
               </p>
-              <Button onClick={handleDownload}>
-                <Download className="w-4 h-4 mr-2" />
-                Download File
-              </Button>
+              {allowDownload && (
+                <Button onClick={handleDownload}>
+                  <Download className="w-4 h-4 mr-2" />
+                  Download File
+                </Button>
+              )}
             </div>
           )}
         </div>
@@ -386,10 +398,14 @@ export function SearchTransmittalItemsComponent({
   data,
   onFilter,
   loading,
+  forceShowViewButton = false,
+  allowFileDownload = true,
 }: {
   data: TransmittalItems[];
   loading: boolean;
   onFilter: (params: { search?: string; status?: string }) => void;
+  forceShowViewButton?: boolean;
+  allowFileDownload?: boolean;
 }) {
   const [query, setQuery] = useState("");
   const [urlCache, setUrlCache] = useState<
@@ -459,6 +475,7 @@ export function SearchTransmittalItemsComponent({
   const transmittalItems = data.filter(
     (item) => item.category !== "proof_attachment",
   );
+  const canViewFiles = forceShowViewButton || user?.role == "operations admin";
 
   function renderItemRows(items: TransmittalItems[]) {
     return items.map((item, index) => (
@@ -488,7 +505,7 @@ export function SearchTransmittalItemsComponent({
         </div>
 
         <div className="flex items-center gap-1 ml-4 opacity-0 group-hover:opacity-100 transition-opacity">
-          {user?.role == "operations admin" && (
+          {canViewFiles && (
             <Button
               variant="ghost"
               size="sm"
@@ -552,6 +569,7 @@ export function SearchTransmittalItemsComponent({
       <FileViewerModal
         file={viewingFile}
         onClose={() => setViewingFile(null)}
+        allowDownload={allowFileDownload}
       />
     </div>
   );

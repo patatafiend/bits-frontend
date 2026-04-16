@@ -14,7 +14,7 @@ export default function TransmittalListPage() {
     search?: string;
     billing_transmittal_number?: string;
     status?: string;
-    business_unit_id?: number;
+    //business_unit_id?: number;
     skip?: number;
     limit?: number;
     order_by?: string;
@@ -28,7 +28,7 @@ export default function TransmittalListPage() {
         billing_transmittal_number:
           params.billing_transmittal_number || undefined,
         client_id: user?.client.id,
-        business_unit_id: params.business_unit_id,
+        //business_unit_id: params.business_unit_id,
         order_by: params.order_by ?? "recent",
         status: params.status === "all" ? undefined : params.status,
         assigned_billing_officer: user?.id,
