@@ -41,15 +41,22 @@ export default function UserComboBox({
   const [open, setOpen] = useState(false);
 
   const options = useMemo(
-    () => userData?.map((u) => ({ label: u.username, value: u.id })) ?? [],
+    () =>
+      userData?.map((u) => ({
+        label: [u.first_name, u.middle_name, u.last_name]
+          .filter(Boolean)
+          .join(" "),
+        value: u.id,
+      })) ?? [],
     [userData],
   );
 
-  const selectedLabel = value != null
-    ? options.find((o) => o.value === value)?.label
-    : allowNull
-      ? nullLabel
-      : null;
+  const selectedLabel =
+    value != null
+      ? options.find((o) => o.value === value)?.label
+      : allowNull
+        ? nullLabel
+        : null;
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -62,7 +69,9 @@ export default function UserComboBox({
             className={cn("flex-1 justify-between", className)}
           >
             <span className="truncate text-sm">
-              {selectedLabel ?? <span className="text-muted-foreground">{placeholder}</span>}
+              {selectedLabel ?? (
+                <span className="text-muted-foreground">{placeholder}</span>
+              )}
             </span>
             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </Button>
@@ -96,7 +105,12 @@ export default function UserComboBox({
                     setOpen(false);
                   }}
                 >
-                  <Check className={cn("mr-2 h-4 w-4", value == null ? "opacity-100" : "opacity-0")} />
+                  <Check
+                    className={cn(
+                      "mr-2 h-4 w-4",
+                      value == null ? "opacity-100" : "opacity-0",
+                    )}
+                  />
                   {nullLabel}
                 </CommandItem>
               )}
@@ -109,7 +123,12 @@ export default function UserComboBox({
                     setOpen(false);
                   }}
                 >
-                  <Check className={cn("mr-2 h-4 w-4", value === option.value ? "opacity-100" : "opacity-0")} />
+                  <Check
+                    className={cn(
+                      "mr-2 h-4 w-4",
+                      value === option.value ? "opacity-100" : "opacity-0",
+                    )}
+                  />
                   {option.label}
                 </CommandItem>
               ))}
