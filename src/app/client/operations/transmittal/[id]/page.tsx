@@ -1,6 +1,6 @@
 "use client";
 
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
@@ -9,7 +9,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useCurrentUser } from "@/components/providers/auth-provider";
-import { EditModal, EndorseTransmittalComponent } from "./dialogs";
+import { EditModal, EndorseTransmittalComponent, ReturnTransmittalComponent } from "./dialogs";
 import {
   ForwardTransmittalDialog,
   HistoryDialog,
@@ -33,6 +33,7 @@ const BILLING_OFFICER = 3;
 
 export default function TransmittalDetailPage() {
   const params = useParams();
+  const router = useRouter();
   const transmittalId = params.id;
   const [isForwardMode, setIsForwardMode] = useState(false);
   const user = useCurrentUser();
@@ -225,6 +226,13 @@ export default function TransmittalDetailPage() {
                           disabled={transmittalLoading || forwardingLoading}
                         />
                       )}
+                      <ReturnTransmittalComponent
+                        transmittalData={transmittalData}
+                        onReturn={() => {
+                          refetchTransmittals();
+                          router.push("./");
+                        }}
+                      />
                     </>
                   )}
                 </div>

@@ -105,6 +105,20 @@ const clientData: { navMain: NavItem[]; adminMain: NavItem[] } = {
         },
       ],
     },
+    {
+      title: "Management",
+      url: "/client/management",
+      icon: ReceiptText,
+      isActive: true,
+      roles: ["admin", "billing admin"],
+      items: [
+        {
+          title: "Manage Receivers",
+          url: "/client/management/manage-receivers",
+          permission: "receiver:read",
+        },
+      ],
+    },
   ],
   adminMain: [
     {
@@ -160,7 +174,7 @@ export function AppSidebar() {
     user?.account_type === "admin_account" ||
     user?.account_type === "company_account" ||
     user?.account_type === "super_admin_account";
-    
+
   const [workspace, setWorkspace] = useState<"admin" | "billing">("billing");
   const pathname = usePathname();
 

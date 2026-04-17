@@ -36,6 +36,7 @@ import UserComboBox from "@/components/user-combobox";
 import {
   useAssignOfficer,
   useEndorseTransmittal,
+  useReturnTransmittal,
 } from "@/hooks/use-transmittal";
 import { useFetchBusinessUnits } from "@/hooks/use-client";
 import { Input } from "@/components/ui/input";
@@ -572,5 +573,122 @@ export function SearchTransmittalItemsComponent({
         allowDownload={allowFileDownload}
       />
     </div>
+  );
+}
+
+export function ReturnTransmittalComponent({
+  transmittalData,
+  onReturn,
+}: {
+  transmittalData: Transmittal;
+  onReturn: () => void;
+}) {
+  const { execute: returnTransmittal, loading } = useReturnTransmittal();
+  const [open, setOpen] = useState(false);
+  const isDisabled =
+    transmittalData.status === "accepted" ||
+    transmittalData.status === "endorsed";
+  const hasItems = (transmittalData.transmittal_items?.length ?? 0) > 0;
+
+  const handleReturn = async () => {
+    const { error } = await returnTransmittal({
+      body: {
+        status: "draft",
+      },
+      params: `/${transmittalData.id}`,
+    });
+    if (error) {
+      toast.error(error.message || "Failed to endorse transmittal");
+      return;
+    }
+    setOpen(false);
+    onReturn();
+    toast.success("Transmittal returned successfully!");
+  };
+  return (
+    <>
+      <Button
+        variant="destructive"
+        onClick={() => setOpen(true)}
+        disabled={isDisabled}
+      >
+        {isDisabled ? "Returned" : "Return"}
+      </Button>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="w-[calc(100%-2rem)] sm:max-w-lg rounded-lg">
+          <DialogHeader>
+            <DialogTitle>
+              {hasItems
+                ? "Confirm Return Transmittal"
+                : "Cannot Return Transmittal"}
+            </DialogTitle>
+          </DialogHeader>
+
+          {hasItems ? (
+            <div className="space-y-4">
+              <div className="rounded-lg border p-3 space-y-1 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Transmittal</span>
+                  <span className="font-medium">
+                    {transmittalData.transmittal_number}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Date</span>
+                  <span className="font-medium">
+                    {new Date(
+                      transmittalData.transmittal_date,
+                    ).toLocaleDateString()}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Files</span>
+                  <span className="font-medium">
+                    {transmittalData.transmittal_items.length} attached
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setOpen(false)}
+                  className="w-full sm:w-auto"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleReturn}
+                  disabled={loading}
+                  className="w-full sm:w-auto"
+                >
+                  {loading ? "Returning..." : "Confirm Return"}
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="flex items-start gap-3 p-3 bg-yellow-50 text-yellow-700 rounded-lg border border-yellow-200">
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                <p className="text-sm">
+                  No files attached. Please upload at least one billing
+                  statement before endorsing.
+                </p>
+              </div>
+              <div className="flex justify-end">
+                <Button
+                  variant="outline"
+                  onClick={() => setOpen(false)}
+                  className="w-full sm:w-auto"
+                >
+                  Close
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

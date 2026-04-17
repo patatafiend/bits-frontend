@@ -213,7 +213,8 @@ export type Receiver = {
   receiver_phone?: string;
   receiver_position?: string;
   is_active: boolean;
-  client_id: number;
+  client_id?: number;
+  business_unit_id?: number;
   created_by?: string;
 };
 

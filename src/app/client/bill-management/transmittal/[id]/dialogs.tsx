@@ -867,7 +867,7 @@ export function ReturnTransmittalComponent({
   const handlePost = async () => {
     const { error } = await returnTransmittal({
       body: {
-        status: "returned",
+        status: "draft",
       },
       params: `/${transmittalData.id}`,
     });
