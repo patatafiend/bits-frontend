@@ -62,7 +62,11 @@ export default function TransmittalDetailPage() {
       query: { include_items: true },
     });
     refetchUsers({
-      query: { client_id: user?.client.id, role_id: BILLING_OFFICER },
+      query: {
+        client_id: user?.client.id,
+        role_id: BILLING_OFFICER,
+        business_unit_id: transmittalData?.business_unit_id,
+      },
     });
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -144,6 +148,7 @@ export default function TransmittalDetailPage() {
                         query: {
                           client_id: user?.client.id,
                           role_id: BILLING_OFFICER,
+                          business_unit_id: transmittalData?.business_unit_id,
                         },
                       });
                       toast.info("Refreshing transmittal data...");
@@ -190,6 +195,7 @@ export default function TransmittalDetailPage() {
                             query: {
                               client_id: user?.client.id,
                               role_id: BILLING_OFFICER,
+                              business_unit_id: transmittalData?.business_unit_id,
                             },
                           });
                           refetchTransmittals();

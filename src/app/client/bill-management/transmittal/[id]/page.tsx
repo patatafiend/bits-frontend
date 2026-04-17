@@ -99,18 +99,18 @@ export default function TransmittalDetailPage() {
   useEffect(() => {
     if (!transmittalData || !user?.client.id) return;
 
-    //const businessUnitId = transmittalData.business_unit_id ?? undefined;
-
     refetchOperationAdminUsers({
       query: {
         client_id: user?.client.id,
         role_id: OPERATIONS_ADMIN,
+        business_unit_id: transmittalData.business_unit_id,
       },
     });
     refetchBillingOfficerUsers({
       query: {
         client_id: user?.client.id,
         role_id: BILLING_OFFICER,
+        business_unit_id: transmittalData.business_unit_id,
       },
     });
 
@@ -198,14 +198,14 @@ export default function TransmittalDetailPage() {
                         query: {
                           client_id: user?.client.id,
                           role_id: OPERATIONS_ADMIN,
-                          //business_unit_id: transmittalData.business_unit_id,
+                          business_unit_id: transmittalData.business_unit_id,
                         },
                       });
                       refetchBillingOfficerUsers({
                         query: {
                           client_id: user?.client.id,
                           role_id: BILLING_OFFICER,
-                          //business_unit_id: transmittalData.business_unit_id,
+                          business_unit_id: transmittalData.business_unit_id,
                         },
                       });
                       toast.info("Refreshing transmittal data...");
@@ -242,14 +242,14 @@ export default function TransmittalDetailPage() {
                           query: {
                             client_id: user?.client.id,
                             role_id: OPERATIONS_ADMIN,
-                            //business_unit_id: transmittalData.business_unit_id,
+                            business_unit_id: transmittalData.business_unit_id,
                           },
                         });
                         refetchBillingOfficerUsers({
                           query: {
                             client_id: user?.client.id,
                             role_id: BILLING_OFFICER,
-                            //business_unit_id: transmittalData.business_unit_id,
+                            business_unit_id: transmittalData.business_unit_id,
                           },
                         });
                         refetchTransmittals();

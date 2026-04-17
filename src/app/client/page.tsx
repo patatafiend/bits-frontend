@@ -100,11 +100,11 @@ export default function HomePage() {
     return <BillingOfficerDashboard />;
   }
 
-  if (user.role === "operations admin") {
+  if (user.role === "operations admin" || user.role === "operations admin MWFL") {
     return <OperationsDashboard />;
   }
 
-  if (user.role === "billing admin") {
+  if (user.role === "billing admin" || user.role === "billing admin MWFL") {
     return <BillingAdminDashboard />;
   }
 
