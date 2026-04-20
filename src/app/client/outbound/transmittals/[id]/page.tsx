@@ -1,6 +1,6 @@
 "use client";
 
-import { useParams } from "next/navigation";
+import { useParams , useRouter} from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
@@ -12,8 +12,9 @@ import { useCurrentUser } from "@/components/providers/auth-provider";
 import {
   useFetchTransmittal,
   useForwardTransmittal,
+  useReturnTransmittal,
 } from "@/hooks/use-transmittal";
-import { ForwardTransmittalDialog } from "./dialogs";
+import { ForwardTransmittalDialog, ReturnTransmittalDialog } from "./dialogs";
 import { StatusBadge } from "@/components/status-badge";
 import { formatDate } from "@/lib/utils";
 import { SearchTransmittalItemsComponent } from "@/app/client/operations/transmittal/[id]/dialogs";
@@ -30,6 +31,7 @@ import {
 
 export default function TransmittalDetailPage() {
   const params = useParams();
+  const router = useRouter();
   const transmittalId = params.id;
   const user = useCurrentUser();
   const {
@@ -39,6 +41,8 @@ export default function TransmittalDetailPage() {
   } = useFetchTransmittal();
   const { execute: updateStatus, loading: loadingUpdate } =
     useForwardTransmittal();
+  const { execute: returnTransmittal, loading: loadingReturn } =
+    useReturnTransmittal();
   const [filteredItems, setFilteredItems] = useState<TransmittalItems[]>([]);
 
   function refetchTransmittals() {
@@ -102,7 +106,20 @@ export default function TransmittalDetailPage() {
     refetchTransmittals();
   }
 
-  const isButtonDisabled = transmittalData?.status === "endorsed";
+  async function handleReturnStatus() {
+    const { error } = await returnTransmittal({
+      params: `/${transmittalData?.id}`,
+      body: { status: "pending" },
+    });
+    if (error) {
+      toast.error(`Failed to return transmittal: ${error.message}`);
+    } else {
+      toast.success("Transmittal returned successfully!");
+    }
+    refetchTransmittals();
+  }
+
+  const canShowEndorsedActions = transmittalData?.status === "endorsed";
 
   return (
     <div className="container mx-auto py-8 max-w-4xl">
@@ -137,7 +154,16 @@ export default function TransmittalDetailPage() {
                   </Button>
                 </div>
                 <div className="flex items-center gap-2">
-                  {isButtonDisabled && (
+                  {canShowEndorsedActions && (
+                    <ReturnTransmittalDialog
+                      onConfirm={() => {
+                        handleReturnStatus();
+                        router.push("./");
+                      }}
+                      loading={loadingReturn}
+                    />
+                  )}
+                  {canShowEndorsedActions && (
                     <ForwardTransmittalDialog
                       onConfirm={() => handleUpdateStatus("forwarded")}
                       loading={loadingUpdate}

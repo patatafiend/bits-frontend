@@ -112,3 +112,56 @@ export function ForwardTransmittalDialog({
     </>
   );
 }
+
+export function ReturnTransmittalDialog({
+  onConfirm,
+  loading,
+  disabled,
+}: {
+  onConfirm: () => void;
+  loading?: boolean;
+  disabled?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <>
+      <Button
+        variant="destructive"
+        onClick={() => setOpen(true)}
+        disabled={disabled}
+      >
+        Return
+      </Button>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <AlertCircle className="w-5 h-5" />
+              Confirm Return
+            </DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Are you sure you want to return this transmittal to draft status? 
+          </p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                onConfirm();
+                setOpen(false);
+              }}
+              disabled={loading}
+            >
+              {loading ? "Processing..." : "Confirm Return"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
