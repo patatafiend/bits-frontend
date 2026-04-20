@@ -1,10 +1,10 @@
 "use client";
 
-import { useParams , useRouter} from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, ImageIcon, RefreshCw } from "lucide-react";
+import { ArrowLeft, ImageIcon, RefreshCw, ChevronDown } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -44,6 +44,7 @@ export default function TransmittalDetailPage() {
   const { execute: returnTransmittal, loading: loadingReturn } =
     useReturnTransmittal();
   const [filteredItems, setFilteredItems] = useState<TransmittalItems[]>([]);
+  const [showReturnToggle, setShowReturnToggle] = useState(false);
 
   function refetchTransmittals() {
     refetchTransmittal({
@@ -154,7 +155,7 @@ export default function TransmittalDetailPage() {
                   </Button>
                 </div>
                 <div className="flex items-center gap-2">
-                  {canShowEndorsedActions && (
+                  {canShowEndorsedActions && showReturnToggle && (
                     <ReturnTransmittalDialog
                       onConfirm={() => {
                         handleReturnStatus();
@@ -168,6 +169,21 @@ export default function TransmittalDetailPage() {
                       onConfirm={() => handleUpdateStatus("forwarded")}
                       loading={loadingUpdate}
                     />
+                  )}
+                  {canShowEndorsedActions && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowReturnToggle(!showReturnToggle)}
+                      className={showReturnToggle ? "bg-muted" : ""}
+                    >
+                      <ChevronDown
+                        className={`w-4 h-4 transition-transform ${
+                          showReturnToggle ? "rotate-180" : ""
+                        }`}
+                      />
+                      More Options
+                    </Button>
                   )}
                 </div>
               </div>
