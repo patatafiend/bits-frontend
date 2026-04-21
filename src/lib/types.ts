@@ -456,3 +456,86 @@ export type UpdateBusinessUnit = Partial<CreateBusinessUnit> & {
   business_unit_email?: string | null;
   is_active?: boolean;
 };
+
+export type TrendGroupBy = "day" | "week" | "month";
+export type ReportFormat = "csv" | "xlsx" | "pdf";
+
+export type ReportFilters = {
+  start_date?: string;
+  end_date?: string;
+  client_id?: number;
+  business_unit_id?: number;
+  assigned_operation_admin?: number;
+  assigned_billing_officer?: number;
+  statuses?: string[];
+};
+
+export type TransmittalReportSummary = {
+  total: number;
+  draft: number;
+  pending: number;
+  endorsed: number;
+  forwarded: number;
+  sent: number;
+  accepted: number;
+  rejected: number;
+  returned: number;
+  partially_returned: number;
+};
+
+export type TransmittalReportTrendItem = {
+  bucket: string;
+  total: number;
+  draft: number;
+  pending: number;
+  endorsed: number;
+  forwarded: number;
+  sent: number;
+  accepted: number;
+  rejected: number;
+  returned: number;
+  partially_returned: number;
+};
+
+export type TransmittalReportTrendResponse = {
+  group_by: TrendGroupBy;
+  items: TransmittalReportTrendItem[];
+};
+
+export type ReportExportRequest = {
+  format: ReportFormat;
+  group_by: TrendGroupBy;
+  filters: ReportFilters;
+};
+
+export type ReportJob = {
+  id: number;
+  report_type: string;
+  format: ReportFormat;
+  status: string;
+  requested_by: number;
+  filters: {
+    group_by?: TrendGroupBy;
+    filters?: ReportFilters;
+  };
+  output_key?: string | null;
+  output_filename?: string | null;
+  error_message?: string | null;
+  started_at?: string | null;
+  completed_at?: string | null;
+  expires_at?: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type ReportJobCreateResponse = {
+  detail: string;
+  job_id: number;
+  status: string;
+};
+
+export type ReportDownloadResponse = {
+  url: string;
+  file_name: string;
+  expires_at?: string | null;
+};

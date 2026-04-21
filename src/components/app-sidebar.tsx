@@ -117,6 +117,11 @@ const clientData: { navMain: NavItem[]; adminMain: NavItem[] } = {
           url: "/client/management/manage-receivers",
           permission: "receiver:read",
         },
+        {
+          title: "Reports",
+          url: "/client/management/reports",
+          permission: "report:read",
+        },
       ],
     },
   ],
@@ -149,6 +154,11 @@ const clientData: { navMain: NavItem[]; adminMain: NavItem[] } = {
           title: "Manage Receivers",
           url: "/client/admin/billing-management/manage-receivers",
           permission: "receiver:read",
+        },
+        {
+          title: "Reports",
+          url: "/client/management/reports",
+          permission: "report:read",
         },
       ],
     },
