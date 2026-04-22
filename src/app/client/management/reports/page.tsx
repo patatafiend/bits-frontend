@@ -14,7 +14,10 @@ import {
   useFetchTransmittalReportSummary,
   useFetchTransmittalReportTrend,
 } from "@/hooks/use-report";
+import { useFetchUsers } from "@/hooks/use-user";
+import { useFetchBusinessUnits } from "@/hooks/use-client";
 import { ReportFormat, TrendGroupBy } from "@/lib/types";
+import { MultiSelect } from "@/components/ui/multi-select";
 import {
   Select,
   SelectContent,
@@ -22,6 +25,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { DatePicker } from "@/components/date-picker";
 
 function toIsoDate(value: Date) {
@@ -51,6 +62,10 @@ export default function ManagementReportsPage() {
   const [groupBy, setGroupBy] = useState<TrendGroupBy>("day");
   const [exportFormat, setExportFormat] = useState<ReportFormat>("csv");
   const [jobId, setJobId] = useState<number | null>(null);
+  const [businessUnitIds, setBusinessUnitIds] = useState<number[]>([]);
+  const [operationAdminIds, setOperationAdminIds] = useState<number[]>([]);
+  const [billingOfficerIds, setBillingOfficerIds] = useState<number[]>([]);
+  const [billingAdminIds, setBillingAdminIds] = useState<number[]>([]);
 
   const activeClientId = useMemo(
     () => selectedClientId ?? user?.client?.id ?? null,
@@ -75,6 +90,11 @@ export default function ManagementReportsPage() {
     loading: jobLoading,
     refetch: refetchReportJob,
   } = useFetchReportJob();
+
+  const { data: usersData, refetch: refetchUsers } = useFetchUsers();
+  const { data: businessUnitsData, refetch: refetchBusinessUnits } =
+    useFetchBusinessUnits();
+
   const {
     data: downloadData,
     loading: downloadLoading,
@@ -87,11 +107,93 @@ export default function ManagementReportsPage() {
     setMounted(true);
   }, []);
 
+  const operationAdminOptions = useMemo(() => {
+    return (usersData ?? []).filter((entry) =>
+      (entry.role ?? "").toLowerCase().includes("operations admin"),
+    );
+  }, [usersData]);
+
+  const billingOfficerOptions = useMemo(() => {
+    return (usersData ?? []).filter((entry) =>
+      (entry.role ?? "").toLowerCase().includes("billing officer"),
+    );
+  }, [usersData]);
+
+  const billingAdminOptions = useMemo(() => {
+    return (usersData ?? []).filter((entry) =>
+      (entry.role ?? "").toLowerCase().includes("billing admin"),
+    );
+  }, [usersData]);
+
+  const businessUnitMultiOptions = useMemo(
+    () =>
+      (businessUnitsData ?? []).map((businessUnit) => ({
+        value: businessUnit.id.toString(),
+        label: businessUnit.name,
+      })),
+    [businessUnitsData],
+  );
+
+  const billingAdminMultiOptions = useMemo(
+    () =>
+      billingAdminOptions.map((entry) => ({
+        value: entry.id.toString(),
+        label: `${entry.first_name} ${entry.last_name} (${entry.email})`,
+      })),
+    [billingAdminOptions],
+  );
+
+  const operationAdminMultiOptions = useMemo(
+    () =>
+      operationAdminOptions.map((entry) => ({
+        value: entry.id.toString(),
+        label: `${entry.first_name} ${entry.last_name}`,
+      })),
+    [operationAdminOptions],
+  );
+
+  const billingOfficerMultiOptions = useMemo(
+    () =>
+      billingOfficerOptions.map((entry) => ({
+        value: entry.id.toString(),
+        label: `${entry.first_name} ${entry.last_name}`,
+      })),
+    [billingOfficerOptions],
+  );
+
+  const activeAdvancedFilterCount =
+    businessUnitIds.length +
+    operationAdminIds.length +
+    billingOfficerIds.length +
+    billingAdminIds.length;
+
+  useEffect(() => {
+    if (!activeClientId) {
+      setBusinessUnitIds([]);
+      setOperationAdminIds([]);
+      setBillingOfficerIds([]);
+      setBillingAdminIds([]);
+      return;
+    }
+
+    refetchBusinessUnits({ params: `${activeClientId}/business_units` });
+    refetchUsers({ query: { client_id: activeClientId } });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeClientId]);
+
   function buildFilterQuery() {
     return {
       client_id: activeClientId ?? undefined,
       start_date: startDate || undefined,
       end_date: endDate || undefined,
+      business_unit_ids: businessUnitIds.length ? businessUnitIds : undefined,
+      assigned_operation_admin_ids: operationAdminIds.length
+        ? operationAdminIds
+        : undefined,
+      assigned_billing_officer_ids: billingOfficerIds.length
+        ? billingOfficerIds
+        : undefined,
+      created_by_user_ids: billingAdminIds.length ? billingAdminIds : undefined,
     };
   }
 
@@ -114,11 +216,7 @@ export default function ManagementReportsPage() {
     const payload = {
       format: exportFormat,
       group_by: groupBy,
-      filters: {
-        client_id: activeClientId,
-        start_date: startDate || undefined,
-        end_date: endDate || undefined,
-      },
+      filters: buildFilterQuery(),
     };
 
     const { data, error } = await queueExport({ body: payload });
@@ -147,6 +245,19 @@ export default function ManagementReportsPage() {
     }
 
     refetchDownloadUrl({ params: `${jobId}/download` });
+  }
+
+  function toNumberArray(values: string[]) {
+    return values
+      .map((value) => Number(value))
+      .filter((value) => Number.isFinite(value));
+  }
+
+  function clearAdvancedFilters() {
+    setBusinessUnitIds([]);
+    setOperationAdminIds([]);
+    setBillingOfficerIds([]);
+    setBillingAdminIds([]);
   }
 
   useEffect(() => {
@@ -217,6 +328,83 @@ export default function ManagementReportsPage() {
         </div>
       </div>
 
+      <details className="rounded-lg border p-4">
+        <summary className="cursor-pointer text-sm font-medium">
+          Advanced filters
+          {activeAdvancedFilterCount > 0
+            ? ` (${activeAdvancedFilterCount} selected)`
+            : ""}
+        </summary>
+
+        <div className="mt-4 space-y-3">
+          <div className="grid gap-3 md:grid-cols-2">
+            <label className="space-y-1 text-sm">
+              <span className="text-muted-foreground">Business Units</span>
+              <MultiSelect
+                modalPopover
+                placeholder="Select business units"
+                options={businessUnitMultiOptions}
+                defaultValue={businessUnitIds.map(String)}
+                onValueChange={(values) =>
+                  setBusinessUnitIds(toNumberArray(values))
+                }
+                className="w-full"
+              />
+            </label>
+
+            <label className="space-y-1 text-sm">
+              <span className="text-muted-foreground">Billing Admin</span>
+              <MultiSelect
+                modalPopover
+                placeholder="Select billing admins"
+                options={billingAdminMultiOptions}
+                defaultValue={billingAdminIds.map(String)}
+                onValueChange={(values) =>
+                  setBillingAdminIds(toNumberArray(values))
+                }
+                className="w-full"
+              />
+            </label>
+
+            <label className="space-y-1 text-sm">
+              <span className="text-muted-foreground">
+                Assigned Operation Admin
+              </span>
+              <MultiSelect
+                modalPopover
+                placeholder="Select operation admins"
+                options={operationAdminMultiOptions}
+                defaultValue={operationAdminIds.map(String)}
+                onValueChange={(values) =>
+                  setOperationAdminIds(toNumberArray(values))
+                }
+                className="w-full"
+              />
+            </label>
+
+            <label className="space-y-1 text-sm">
+              <span className="text-muted-foreground">Billing Officer</span>
+              <MultiSelect
+                modalPopover
+                placeholder="Select billing officers"
+                options={billingOfficerMultiOptions}
+                defaultValue={billingOfficerIds.map(String)}
+                onValueChange={(values) =>
+                  setBillingOfficerIds(toNumberArray(values))
+                }
+                className="w-full"
+              />
+            </label>
+          </div>
+
+          <div className="flex justify-end">
+            <Button variant="outline" onClick={clearAdvancedFilters}>
+              Clear advanced filters
+            </Button>
+          </div>
+        </div>
+      </details>
+
       {!activeClientId ? (
         <div className="rounded-lg border border-dashed p-6 text-sm text-muted-foreground">
           Select a client first to load reports.
@@ -260,32 +448,30 @@ export default function ManagementReportsPage() {
                 data...
               </div>
             ) : trend?.items?.length ? (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead className="bg-muted/40">
-                    <tr>
-                      <th className="px-3 py-2 text-left">Bucket</th>
-                      <th className="px-3 py-2 text-left">Total</th>
-                      <th className="px-3 py-2 text-left">Pending</th>
-                      <th className="px-3 py-2 text-left">Endorsed</th>
-                      <th className="px-3 py-2 text-left">Forwarded</th>
-                      <th className="px-3 py-2 text-left">Sent</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {trend.items.map((item) => (
-                      <tr key={item.bucket} className="border-t">
-                        <td className="px-3 py-2">{item.bucket}</td>
-                        <td className="px-3 py-2">{item.total}</td>
-                        <td className="px-3 py-2">{item.pending}</td>
-                        <td className="px-3 py-2">{item.endorsed}</td>
-                        <td className="px-3 py-2">{item.forwarded}</td>
-                        <td className="px-3 py-2">{item.sent}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              <Table>
+                <TableHeader className="bg-muted/40">
+                  <TableRow>
+                    <TableHead className="px-3 py-2 text-left">Bucket</TableHead>
+                    <TableHead className="px-3 py-2 text-left">Total</TableHead>
+                    <TableHead className="px-3 py-2 text-left">Pending</TableHead>
+                    <TableHead className="px-3 py-2 text-left">Endorsed</TableHead>
+                    <TableHead className="px-3 py-2 text-left">Forwarded</TableHead>
+                    <TableHead className="px-3 py-2 text-left">Sent</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {trend.items.map((item) => (
+                    <TableRow key={item.bucket}>
+                      <TableCell className="px-3 py-2">{item.bucket}</TableCell>
+                      <TableCell className="px-3 py-2">{item.total}</TableCell>
+                      <TableCell className="px-3 py-2">{item.pending}</TableCell>
+                      <TableCell className="px-3 py-2">{item.endorsed}</TableCell>
+                      <TableCell className="px-3 py-2">{item.forwarded}</TableCell>
+                      <TableCell className="px-3 py-2">{item.sent}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             ) : (
               <div className="px-4 py-6 text-sm text-muted-foreground">
                 No trend data for the selected filters.

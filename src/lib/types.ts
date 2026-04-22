@@ -465,8 +465,13 @@ export type ReportFilters = {
   end_date?: string;
   client_id?: number;
   business_unit_id?: number;
+  business_unit_ids?: number[];
   assigned_operation_admin?: number;
+  assigned_operation_admin_ids?: number[];
   assigned_billing_officer?: number;
+  assigned_billing_officer_ids?: number[];
+  created_by_user_id?: number;
+  created_by_user_ids?: number[];
   statuses?: string[];
 };
 
