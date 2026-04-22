@@ -11,7 +11,6 @@ import {
   useCreateTransmittalReportExportJob,
   useFetchReportDownloadUrl,
   useFetchReportJob,
-  useFetchTransmittalReportSummary,
   useFetchTransmittalReportTrend,
 } from "@/hooks/use-report";
 import { useFetchUsers } from "@/hooks/use-user";
@@ -73,11 +72,6 @@ export default function ManagementReportsPage() {
   );
 
   const {
-    data: summary,
-    loading: summaryLoading,
-    refetch: refetchSummary,
-  } = useFetchTransmittalReportSummary();
-  const {
     data: trend,
     loading: trendLoading,
     refetch: refetchTrend,
@@ -101,7 +95,7 @@ export default function ManagementReportsPage() {
     refetch: refetchDownloadUrl,
   } = useFetchReportDownloadUrl();
 
-  const isLoading = summaryLoading || trendLoading;
+  const isLoading = trendLoading;
 
   useEffect(() => {
     setMounted(true);
@@ -203,7 +197,6 @@ export default function ManagementReportsPage() {
     }
 
     const filters = buildFilterQuery();
-    refetchSummary({ query: filters });
     refetchTrend({ query: { ...filters, group_by: groupBy } });
   }
 
@@ -277,7 +270,7 @@ export default function ManagementReportsPage() {
         <div className="flex flex-col gap-2">
           <h1 className="text-2xl font-semibold">Transmittal Reports</h1>
           <p className="text-sm text-muted-foreground">
-            View transmittal performance summary and generate export jobs.
+            View transmittal performance trend and generate export jobs.
           </p>
         </div>
       </div>
@@ -289,7 +282,7 @@ export default function ManagementReportsPage() {
       <div className="flex flex-col gap-2">
         <h1 className="text-2xl font-semibold">Transmittal Reports</h1>
         <p className="text-sm text-muted-foreground">
-          View transmittal performance summary and generate export jobs.
+          View transmittal performance trend and generate export jobs.
         </p>
       </div>
 
@@ -411,35 +404,6 @@ export default function ManagementReportsPage() {
         </div>
       ) : (
         <>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-            <div className="rounded-lg border p-3">
-              <div className="text-xs text-muted-foreground">Total</div>
-              <div className="text-xl font-semibold">{summary?.total ?? 0}</div>
-            </div>
-            <div className="rounded-lg border p-3">
-              <div className="text-xs text-muted-foreground">Pending</div>
-              <div className="text-xl font-semibold">
-                {summary?.pending ?? 0}
-              </div>
-            </div>
-            <div className="rounded-lg border p-3">
-              <div className="text-xs text-muted-foreground">Endorsed</div>
-              <div className="text-xl font-semibold">
-                {summary?.endorsed ?? 0}
-              </div>
-            </div>
-            <div className="rounded-lg border p-3">
-              <div className="text-xs text-muted-foreground">Forwarded</div>
-              <div className="text-xl font-semibold">
-                {summary?.forwarded ?? 0}
-              </div>
-            </div>
-            <div className="rounded-lg border p-3">
-              <div className="text-xs text-muted-foreground">Sent</div>
-              <div className="text-xl font-semibold">{summary?.sent ?? 0}</div>
-            </div>
-          </div>
-
           <div className="rounded-lg border">
             <div className="border-b px-4 py-3 text-sm font-medium">Trend</div>
             {isLoading ? (
