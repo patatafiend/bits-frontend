@@ -121,6 +121,7 @@ const clientData: { navMain: NavItem[]; adminMain: NavItem[] } = {
           title: "Reports",
           url: "/client/management/reports",
           permission: "report:read",
+          roles: ["admin"],
         },
       ],
     },
