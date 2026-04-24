@@ -372,6 +372,11 @@ export type UploadInvoiceFileProps = {
   }) => void;
 };
 
+export type PaginatedUser = {
+  users: User[];
+  total: number;
+}
+
 export type PaginatedTransmittal = {
   items: Transmittal[];
   total: number;

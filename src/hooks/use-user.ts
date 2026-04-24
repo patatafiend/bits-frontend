@@ -1,8 +1,15 @@
 import { useServerFetch, useServerAction } from "@/hooks/use-server";
-import { User, CreateUser } from "@/lib/types";
+import { User, CreateUser, PaginatedUser } from "@/lib/types";
 
 export function useFetchUsers() {
   return useServerFetch<User[]>("/user", {
+    fetchImmediately: false,
+    method: "GET",
+  });
+}
+
+export function useFetchUsersPaginated() {
+  return useServerFetch<PaginatedUser>("/user/paginated", {
     fetchImmediately: false,
     method: "GET",
   });
