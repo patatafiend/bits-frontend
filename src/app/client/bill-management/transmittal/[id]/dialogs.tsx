@@ -33,6 +33,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { DrawerDialog } from "@/components/drawer-dialog";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Form,
   FormField,
@@ -1186,13 +1187,15 @@ export function SearchTransmittalItemsComponent({
 }
 
 function ItemRejectionReasonDialog({ item }: { item: TransmittalItems }) {
-  if (item.status !== "rejected" || !item.rejection_reason) {
+  if (!item.rejection_reason) {
     return null;
   }
 
+  const isRejected = item.status === "rejected";
+
   return (
     <DrawerDialog
-      title="Item Rejected"
+      title={isRejected ? "Item Rejected" : "Item Return Reason"}
       description=""
       responsive
       className="max-w-md"
@@ -1213,13 +1216,20 @@ function ItemRejectionReasonDialog({ item }: { item: TransmittalItems }) {
         </p>
         {item.return_date && (
           <p className="text-xs text-muted-foreground">
-            Rejected on {new Date(item.return_date).toLocaleDateString()}
+            {isRejected ? "Rejected" : "Updated"} on{" "}
+            {new Date(item.return_date).toLocaleDateString()}
           </p>
         )}
       </div>
     </DrawerDialog>
   );
 }
+
+const returnReasonSchema = z.object({
+  rejection_reason: z.string().min(1, "Return reason is required").trim(),
+});
+
+type ReturnReasonFormValues = z.infer<typeof returnReasonSchema>;
 
 function DeleteItemDialog({
   onConfirm,
@@ -1273,8 +1283,16 @@ export function ItemAction({
   onClick: () => void;
 }) {
   const { execute: itemAction, loading } = useItemAction();
+  const [open, setOpen] = useState(false);
+  const form = useForm<ReturnReasonFormValues>({
+    resolver: zodResolver(returnReasonSchema),
+    defaultValues: { rejection_reason: item.rejection_reason ?? "" },
+  });
 
-  const handleAction = async (action: "return" | "undo") => {
+  const handleAction = async (
+    action: "return" | "undo",
+    reason?: string,
+  ) => {
     const status = action === "return" ? "returned" : "forwarded";
 
     const { error } = await itemAction({
@@ -1284,10 +1302,15 @@ export function ItemAction({
       },
       body: {
         status: status,
+        rejection_reason: action === "return" ? reason : null,
       },
     });
 
     if (!error) {
+      if (action === "return") {
+        setOpen(false);
+        form.reset();
+      }
       onClick();
     } else {
       toast.error(error.message);
@@ -1303,10 +1326,77 @@ export function ItemAction({
           Undo
         </Button>
       ) : (
-        <Button onClick={() => handleAction("return")} disabled={loading}>
+        <Button onClick={() => setOpen(true)} disabled={loading}>
           Return
         </Button>
       )}
+
+      <Dialog
+        open={open}
+        onOpenChange={(nextOpen) => {
+          setOpen(nextOpen);
+          if (!nextOpen) {
+            form.reset();
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <AlertCircle className="w-5 h-5" />
+              Return Item
+            </DialogTitle>
+          </DialogHeader>
+
+          <Form {...form}>
+            <form
+              onSubmit={form.handleSubmit((values) =>
+                handleAction("return", values.rejection_reason),
+              )}
+              className="space-y-4"
+            >
+              <div className="rounded-md border border-yellow-300 bg-yellow-50 p-3">
+                <p className="text-sm text-yellow-800">
+                  Provide a return reason. The item will be marked as returned.
+                </p>
+              </div>
+
+              <FormField
+                control={form.control}
+                name="rejection_reason"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      Return Reason <span className="text-destructive">*</span>
+                    </FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Please provide a reason for returning this item..."
+                        rows={4}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <DialogFooter>
+                <Button
+                  variant="outline"
+                  type="button"
+                  onClick={() => setOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" variant="destructive" disabled={loading}>
+                  {loading ? "Processing..." : "Confirm Return"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

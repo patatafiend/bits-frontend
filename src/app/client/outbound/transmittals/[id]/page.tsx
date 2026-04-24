@@ -121,6 +121,7 @@ export default function TransmittalDetailPage() {
   }
 
   const canShowEndorsedActions = transmittalData?.status === "endorsed";
+  const canReturnPerItem = transmittalData?.status === "forwarded";
 
   return (
     <div className="container mx-auto py-8 max-w-4xl">
@@ -250,6 +251,9 @@ export default function TransmittalDetailPage() {
                   onFilter={handleFilter}
                   forceShowViewButton
                   allowFileDownload={false}
+                  enableItemActions
+                  canReturnItems={canReturnPerItem}
+                  onItemActionComplete={refetchTransmittals}
                 />
               </div>
             </CardContent>

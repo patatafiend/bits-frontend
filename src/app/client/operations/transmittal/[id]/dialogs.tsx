@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -36,10 +37,12 @@ import UserComboBox from "@/components/user-combobox";
 import {
   useAssignOfficer,
   useEndorseTransmittal,
+  useItemAction,
   useReturnTransmittal,
 } from "@/hooks/use-transmittal";
 import { useFetchBusinessUnits } from "@/hooks/use-client";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { useGetPresignedUrl } from "@/hooks/use-media";
 import Loader from "@/components/ui/loader";
 import { StatusBadge } from "@/components/status-badge";
@@ -401,12 +404,18 @@ export function SearchTransmittalItemsComponent({
   loading,
   forceShowViewButton = false,
   allowFileDownload = true,
+  enableItemActions = false,
+  canReturnItems = false,
+  onItemActionComplete,
 }: {
   data: TransmittalItems[];
   loading: boolean;
   onFilter: (params: { search?: string; status?: string }) => void;
   forceShowViewButton?: boolean;
   allowFileDownload?: boolean;
+  enableItemActions?: boolean;
+  canReturnItems?: boolean;
+  onItemActionComplete?: () => void;
 }) {
   const [query, setQuery] = useState("");
   const [urlCache, setUrlCache] = useState<
@@ -478,7 +487,7 @@ export function SearchTransmittalItemsComponent({
   );
   const canViewFiles = forceShowViewButton || user?.role == "operations admin";
 
-  function renderItemRows(items: TransmittalItems[]) {
+  function renderItemRows(items: TransmittalItems[], showItemActions = false) {
     return items.map((item, index) => (
       <div
         key={item.id}
@@ -517,6 +526,15 @@ export function SearchTransmittalItemsComponent({
             >
               {loadingUrl ? "Loading..." : "View"}
             </Button>
+          )}
+          {showItemActions && enableItemActions && canReturnItems && (
+            <>
+              <ItemReasonDialog item={item} />
+              <ItemAction
+                item={item}
+                onClick={onItemActionComplete ?? (() => {})}
+              />
+            </>
           )}
         </div>
       </div>
@@ -561,7 +579,7 @@ export function SearchTransmittalItemsComponent({
             <div className="space-y-2">
               <h3 className="text-sm font-medium">Transmittal Items</h3>
               <div className="rounded-xl border bg-card overflow-hidden">
-                {renderItemRows(transmittalItems)}
+                {renderItemRows(transmittalItems, true)}
               </div>
             </div>
           )}
@@ -573,6 +591,175 @@ export function SearchTransmittalItemsComponent({
         allowDownload={allowFileDownload}
       />
     </div>
+  );
+}
+
+const returnReasonSchema = z.object({
+  rejection_reason: z.string().min(1, "Return reason is required").trim(),
+});
+
+type ReturnReasonFormValues = z.infer<typeof returnReasonSchema>;
+
+function ItemReasonDialog({ item }: { item: TransmittalItems }) {
+  if (!item.rejection_reason) {
+    return null;
+  }
+
+  const isRejected = item.status === "rejected";
+
+  return (
+    <DrawerDialog
+      title={isRejected ? "Item Rejected" : "Item Return Reason"}
+      description=""
+      responsive
+      className="max-w-md"
+      renderTrigger={
+        <Button
+          variant="outline"
+          size="sm"
+          className="text-destructive border-destructive hover:text-destructive"
+        >
+          <AlertCircle className="w-4 h-4 mr-2" />
+          Notes
+        </Button>
+      }
+    >
+      <div className="space-y-3 px-4 sm:px-0 pb-4">
+        <p className="text-sm text-muted-foreground break-all">
+          {item.rejection_reason}
+        </p>
+        {item.return_date && (
+          <p className="text-xs text-muted-foreground">
+            {isRejected ? "Rejected" : "Updated"} on{" "}
+            {new Date(item.return_date).toLocaleDateString()}
+          </p>
+        )}
+      </div>
+    </DrawerDialog>
+  );
+}
+
+function ItemAction({
+  item,
+  onClick,
+}: {
+  item: TransmittalItems;
+  onClick: () => void;
+}) {
+  const { execute: itemAction, loading } = useItemAction();
+  const [open, setOpen] = useState(false);
+  const form = useForm<ReturnReasonFormValues>({
+    resolver: zodResolver(returnReasonSchema),
+    defaultValues: { rejection_reason: item.rejection_reason ?? "" },
+  });
+
+  const handleAction = async (action: "return" | "undo", reason?: string) => {
+    const status = action === "return" ? "returned" : "forwarded";
+
+    const { error } = await itemAction({
+      query: {
+        id: item.id,
+        action,
+      },
+      body: {
+        status,
+        rejection_reason: action === "return" ? reason : null,
+      },
+    });
+
+    if (error) {
+      toast.error(error.message || "Failed to update item status");
+      return;
+    }
+
+    if (action === "return") {
+      setOpen(false);
+      form.reset();
+    }
+    onClick();
+  };
+
+  const isReturned = item.status === "returned";
+
+  return (
+    <>
+      {isReturned ? (
+        <Button onClick={() => handleAction("undo")} disabled={loading}>
+          Undo
+        </Button>
+      ) : (
+        <Button onClick={() => setOpen(true)} disabled={loading}>
+          Return
+        </Button>
+      )}
+
+      <Dialog
+        open={open}
+        onOpenChange={(nextOpen) => {
+          setOpen(nextOpen);
+          if (!nextOpen) {
+            form.reset();
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <AlertCircle className="w-5 h-5" />
+              Return Item
+            </DialogTitle>
+          </DialogHeader>
+
+          <Form {...form}>
+            <form
+              onSubmit={form.handleSubmit((values) =>
+                handleAction("return", values.rejection_reason),
+              )}
+              className="space-y-4"
+            >
+              <div className="rounded-md border border-yellow-300 bg-yellow-50 p-3">
+                <p className="text-sm text-yellow-800">
+                  Provide a return reason. The item will be marked as returned.
+                </p>
+              </div>
+
+              <FormField
+                control={form.control}
+                name="rejection_reason"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      Return Reason <span className="text-destructive">*</span>
+                    </FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Please provide a reason for returning this item..."
+                        rows={4}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <DialogFooter>
+                <Button
+                  variant="outline"
+                  type="button"
+                  onClick={() => setOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" variant="destructive" disabled={loading}>
+                  {loading ? "Processing..." : "Confirm Return"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 
