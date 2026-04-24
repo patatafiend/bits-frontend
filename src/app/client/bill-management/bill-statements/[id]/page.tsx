@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { FileText } from "lucide-react";
 import { useGetPresignedUrl } from "@/hooks/use-media";
@@ -88,9 +88,8 @@ export default function TransmittalViewPage() {
               <div className="mb-2">
                 <StatusBadge status={transmittalData?.status || ""} />
               </div>
-              <CardTitle className="text-2xl">
-                Transmittal #{transmittalData?.transmittal_number}
-              </CardTitle>
+              <div>Transmittal #{transmittalData?.transmittal_number}</div>
+              <div>Invoice # {transmittalData?.billing_transmittal_number}</div>
             </div>
           </div>
         </CardHeader>
