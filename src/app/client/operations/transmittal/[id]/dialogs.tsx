@@ -527,10 +527,10 @@ export function SearchTransmittalItemsComponent({
               {loadingUrl ? "Loading..." : "View"}
             </Button>
           )}
-          {showItemActions && enableItemActions && canReturnItems && (
+          {showItemActions && enableItemActions && (
             <>
               <ItemReasonDialog item={item} />
-              <ItemAction
+              <ReturnToDraft
                 item={item}
                 onClick={onItemActionComplete ?? (() => {})}
               />
@@ -714,6 +714,130 @@ function ItemAction({
             <form
               onSubmit={form.handleSubmit((values) =>
                 handleAction("return", values.rejection_reason),
+              )}
+              className="space-y-4"
+            >
+              <div className="rounded-md border border-yellow-300 bg-yellow-50 p-3">
+                <p className="text-sm text-yellow-800">
+                  Provide a return reason. The item will be marked as returned.
+                </p>
+              </div>
+
+              <FormField
+                control={form.control}
+                name="rejection_reason"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      Return Reason <span className="text-destructive">*</span>
+                    </FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Please provide a reason for returning this item..."
+                        rows={4}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <DialogFooter>
+                <Button
+                  variant="outline"
+                  type="button"
+                  onClick={() => setOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" variant="destructive" disabled={loading}>
+                  {loading ? "Processing..." : "Confirm Return"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
+function ReturnToDraft({
+  item,
+  onClick,
+}: {
+  item: TransmittalItems;
+  onClick: () => void;
+}) {
+  const { execute: itemAction, loading } = useItemAction();
+  const [open, setOpen] = useState(false);
+  const form = useForm<ReturnReasonFormValues>({
+    resolver: zodResolver(returnReasonSchema),
+    defaultValues: { rejection_reason: item.rejection_reason ?? "" },
+  });
+
+  const handleAction = async (action: "draft" | "undo", reason?: string) => {
+    const status = action === "draft" ? "draft" : "forwarded";
+
+    const { error } = await itemAction({
+      query: {
+        id: item.id,
+        action,
+      },
+      body: {
+        status,
+        rejection_reason: action === "draft" ? reason : null,
+      },
+    });
+
+    if (error) {
+      toast.error(error.message || "Failed to update item status");
+      return;
+    }
+
+    if (action === "draft") {
+      setOpen(false);
+      form.reset();
+    }
+    onClick();
+  };
+
+  const cantRevert = item.status === "pending"
+
+  return (
+    <>
+      {!cantRevert ? (
+        <Button onClick={() => handleAction("undo")} disabled={loading}>
+          Undo
+        </Button>
+      ) : (
+        <Button onClick={() => setOpen(true)} disabled={loading}>
+          Return
+        </Button>
+      )}
+
+      <Dialog
+        open={open}
+        onOpenChange={(nextOpen) => {
+          setOpen(nextOpen);
+          if (!nextOpen) {
+            form.reset();
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <AlertCircle className="w-5 h-5" />
+              Return Item
+            </DialogTitle>
+          </DialogHeader>
+
+          <Form {...form}>
+            <form
+              onSubmit={form.handleSubmit((values) =>
+                handleAction("draft", values.rejection_reason),
               )}
               className="space-y-4"
             >

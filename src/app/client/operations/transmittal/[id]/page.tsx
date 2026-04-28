@@ -20,7 +20,7 @@ import {
 } from "@/hooks/use-transmittal";
 import { useFetchUsers } from "@/hooks/use-user";
 import { StatusBadge } from "@/components/status-badge";
-import { formatDate } from "@/lib/utils";
+import { formatDate, formatFullName } from "@/lib/utils";
 import { SearchTransmittalItemsComponent } from "./dialogs";
 import { TransmittalItems } from "@/lib/types";
 import { Switch } from "@/components/ui/switch";
@@ -269,8 +269,9 @@ export default function TransmittalDetailPage() {
                     Billing Officer
                   </p>
                   <p className="font-medium">
-                    {transmittalData.billing_officer_assigned?.username ??
-                      "No officer assigned"}
+                    {transmittalData.billing_officer_assigned
+                      ? formatFullName(transmittalData.billing_officer_assigned, true)
+                      : "No officer assigned"}
                   </p>
                 </div>
                 <div>
@@ -297,6 +298,11 @@ export default function TransmittalDetailPage() {
                   data={filteredItems}
                   loading={transmittalLoading}
                   onFilter={handleFilter}
+                  forceShowViewButton
+                  allowFileDownload={false}
+                  enableItemActions
+                  canReturnItems={isPending}
+                  onItemActionComplete={refetchTransmittals}
                 />
               </div>
             </CardContent>

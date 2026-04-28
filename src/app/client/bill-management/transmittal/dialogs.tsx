@@ -448,6 +448,7 @@ export function SearchTransmittalComponent({
             <SelectItem value="sent">Sent</SelectItem>
             <SelectItem value="accepted">Accepted</SelectItem>
             <SelectItem value="rejected">Rejected</SelectItem>
+            <SelectItem value="endorsed">Endorsed</SelectItem>
             <SelectItem value="forwarded">Forwarded</SelectItem>
             <SelectItem value="returned">Returned</SelectItem>
             <SelectItem value="partially_returned">

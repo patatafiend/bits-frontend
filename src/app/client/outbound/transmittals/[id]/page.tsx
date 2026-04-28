@@ -16,7 +16,7 @@ import {
 } from "@/hooks/use-transmittal";
 import { ForwardTransmittalDialog, ReturnTransmittalDialog } from "./dialogs";
 import { StatusBadge } from "@/components/status-badge";
-import { formatDate } from "@/lib/utils";
+import { formatDate, formatFullName } from "@/lib/utils";
 import { SearchTransmittalItemsComponent } from "@/app/client/operations/transmittal/[id]/dialogs";
 import { TransmittalItems } from "@/lib/types";
 import { UploadFile } from "@/app/client/bill-management/transmittal/[id]/upload-file";
@@ -220,8 +220,9 @@ export default function TransmittalDetailPage() {
                     Billing Officer
                   </p>
                   <p className="font-medium">
-                    {transmittalData.billing_officer_assigned?.username ??
-                      "No officer assigned"}
+                    {transmittalData.billing_officer_assigned
+                      ? formatFullName(transmittalData.billing_officer_assigned, true)
+                      : "No officer assigned"}
                   </p>
                 </div>
                 <div>
@@ -259,7 +260,7 @@ export default function TransmittalDetailPage() {
             </CardContent>
           </Card>
         )}
-        {transmittalData?.status == "endorsed" && (
+        {(transmittalData?.status == "endorsed" || transmittalData?.status == "forwarded") && (
           <UploadFile
             mode="proof_attachment"
             transmittalData={transmittalData}

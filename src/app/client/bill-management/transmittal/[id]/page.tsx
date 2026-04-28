@@ -27,7 +27,7 @@ import { StatusBadge } from "@/components/status-badge";
 import { UploadFile } from "./upload-file";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { formatDate } from "@/lib/utils";
+import { formatDate, formatFullName } from "@/lib/utils";
 import { TransmittalItems } from "@/lib/types";
 import { SearchTransmittalItemsComponent } from "./dialogs";
 import Image from "next/image";
@@ -375,15 +375,17 @@ export default function TransmittalDetailPage() {
                     Operation Admin
                   </p>
                   <p className="font-medium">
-                    {transmittalData.operation_admin_assigned?.username ??
-                      "No Admin assigned"}
+                    {transmittalData.operation_admin_assigned
+                      ? formatFullName(transmittalData.operation_admin_assigned, true)
+                      : "No Admin assigned"}
                   </p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Officer</p>
                   <p className="font-medium">
-                    {transmittalData.billing_officer_assigned?.username ??
-                      "No Officer assigned"}
+                    {transmittalData.billing_officer_assigned
+                      ? formatFullName(transmittalData.billing_officer_assigned, true)
+                      : "No Officer assigned"}
                   </p>
                 </div>
                 <div>
