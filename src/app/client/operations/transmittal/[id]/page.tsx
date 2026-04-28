@@ -301,7 +301,7 @@ export default function TransmittalDetailPage() {
                   forceShowViewButton
                   allowFileDownload={false}
                   enableItemActions
-                  canReturnItems={isPending}
+                  itemActionMode="draft"
                   onItemActionComplete={refetchTransmittals}
                 />
               </div>

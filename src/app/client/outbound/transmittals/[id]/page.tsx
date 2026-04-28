@@ -253,7 +253,7 @@ export default function TransmittalDetailPage() {
                   forceShowViewButton
                   allowFileDownload={false}
                   enableItemActions
-                  canReturnItems={canReturnPerItem}
+                  itemActionMode="return"
                   onItemActionComplete={refetchTransmittals}
                 />
               </div>

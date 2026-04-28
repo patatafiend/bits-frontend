@@ -405,7 +405,7 @@ export function SearchTransmittalItemsComponent({
   forceShowViewButton = false,
   allowFileDownload = true,
   enableItemActions = false,
-  canReturnItems = false,
+  itemActionMode,
   onItemActionComplete,
 }: {
   data: TransmittalItems[];
@@ -414,7 +414,7 @@ export function SearchTransmittalItemsComponent({
   forceShowViewButton?: boolean;
   allowFileDownload?: boolean;
   enableItemActions?: boolean;
-  canReturnItems?: boolean;
+  itemActionMode?: "draft" | "return";
   onItemActionComplete?: () => void;
 }) {
   const [query, setQuery] = useState("");
@@ -527,15 +527,22 @@ export function SearchTransmittalItemsComponent({
               {loadingUrl ? "Loading..." : "View"}
             </Button>
           )}
-          {showItemActions && enableItemActions && (
-            <>
-              <ItemReasonDialog item={item} />
-              <ReturnToDraft
-                item={item}
-                onClick={onItemActionComplete ?? (() => {})}
-              />
-            </>
-          )}
+          <ItemReasonDialog item={item} />
+          {showItemActions &&
+          enableItemActions &&
+          itemActionMode === "draft" ? (
+            <ReturnToDraft
+              item={item}
+              onClick={onItemActionComplete ?? (() => {})}
+            />
+          ) : showItemActions &&
+            enableItemActions &&
+            itemActionMode === "return" ? (
+            <ItemAction
+              item={item}
+              onClick={onItemActionComplete ?? (() => {})}
+            />
+          ) : null}
         </div>
       </div>
     ));
@@ -803,7 +810,7 @@ function ReturnToDraft({
     onClick();
   };
 
-  const cantRevert = item.status === "pending"
+  const cantRevert = item.status === "pending";
 
   return (
     <>
