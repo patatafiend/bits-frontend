@@ -415,22 +415,38 @@ export default function ManagementReportsPage() {
               <Table>
                 <TableHeader className="bg-muted/40">
                   <TableRow>
-                    <TableHead className="px-3 py-2 text-left">Bucket</TableHead>
+                    <TableHead className="px-3 py-2 text-left">
+                      Bucket Range
+                    </TableHead>
                     <TableHead className="px-3 py-2 text-left">Total</TableHead>
-                    <TableHead className="px-3 py-2 text-left">Pending</TableHead>
-                    <TableHead className="px-3 py-2 text-left">Endorsed</TableHead>
-                    <TableHead className="px-3 py-2 text-left">Forwarded</TableHead>
+                    <TableHead className="px-3 py-2 text-left">
+                      Pending
+                    </TableHead>
+                    <TableHead className="px-3 py-2 text-left">
+                      Endorsed
+                    </TableHead>
+                    <TableHead className="px-3 py-2 text-left">
+                      Forwarded
+                    </TableHead>
                     <TableHead className="px-3 py-2 text-left">Sent</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {trend.items.map((item) => (
                     <TableRow key={item.bucket}>
-                      <TableCell className="px-3 py-2">{item.bucket}</TableCell>
+                      <TableCell className="px-3 py-2">
+                        {item.bucket_label}
+                      </TableCell>
                       <TableCell className="px-3 py-2">{item.total}</TableCell>
-                      <TableCell className="px-3 py-2">{item.pending}</TableCell>
-                      <TableCell className="px-3 py-2">{item.endorsed}</TableCell>
-                      <TableCell className="px-3 py-2">{item.forwarded}</TableCell>
+                      <TableCell className="px-3 py-2">
+                        {item.pending}
+                      </TableCell>
+                      <TableCell className="px-3 py-2">
+                        {item.endorsed}
+                      </TableCell>
+                      <TableCell className="px-3 py-2">
+                        {item.forwarded}
+                      </TableCell>
                       <TableCell className="px-3 py-2">{item.sent}</TableCell>
                     </TableRow>
                   ))}

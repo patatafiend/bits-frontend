@@ -55,8 +55,8 @@ type ReplacementFile = {
   error?: string;
 };
 
-const MAX_UPLOAD_SIZE_BYTES = 10 * 1024 * 1024;
-const MAX_UPLOAD_SIZE_LABEL = "10 MB";
+const MAX_UPLOAD_SIZE_BYTES = 30 * 1024 * 1024;
+const MAX_UPLOAD_SIZE_LABEL = "30 MB";
 
 export function ResubmittModal({
   client_id,

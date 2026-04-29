@@ -495,6 +495,9 @@ export type TransmittalReportSummary = {
 
 export type TransmittalReportTrendItem = {
   bucket: string;
+  bucket_start: string;
+  bucket_end: string;
+  bucket_label: string;
   total: number;
   draft: number;
   pending: number;
