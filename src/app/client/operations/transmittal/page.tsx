@@ -1,14 +1,23 @@
 "use client";
 
+import { Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { FileText, RefreshCw } from "lucide-react";
+import { FileText, RefreshCw, Loader2 } from "lucide-react";
 import { useFetchTransmittals } from "@/hooks/use-transmittal";
 import { SearchTransmittalComponent } from "./dialogs";
 import { useCurrentUser } from "@/components/providers/auth-provider";
 
 export default function TransmittalListPage() {
+  return (
+    <Suspense fallback={<Loader2 />}>
+      <TransmittalListComponent />
+    </Suspense>
+  );
+}
+
+function TransmittalListComponent() {
   const { data: transmittals, refetch, loading } = useFetchTransmittals();
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -33,15 +42,22 @@ export default function TransmittalListPage() {
     const newParams = new URLSearchParams();
 
     // Only add params that differ from defaults
-    if (params.page && params.page !== 1) newParams.set("page", String(params.page));
-    if (params.limit && params.limit !== 10) newParams.set("limit", String(params.limit));
+    if (params.page && params.page !== 1)
+      newParams.set("page", String(params.page));
+    if (params.limit && params.limit !== 10)
+      newParams.set("limit", String(params.limit));
     if (params.search) newParams.set("search", params.search);
-    if (params.status && params.status !== "all") newParams.set("status", params.status);
-    if (params.business_unit) newParams.set("business_unit", String(params.business_unit));
-    if (params.order_by && params.order_by !== "recent") newParams.set("order_by", params.order_by);
+    if (params.status && params.status !== "all")
+      newParams.set("status", params.status);
+    if (params.business_unit)
+      newParams.set("business_unit", String(params.business_unit));
+    if (params.order_by && params.order_by !== "recent")
+      newParams.set("order_by", params.order_by);
 
     const queryString = newParams.toString();
-    router.push(`/client/operations/transmittal${queryString ? "?" + queryString : ""}`);
+    router.push(
+      `/client/operations/transmittal${queryString ? "?" + queryString : ""}`,
+    );
   }
 
   function refetchTransmittals(params: {
@@ -59,7 +75,9 @@ export default function TransmittalListPage() {
     const skip = params.skip ?? (page - 1) * limit;
     const search = params.search ?? currentSearch;
     const status = params.status ?? currentStatus;
-    const businessUnit = params.business_unit_id ?? (currentBusinessUnit ? parseInt(currentBusinessUnit) : null);
+    const businessUnit =
+      params.business_unit_id ??
+      (currentBusinessUnit ? parseInt(currentBusinessUnit) : null);
     const orderBy = params.order_by ?? currentOrderBy;
 
     // Update URL with new params
@@ -120,7 +138,9 @@ export default function TransmittalListPage() {
               initialLimit={currentLimit}
               initialSearch={currentSearch}
               initialStatus={currentStatus}
-              initialBusinessUnit={currentBusinessUnit ? parseInt(currentBusinessUnit) : null}
+              initialBusinessUnit={
+                currentBusinessUnit ? parseInt(currentBusinessUnit) : null
+              }
               initialOrderBy={currentOrderBy}
             />
           )}

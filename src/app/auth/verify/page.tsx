@@ -13,10 +13,11 @@ import { toast } from "sonner";
 import { Card, CardContent } from "@/components/ui/card";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useEffect, Suspense } from "react";
+import { Loader2 } from "lucide-react";
 
 export default function PasswordResetPage() {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<Loader2 />}>
       <PasswordResetComponent />
     </Suspense>
   );
@@ -103,9 +104,7 @@ export function ResetPasswordComponent({ token }: ResetPasswordComponentProps) {
     });
 
     if (response.error) {
-      toast.error(
-        response.error.message || "Failed to reset password",
-      );
+      toast.error(response.error.message || "Failed to reset password");
       return;
     }
 

@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { FileText } from "lucide-react";
+import { FileText, Loader2 } from "lucide-react";
 import { useGetPresignedUrl } from "@/hooks/use-media";
 import { FileViewerModal } from "../../transmittal/[id]/dialogs";
 import { useFetchReceiverTransmittal } from "@/hooks/use-receiver";
@@ -14,6 +14,14 @@ import { RejectTransmittalItemAction } from "./dialogs";
 import { StatusBadge } from "@/components/status-badge";
 
 export default function TransmittalViewPage() {
+  return (
+    <Suspense fallback={<Loader2 />}>
+      <TransmittalViewComponent />
+    </Suspense>
+  );
+}
+
+function TransmittalViewComponent() {
   const params = useParams();
   const searchParams = useSearchParams();
   const transmittalId = params.id;
