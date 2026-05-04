@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { ArrowLeft, RefreshCw } from "lucide-react";
-import Link from "next/link";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useCurrentUser } from "@/components/providers/auth-provider";
@@ -123,12 +122,14 @@ export default function TransmittalDetailPage() {
 
   return (
     <div className="container mx-auto py-8 max-w-4xl">
-      <Link href="/client/operations/transmittal">
-        <Button variant="ghost" className="mb-4">
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to Transmittals
-        </Button>
-      </Link>
+      <Button
+        variant="ghost"
+        className="mb-4"
+        onClick={() => router.back()}
+      >
+        <ArrowLeft className="w-4 h-4 mr-2" />
+        Back to Transmittals
+      </Button>
 
       <div className="grid gap-6">
         {transmittalData && (

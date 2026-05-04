@@ -24,8 +24,8 @@ const config = {
   },
 };
 
-const MAX_UPLOAD_SIZE_BYTES = 30 * 1024 * 1024;
-const MAX_UPLOAD_SIZE_LABEL = "30 MB";
+const MAX_UPLOAD_SIZE_BYTES = 50 * 1024 * 1024;
+const MAX_UPLOAD_SIZE_LABEL = "50 MB";
 
 export function UploadFile({
   mode = "billing_statement",
@@ -162,7 +162,7 @@ export function UploadFile({
                 Drag & drop files here, or click to select
               </p>
               <p className="text-xs text-muted-foreground">
-                Supports: Images, PDF, Excel. Max 30 MB per file.
+                Supports: Images, PDF, Excel. Max 50 MB per file.
               </p>
             </div>
           )}

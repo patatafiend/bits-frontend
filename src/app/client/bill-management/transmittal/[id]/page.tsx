@@ -1,11 +1,10 @@
 "use client";
 
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { ArrowLeft, ImageIcon, RefreshCw } from "lucide-react";
-import Link from "next/link";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useCurrentUser } from "@/components/providers/auth-provider";
@@ -46,6 +45,7 @@ const BILLING_OFFICER = 3;
 
 export default function TransmittalDetailPage() {
   const params = useParams();
+  const router = useRouter();
   const transmittalId = params.id;
   const [modalOpen, setModalOpen] = useState(false);
   const [isSendMode, setIsSendMode] = useState(false);
@@ -172,12 +172,14 @@ export default function TransmittalDetailPage() {
 
   return (
     <div className="container mx-auto py-8">
-      <Link href="/client/bill-management/transmittal">
-        <Button variant="ghost" className="mb-4">
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to Transmittals
-        </Button>
-      </Link>
+      <Button
+        variant="ghost"
+        className="mb-4"
+        onClick={() => router.back()}
+      >
+        <ArrowLeft className="w-4 h-4 mr-2" />
+        Back to Transmittals
+      </Button>
 
       <div className="grid gap-6">
         {transmittalData && (

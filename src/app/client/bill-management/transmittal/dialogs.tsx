@@ -326,30 +326,43 @@ export function SearchTransmittalComponent({
   onFilter,
   loading,
   client_id,
+  initialPage = 1,
+  initialLimit = 10,
+  initialSearch = "",
+  initialStatus = "all",
+  initialBusinessUnit = null,
+  initialOrderBy = "recent",
 }: {
   data: PaginatedTransmittal;
   loading: boolean;
   client_id?: number;
+  initialPage?: number;
+  initialLimit?: number;
+  initialSearch?: string;
+  initialStatus?: string;
+  initialBusinessUnit?: number | null;
+  initialOrderBy?: string;
   onFilter: (params: {
     search?: string;
     billing_transmittal_number?: string;
     status?: string;
-    business_unit_id?: number;
+    business_unit_id?: number | null;
     limit?: number;
     skip?: number;
     order_by?: string;
+    page?: number;
   }) => void;
 }) {
   const { data: businessUnitData, refetch: refetchBusinessUnits } =
     useFetchBusinessUnits();
-  const [query, setQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [query, setQuery] = useState(initialSearch);
+  const [statusFilter, setStatusFilter] = useState(initialStatus);
   const [businessUnitFilter, setBusinessUnitFilter] = useState<number | null>(
-    null,
+    initialBusinessUnit,
   );
-  const [orderBy, setOrderBy] = useState("recent");
-  const [limit, setLimit] = useState(10);
-  const [page, setPage] = useState(1);
+  const [orderBy, setOrderBy] = useState(initialOrderBy);
+  const [limit, setLimit] = useState(initialLimit);
+  const [page, setPage] = useState(initialPage);
 
   useEffect(() => {
     if (client_id) {
@@ -369,10 +382,11 @@ export function SearchTransmittalComponent({
           ? normalizedQuery
           : undefined,
         status: statusFilter,
-        business_unit_id: businessUnitFilter ?? undefined,
+        business_unit_id: businessUnitFilter,
         limit: limit,
         skip: (page - 1) * limit,
         order_by: orderBy,
+        page: page,
       });
     }, 350);
     return () => clearTimeout(timeout);
