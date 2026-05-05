@@ -49,6 +49,10 @@ const variants: Record<string, { badge: string; dot: string }> = {
     badge: "bg-sky-50 text-sky-700 border-sky-200",
     dot: "bg-sky-500",
   },
+  cancelled: {
+    badge: "bg-slate-50 text-red-700 border-red-200",
+    dot: "bg-red-500",
+  },
 };
 export function StatusBadge({ status }: { status: string }) {
   const variant = variants[status] ?? {

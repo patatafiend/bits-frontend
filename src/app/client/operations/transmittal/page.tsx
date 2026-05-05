@@ -73,12 +73,15 @@ function TransmittalListComponent() {
     const page = params.page ?? currentPage;
     const limit = params.limit ?? currentLimit;
     const skip = params.skip ?? (page - 1) * limit;
-    const search = params.search ?? currentSearch;
-    const status = params.status ?? currentStatus;
+    const search = "search" in params ? params.search : currentSearch;
+    const status = "status" in params ? params.status : currentStatus;
     const businessUnit =
-      params.business_unit_id ??
-      (currentBusinessUnit ? parseInt(currentBusinessUnit) : null);
-    const orderBy = params.order_by ?? currentOrderBy;
+      "business_unit_id" in params
+        ? params.business_unit_id
+        : currentBusinessUnit
+          ? parseInt(currentBusinessUnit)
+          : null;
+    const orderBy = "order_by" in params ? params.order_by : currentOrderBy;
 
     // Update URL with new params
     updateUrlParams({

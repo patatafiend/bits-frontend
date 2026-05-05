@@ -37,6 +37,12 @@ export function useUpdateTransmittal() {
   });
 }
 
+export function useCancelTransmittal() {
+  return useServerAction<Transmittal, UpdateTransmittal>(`/transmittals/`, {
+    method: "PUT",
+  });
+}
+
 export function useFetchTransmittals() {
   return useServerFetch<PaginatedTransmittal>(`/transmittals`, {
     fetchImmediately: false,
@@ -79,9 +85,12 @@ export type TransmittalResponse = {
 };
 
 export function useSendTransmittal() {
-  return useServerAction<TransmittalResponse, SendTransmittalRequest>(`/transmittals`, {
-    method: "POST",
-  });
+  return useServerAction<TransmittalResponse, SendTransmittalRequest>(
+    `/transmittals`,
+    {
+      method: "POST",
+    },
+  );
 }
 
 export type ReceiverResponse = {

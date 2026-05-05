@@ -10,7 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Eye, RefreshCcw } from "lucide-react";
+import { Eye, RefreshCcw, X } from "lucide-react";
 import Link from "next/link";
 import {
   Dialog,
@@ -33,7 +33,11 @@ import {
 import z from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useCreateTransmittal, useGenerateTMN } from "@/hooks/use-transmittal";
+import {
+  useCreateTransmittal,
+  useGenerateTMN,
+  useCancelTransmittal,
+} from "@/hooks/use-transmittal";
 import { toast } from "sonner";
 import { PaginatedTransmittal, TransmittalModalProps } from "@/lib/types";
 import {
@@ -56,18 +60,112 @@ import BusinessUnitComboBox from "@/components/business-units";
 import { useFetchBusinessUnits } from "@/hooks/use-client";
 import { formatDate } from "@/lib/utils";
 
+function CancelTransmittalDialog({
+  transmittal,
+  onSuccess,
+}: {
+  transmittal: PaginatedTransmittal["items"][0];
+  onSuccess: () => void;
+}) {
+  const { execute, loading } = useCancelTransmittal();
+  const [open, setOpen] = useState(false);
+
+  async function handleCancel() {
+    const { error } = await execute({
+      body: {
+        status: "cancelled",
+      },
+      params: `${transmittal.id}`,
+    });
+
+    if (!error) {
+      setOpen(false);
+      onSuccess();
+      toast.success(
+        `Transmittal ${transmittal.transmittal_number} cancelled successfully`,
+      );
+    } else {
+      toast.error(`Error: ${error.message}`);
+    }
+  }
+
+  return (
+    <>
+      <Button variant="destructive" size="sm" onClick={() => setOpen(true)}>
+        Cancel
+      </Button>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="w-[calc(100%-2rem)] sm:max-w-lg rounded-lg">
+          <DialogHeader>
+            <DialogTitle>Cancel Transmittal</DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="rounded-lg border p-3 space-y-1 text-sm">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Transmittal</span>
+                <span className="font-medium">
+                  {transmittal.transmittal_number}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Billing TM</span>
+                <span className="font-medium">
+                  {transmittal.billing_transmittal_number}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Created Date</span>
+                <span className="font-medium">
+                  {formatDate(transmittal.created_at)}
+                </span>
+              </div>
+            </div>
+
+            <p className="text-sm text-muted-foreground">
+              Are you sure you want to cancel this transmittal? This action
+              cannot be undone.
+            </p>
+
+            <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setOpen(false)}
+                className="w-full sm:w-auto"
+              >
+                Keep
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleCancel}
+                disabled={loading}
+                className="w-full sm:w-auto"
+              >
+                {loading ? "Cancelling..." : "Cancel Transmittal"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
 export function TransmittalList({
   data,
   page,
   setPage,
   limit,
   total,
+  onSuccess,
 }: {
   data: PaginatedTransmittal["items"];
   page: number;
   setPage: (page: number) => void;
   limit: number;
   total: number;
+  onSuccess: () => void;
 }) {
   const pageCount = Math.ceil(total / limit);
   const pages = [...Array(pageCount)].map((_, i) => i + 1);
@@ -100,14 +198,23 @@ export function TransmittalList({
                 <StatusBadge status={transmittal.status} />
               </TableCell>
               <TableCell className="text-right">
-                <Link
-                  href={`/client/bill-management/transmittal/${transmittal.id}`}
-                >
+                <div className="flex gap-2 justify-end items-center">
                   <Button variant="ghost" size="sm">
-                    <Eye className="w-4 h-4 mr-2" />
-                    View
+                    <Link
+                      href={`/client/bill-management/transmittal/${transmittal.id}`}
+                      className="flex items-center"
+                    >
+                      <Eye className="w-2 h-2 mr-1.5" />
+                      View
+                    </Link>
                   </Button>
-                </Link>
+                  {transmittal.status === "draft" && (
+                    <CancelTransmittalDialog
+                      transmittal={transmittal}
+                      onSuccess={onSuccess}
+                    />
+                  )}
+                </div>
               </TableCell>
             </TableRow>
           ))}
@@ -391,14 +498,7 @@ export function SearchTransmittalComponent({
     }, 350);
     return () => clearTimeout(timeout);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    query,
-    statusFilter,
-    businessUnitFilter,
-    page,
-    orderBy,
-    limit,
-  ]);
+  }, [query, statusFilter, businessUnitFilter, page, orderBy, limit]);
 
   function handleQueryChange(e: React.ChangeEvent<HTMLInputElement>) {
     setQuery(e.target.value);
@@ -469,6 +569,7 @@ export function SearchTransmittalComponent({
               Partially Returned
             </SelectItem>
             <SelectItem value="resubmitted">Resubmitted</SelectItem>
+            <SelectItem value="cancelled">Cancelled</SelectItem>
           </SelectContent>
         </Select>
 
@@ -523,6 +624,23 @@ export function SearchTransmittalComponent({
           setPage={setPage}
           limit={limit}
           total={data.total}
+          onSuccess={() => {
+            const normalizedQuery = query.trim();
+            const isBillingQuery = /^btm/i.test(normalizedQuery);
+
+            onFilter({
+              search: isBillingQuery ? undefined : normalizedQuery || undefined,
+              billing_transmittal_number: isBillingQuery
+                ? normalizedQuery
+                : undefined,
+              status: statusFilter,
+              business_unit_id: businessUnitFilter,
+              limit: limit,
+              skip: (page - 1) * limit,
+              order_by: orderBy,
+              page: page,
+            });
+          }}
         />
       ) : (
         <p className="text-sm text-muted-foreground py-4 text-center">
