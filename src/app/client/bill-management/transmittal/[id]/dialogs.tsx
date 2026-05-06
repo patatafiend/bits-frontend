@@ -814,7 +814,11 @@ export function ForwardTransmittalDialog({
 
   return (
     <>
-      <Button variant="success" onClick={() => setOpen(true)} disabled={disabled}>
+      <Button
+        variant="success"
+        onClick={() => setOpen(true)}
+        disabled={disabled}
+      >
         Forwarded
       </Button>
 
@@ -827,8 +831,8 @@ export function ForwardTransmittalDialog({
             </DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground">
-            Are you sure you want to tag this transmittal as forwarded? This action cannot
-            be undone.
+            Are you sure you want to tag this transmittal as forwarded? This
+            action cannot be undone.
           </p>
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpen(false)}>
@@ -1148,9 +1152,9 @@ export function SearchTransmittalItemsComponent({
                 </div>
               </div>
 
-              <div className="flex items-center gap-1 ml-4 opacity-0 group-hover:opacity-100 transition-opacity">
+              <div className="flex items-center gap-2 ml-4">
                 <Button
-                  variant="ghost"
+                  variant="default"
                   size="sm"
                   onClick={() =>
                     handleViewFile(
@@ -1289,10 +1293,7 @@ export function ItemAction({
     defaultValues: { rejection_reason: item.rejection_reason ?? "" },
   });
 
-  const handleAction = async (
-    action: "return" | "undo",
-    reason?: string,
-  ) => {
+  const handleAction = async (action: "return" | "undo", reason?: string) => {
     const status = action === "return" ? "returned" : "forwarded";
 
     const { error } = await itemAction({
@@ -1322,11 +1323,15 @@ export function ItemAction({
   return (
     <>
       {isReturned ? (
-        <Button onClick={() => handleAction("undo")} disabled={loading}>
+        <Button
+          size="sm"
+          onClick={() => handleAction("undo")}
+          disabled={loading}
+        >
           Undo
         </Button>
       ) : (
-        <Button onClick={() => setOpen(true)} disabled={loading}>
+        <Button size="sm" onClick={() => setOpen(true)} disabled={loading}>
           Return
         </Button>
       )}

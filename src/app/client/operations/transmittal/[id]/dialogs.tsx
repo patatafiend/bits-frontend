@@ -514,10 +514,10 @@ export function SearchTransmittalItemsComponent({
           </div>
         </div>
 
-        <div className="flex items-center gap-1 ml-4 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="flex items-center gap-2 ml-4">
           {canViewFiles && (
             <Button
-              variant="ghost"
+              variant="default"
               size="sm"
               onClick={() =>
                 handleViewFile(item.file_key, item.file_name, item.file_type)
@@ -691,11 +691,15 @@ function ItemAction({
   return (
     <>
       {isReturned ? (
-        <Button onClick={() => handleAction("undo")} disabled={loading}>
+        <Button
+          size="sm"
+          onClick={() => handleAction("undo")}
+          disabled={loading}
+        >
           Undo
         </Button>
       ) : (
-        <Button onClick={() => setOpen(true)} disabled={loading}>
+        <Button size="sm" onClick={() => setOpen(true)} disabled={loading}>
           Return
         </Button>
       )}
