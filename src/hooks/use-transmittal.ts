@@ -11,6 +11,7 @@ import {
   TransmittalItemAction,
   TransmittalStats,
   SendTransmittalRequest,
+  UpdateTransmittalItemRemarksRequest,
 } from "@/lib/types";
 
 export function useCreateTransmittal() {
@@ -178,6 +179,15 @@ export function useItemAction() {
     `/transmittals/item/action`,
     {
       method: "POST",
+    },
+  );
+}
+
+export function useUpdateTransmittalItemRemarks() {
+  return useServerAction<TransmittalItems, UpdateTransmittalItemRemarksRequest>(
+    `/transmittals/item/`,
+    {
+      method: "PUT",
     },
   );
 }

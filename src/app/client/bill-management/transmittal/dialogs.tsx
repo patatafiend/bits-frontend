@@ -10,7 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Eye, RefreshCcw, X } from "lucide-react";
+import { Eye, RefreshCcw } from "lucide-react";
 import Link from "next/link";
 import {
   Dialog,

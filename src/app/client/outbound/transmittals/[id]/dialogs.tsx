@@ -13,7 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { TransmittalWithItems } from "@/lib/types";
+import { TransmittalWithItems, TransmittalItems } from "@/lib/types";
 import { DrawerDialog } from "@/components/drawer-dialog";
 export function RejectionReasonDialog({
   transmittalData,
@@ -158,6 +158,77 @@ export function ReturnTransmittalDialog({
               disabled={loading}
             >
               {loading ? "Processing..." : "Confirm Return"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
+export function ForwardItemDialog({
+  item,
+  onConfirm,
+  loading,
+  disabled,
+}: {
+  item: TransmittalItems;
+  onConfirm: () => void;
+  loading?: boolean;
+  disabled?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <>
+      <Button
+        variant="success"
+        size="sm"
+        onClick={() => setOpen(true)}
+        disabled={disabled}
+      >
+        Forward
+      </Button>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-green-600">
+              <CheckCircle className="w-5 h-5" />
+              Forward Item
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Are you sure you want to mark this item as forwarded?
+            </p>
+            <div className="bg-muted p-3 rounded-lg space-y-2">
+              <div>
+                <p className="text-xs text-muted-foreground">File Name</p>
+                <p className="text-sm font-medium truncate">{item.file_name}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Reference Number</p>
+                <p className="text-sm font-mono">{item.reference_number}</p>
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              This action cannot be undone.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              className="bg-green-600 hover:bg-green-700"
+              onClick={() => {
+                onConfirm();
+                setOpen(false);
+              }}
+              disabled={loading}
+            >
+              {loading ? "Processing..." : "Confirm Forward"}
             </Button>
           </DialogFooter>
         </DialogContent>

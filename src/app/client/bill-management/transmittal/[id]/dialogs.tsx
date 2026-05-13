@@ -50,6 +50,7 @@ import {
   useReturnTransmittal,
   useSendTransmittal,
   useUpdateTransmittal,
+  useUpdateTransmittalItemRemarks,
 } from "@/hooks/use-transmittal";
 import { useFetchReceivers } from "@/hooks/use-receiver";
 import ReceiverComboBox from "@/components/receiver-combobox";
@@ -1085,9 +1086,7 @@ export function SearchTransmittalItemsComponent({
     transmittalData.status === "rejected" ||
     transmittalData.status === "partially_returned";
 
-  const billingItems = data.filter(
-    (i) => i.category === "billing_statement" || !i.category,
-  );
+  const allItems = data;
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2">
@@ -1105,6 +1104,7 @@ export function SearchTransmittalItemsComponent({
           <SelectContent>
             <SelectItem value="all">All</SelectItem>
             <SelectItem value="returned">Returned</SelectItem>
+            <SelectItem value="draft">Draft</SelectItem>
             <SelectItem value="forwarded">Forwarded</SelectItem>
           </SelectContent>
         </Select>
@@ -1118,68 +1118,85 @@ export function SearchTransmittalItemsComponent({
 
       {loading ? (
         <Loader loading={loading} />
-      ) : billingItems.length === 0 ? (
+      ) : allItems.length === 0 ? (
         <p className="text-sm text-muted-foreground py-4 text-center">
           No transmittals match your search.
         </p>
       ) : (
         <div className="rounded-xl border bg-card overflow-hidden">
-          {billingItems.map((item, index) => (
-            <div
-              key={item.id}
-              className={`group flex items-center justify-between px-4 py-3 transition-colors hover:bg-muted/50 ${
-                index !== data.length - 1 ? "border-b" : ""
-              }`}
-            >
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-muted">
-                  <FileText className="w-4 h-4 text-muted-foreground" />
-                </div>
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-xs text-muted-foreground font-mono">
-                      {item.reference_number}
-                    </span>
-                    <p className="text-sm font-medium truncate">
-                      {item.file_name}
-                    </p>
-                    {item.status && <StatusBadge status={item.status} />}
+          {allItems.map((item, index) => {
+            const isProofAttachment = item.category === "proof_attachment";
+            return (
+              <div
+                key={item.id}
+                className={`group flex items-center justify-between px-4 py-3 transition-colors hover:bg-muted/50 ${
+                  index !== data.length - 1 ? "border-b" : ""
+                }`}
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-muted">
+                    <FileText className="w-4 h-4 text-muted-foreground" />
                   </div>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    {(parseInt(item.file_size) / 1024 / 1024).toFixed(2)} MB ·
-                    uploaded {new Date(item.uploaded_at).toLocaleDateString()}
-                  </p>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-xs text-muted-foreground font-mono">
+                        {item.reference_number}
+                      </span>
+                      <p className="text-sm font-medium truncate">
+                        {item.file_name}
+                      </p>
+                      {item.status && <StatusBadge status={item.status} />}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {(parseInt(item.file_size) / 1024 / 1024).toFixed(2)} MB ·
+                      uploaded {new Date(item.uploaded_at).toLocaleDateString()}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 ml-4">
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={() =>
+                      handleViewFile(
+                        item.file_key,
+                        item.file_name,
+                        item.file_type,
+                      )
+                    }
+                    disabled={loadingUrl}
+                  >
+                    {loadingUrl ? "Loading..." : "View"}
+                  </Button>
+                  {isDraft && (
+                    <DeleteItemDialog
+                      disabled={deletingFile}
+                      onConfirm={() => handleDeleteItem(item.id, item.file_key)}
+                    />
+                  )}
+                  {!isProofAttachment && (
+                    <>
+                      <RemarksDialog
+                        item={item}
+                        onSaveComplete={refetchTransmittals}
+                      />
+                      <ItemRejectionReasonDialog item={item} />
+                      {item.status === "draft" && (
+                        <ForwardItemButton
+                          item={item}
+                          onForwardComplete={refetchTransmittals}
+                        />
+                      )}
+                      {canReturn && (
+                        <ItemAction item={item} onClick={refetchTransmittals} />
+                      )}
+                    </>
+                  )}
                 </div>
               </div>
-
-              <div className="flex items-center gap-2 ml-4">
-                <Button
-                  variant="default"
-                  size="sm"
-                  onClick={() =>
-                    handleViewFile(
-                      item.file_key,
-                      item.file_name,
-                      item.file_type,
-                    )
-                  }
-                  disabled={loadingUrl}
-                >
-                  {loadingUrl ? "Loading..." : "View"}
-                </Button>
-                {isDraft && (
-                  <DeleteItemDialog
-                    disabled={deletingFile}
-                    onConfirm={() => handleDeleteItem(item.id, item.file_key)}
-                  />
-                )}
-                <ItemRejectionReasonDialog item={item} />
-                {canReturn && (
-                  <ItemAction item={item} onClick={refetchTransmittals} />
-                )}
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
       <FileViewerModal
@@ -1191,7 +1208,7 @@ export function SearchTransmittalItemsComponent({
 }
 
 function ItemRejectionReasonDialog({ item }: { item: TransmittalItems }) {
-  if (!item.rejection_reason) {
+  if (!item.rejection_reason && !item.remarks) {
     return null;
   }
 
@@ -1199,7 +1216,7 @@ function ItemRejectionReasonDialog({ item }: { item: TransmittalItems }) {
 
   return (
     <DrawerDialog
-      title={isRejected ? "Item Rejected" : "Item Return Reason"}
+      title={isRejected ? "Item Rejected" : "Item Notes"}
       description=""
       responsive
       className="max-w-md"
@@ -1214,18 +1231,183 @@ function ItemRejectionReasonDialog({ item }: { item: TransmittalItems }) {
         </Button>
       }
     >
-      <div className="space-y-3 px-4 sm:px-0 pb-4">
-        <p className="text-sm text-muted-foreground break-all">
-          {item.rejection_reason}
-        </p>
-        {item.return_date && (
-          <p className="text-xs text-muted-foreground">
-            {isRejected ? "Rejected" : "Updated"} on{" "}
-            {new Date(item.return_date).toLocaleDateString()}
-          </p>
+      <div className="space-y-4 px-4 sm:px-0 pb-4">
+        {item.rejection_reason && (
+          <div className="space-y-2">
+            <h4 className="text-sm font-medium">
+              {isRejected ? "Rejection Reason" : "Return Reason"}
+            </h4>
+            <p className="text-sm text-muted-foreground break-all">
+              {item.rejection_reason}
+            </p>
+            {item.return_date && (
+              <p className="text-xs text-muted-foreground">
+                {isRejected ? "Rejected" : "Updated"} on{" "}
+                {new Date(item.return_date).toLocaleDateString()}
+              </p>
+            )}
+          </div>
+        )}
+        {item.remarks && (
+          <div className="space-y-2">
+            <h4 className="text-sm font-medium">Remarks</h4>
+            <p className="text-sm text-muted-foreground break-all">
+              {item.remarks}
+            </p>
+          </div>
         )}
       </div>
     </DrawerDialog>
+  );
+}
+
+function RemarksDialog({
+  item,
+  onSaveComplete,
+}: {
+  item: TransmittalItems;
+  onSaveComplete?: () => void;
+}) {
+  const { execute: updateRemarks, loading } = useUpdateTransmittalItemRemarks();
+  const [remarks, setRemarks] = useState(item.remarks || "");
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const maxLength = 1000;
+
+  const hasRemarks = item.remarks && item.remarks.trim().length > 0;
+
+  const handleSave = async (closeDialog?: () => void) => {
+    const { error } = await updateRemarks({
+      params: `/${item.id}/remarks`,
+      body: { remarks: remarks.trim() || null },
+    });
+
+    if (error) {
+      toast.error(error.message || "Failed to save remarks");
+      return;
+    }
+
+    toast.success("Remarks saved successfully");
+    closeDialog?.();
+    onSaveComplete?.();
+  };
+
+  const handleClear = async (closeDialog?: () => void) => {
+    const { error } = await updateRemarks({
+      params: `/${item.id}`,
+      body: { remarks: null },
+    });
+
+    if (error) {
+      toast.error(error.message || "Failed to clear remarks");
+      return;
+    }
+
+    toast.success("Remarks cleared");
+    setShowClearConfirm(false);
+    closeDialog?.();
+    onSaveComplete?.();
+  };
+
+  return (
+    <>
+      {showClearConfirm && (
+        <Dialog open={showClearConfirm} onOpenChange={setShowClearConfirm}>
+          <DialogContent className="max-w-sm">
+            <DialogHeader>
+              <DialogTitle>Clear Remarks?</DialogTitle>
+            </DialogHeader>
+            <p className="text-sm text-muted-foreground">
+              Are you sure you want to clear the remarks for this item? This
+              cannot be undone.
+            </p>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setShowClearConfirm(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={() => handleClear()}
+                disabled={loading}
+              >
+                {loading ? "Clearing..." : "Clear"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      <DrawerDialog
+        title={hasRemarks ? "Edit Remarks" : "Add Remarks"}
+        description=""
+        responsive
+        className="max-w-md"
+        renderTrigger={
+          <Button variant="outline" size="sm">
+            {hasRemarks ? (
+              <>
+                <Edit className="w-4 h-4 mr-2" />
+                Remarks
+              </>
+            ) : (
+              <>
+                <Edit className="w-4 h-4 mr-2" />
+                Add Notes
+              </>
+            )}
+          </Button>
+        }
+      >
+        {(closeDialog) => (
+          <div className="space-y-4 px-4 sm:px-0 pb-4">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium">Remarks</label>
+                <span className="text-xs text-muted-foreground">
+                  {remarks.length} / {maxLength}
+                </span>
+              </div>
+              <Textarea
+                value={remarks}
+                onChange={(e) => setRemarks(e.target.value.slice(0, maxLength))}
+                placeholder="Add your remarks here..."
+                className="min-h-[120px] resize-none"
+                disabled={loading}
+              />
+            </div>
+
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={closeDialog}
+                disabled={loading}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              {hasRemarks && (
+                <Button
+                  variant="destructive"
+                  onClick={() => setShowClearConfirm(true)}
+                  disabled={loading}
+                >
+                  Clear
+                </Button>
+              )}
+              <Button
+                onClick={() => handleSave(closeDialog)}
+                disabled={loading}
+                className="flex-1"
+              >
+                {loading ? "Saving..." : "Save"}
+              </Button>
+            </div>
+          </div>
+        )}
+      </DrawerDialog>
+    </>
   );
 }
 
@@ -1403,5 +1585,116 @@ export function ItemAction({
         </DialogContent>
       </Dialog>
     </>
+  );
+}
+
+export function ForwardItemDialog({
+  item,
+  onConfirm,
+  loading,
+  disabled,
+}: {
+  item: TransmittalItems;
+  onConfirm: () => void;
+  loading?: boolean;
+  disabled?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <>
+      <Button
+        variant="success"
+        size="sm"
+        onClick={() => setOpen(true)}
+        disabled={disabled}
+      >
+        Forward
+      </Button>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-green-600">
+              <CheckCircle className="w-5 h-5" />
+              Forward Item
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Are you sure you want to mark this item as forwarded?
+            </p>
+            <div className="bg-muted p-3 rounded-lg space-y-2">
+              <div>
+                <p className="text-xs text-muted-foreground">File Name</p>
+                <p className="text-sm font-medium truncate">{item.file_name}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">
+                  Reference Number
+                </p>
+                <p className="text-sm font-mono">{item.reference_number}</p>
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              This action cannot be undone.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              className="bg-green-600 hover:bg-green-700"
+              onClick={() => {
+                onConfirm();
+                setOpen(false);
+              }}
+              disabled={loading}
+            >
+              {loading ? "Processing..." : "Confirm Forward"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
+function ForwardItemButton({
+  item,
+  onForwardComplete,
+}: {
+  item: TransmittalItems;
+  onForwardComplete: () => void;
+}) {
+  const { execute: itemAction, loading } = useItemAction();
+
+  const handleForward = async () => {
+    const { error } = await itemAction({
+      query: {
+        id: item.id,
+      },
+      body: {
+        status: "forwarded",
+      },
+    });
+
+    if (error) {
+      toast.error(error.message || "Failed to forward item");
+      return;
+    }
+
+    toast.success("Item forwarded successfully");
+    onForwardComplete();
+  };
+
+  return (
+    <ForwardItemDialog
+      item={item}
+      disabled={loading}
+      loading={loading}
+      onConfirm={handleForward}
+    />
   );
 }

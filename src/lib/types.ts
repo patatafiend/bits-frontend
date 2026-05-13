@@ -299,6 +299,7 @@ export type TransmittalItems = {
   reference_number: string;
   status: string;
   rejection_reason?: string | null;
+  remarks?: string | null;
   return_date: string;
   file_name: string;
   file_key: string;
@@ -328,6 +329,10 @@ export type TransmittalItemAction = {
 };
 
 export type ItemActionUpdate = Partial<TransmittalItemAction>;
+
+export type UpdateTransmittalItemRemarksRequest = {
+  remarks: string | null;
+};
 
 export type CreateTransmittal = {
   transmittal_number: string;
@@ -375,7 +380,7 @@ export type UploadInvoiceFileProps = {
 export type PaginatedUser = {
   users: User[];
   total: number;
-}
+};
 
 export type PaginatedTransmittal = {
   items: Transmittal[];

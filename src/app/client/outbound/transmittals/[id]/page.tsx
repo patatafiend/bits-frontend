@@ -123,11 +123,7 @@ export default function TransmittalDetailPage() {
 
   return (
     <div className="container mx-auto py-8 max-w-4xl">
-      <Button
-        variant="ghost"
-        className="mb-4"
-        onClick={() => router.back()}
-      >
+      <Button variant="ghost" className="mb-4" onClick={() => router.back()}>
         <ArrowLeft className="w-4 h-4 mr-2" />
         Back to Transmittals
       </Button>
@@ -221,7 +217,10 @@ export default function TransmittalDetailPage() {
                   </p>
                   <p className="font-medium">
                     {transmittalData.billing_officer_assigned
-                      ? formatFullName(transmittalData.billing_officer_assigned, true)
+                      ? formatFullName(
+                          transmittalData.billing_officer_assigned,
+                          true,
+                        )
                       : "No officer assigned"}
                   </p>
                 </div>
@@ -255,12 +254,14 @@ export default function TransmittalDetailPage() {
                   enableItemActions
                   itemActionMode="return"
                   onItemActionComplete={refetchTransmittals}
+                  requiredForwardStatus="endorsed"
                 />
               </div>
             </CardContent>
           </Card>
         )}
-        {(transmittalData?.status == "endorsed" || transmittalData?.status == "forwarded") && (
+        {(transmittalData?.status == "endorsed" ||
+          transmittalData?.status == "forwarded") && (
           <UploadFile
             mode="proof_attachment"
             transmittalData={transmittalData}

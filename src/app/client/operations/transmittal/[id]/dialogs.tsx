@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { FileText, AlertCircle } from "lucide-react";
+import { FileText, AlertCircle, CheckCircle } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -39,6 +39,7 @@ import {
   useEndorseTransmittal,
   useItemAction,
   useReturnTransmittal,
+  useUpdateTransmittalItemRemarks,
 } from "@/hooks/use-transmittal";
 import { useFetchBusinessUnits } from "@/hooks/use-client";
 import { Input } from "@/components/ui/input";
@@ -407,6 +408,7 @@ export function SearchTransmittalItemsComponent({
   enableItemActions = false,
   itemActionMode,
   onItemActionComplete,
+  requiredForwardStatus = "pending",
 }: {
   data: TransmittalItems[];
   loading: boolean;
@@ -416,6 +418,7 @@ export function SearchTransmittalItemsComponent({
   enableItemActions?: boolean;
   itemActionMode?: "draft" | "return";
   onItemActionComplete?: () => void;
+  requiredForwardStatus?: string;
 }) {
   const [query, setQuery] = useState("");
   const [urlCache, setUrlCache] = useState<
@@ -487,7 +490,11 @@ export function SearchTransmittalItemsComponent({
   );
   const canViewFiles = forceShowViewButton || user?.role == "operations admin";
 
-  function renderItemRows(items: TransmittalItems[], showItemActions = false) {
+  function renderItemRows(
+    items: TransmittalItems[],
+    showItemActions = false,
+    isProofAttachment = false,
+  ) {
     return items.map((item, index) => (
       <div
         key={item.id}
@@ -527,22 +534,36 @@ export function SearchTransmittalItemsComponent({
               {loadingUrl ? "Loading..." : "View"}
             </Button>
           )}
-          <ItemReasonDialog item={item} />
-          {showItemActions &&
-          enableItemActions &&
-          itemActionMode === "draft" ? (
-            <ReturnToDraft
-              item={item}
-              onClick={onItemActionComplete ?? (() => {})}
-            />
-          ) : showItemActions &&
-            enableItemActions &&
-            itemActionMode === "return" ? (
-            <ItemAction
-              item={item}
-              onClick={onItemActionComplete ?? (() => {})}
-            />
-          ) : null}
+          {!isProofAttachment && (
+            <>
+              <RemarksDialog
+                item={item}
+                onSaveComplete={onItemActionComplete}
+              />
+              <ItemReasonDialog item={item} />
+              {item.status === requiredForwardStatus && (
+                <ForwardItemButton
+                  item={item}
+                  onForwardComplete={onItemActionComplete ?? (() => {})}
+                />
+              )}
+              {showItemActions &&
+              enableItemActions &&
+              itemActionMode === "draft" ? (
+                <ReturnToDraft
+                  item={item}
+                  onClick={onItemActionComplete ?? (() => {})}
+                />
+              ) : showItemActions &&
+                enableItemActions &&
+                itemActionMode === "return" ? (
+                <ItemAction
+                  item={item}
+                  onClick={onItemActionComplete ?? (() => {})}
+                />
+              ) : null}
+            </>
+          )}
         </div>
       </div>
     ));
@@ -577,7 +598,7 @@ export function SearchTransmittalItemsComponent({
             <div className="space-y-2">
               <h3 className="text-sm font-medium">Proof Images</h3>
               <div className="rounded-xl border bg-card overflow-hidden">
-                {renderItemRows(proofItems)}
+                {renderItemRows(proofItems, false, true)}
               </div>
             </div>
           )}
@@ -608,7 +629,7 @@ const returnReasonSchema = z.object({
 type ReturnReasonFormValues = z.infer<typeof returnReasonSchema>;
 
 function ItemReasonDialog({ item }: { item: TransmittalItems }) {
-  if (!item.rejection_reason) {
+  if (!item.rejection_reason && !item.remarks) {
     return null;
   }
 
@@ -616,7 +637,7 @@ function ItemReasonDialog({ item }: { item: TransmittalItems }) {
 
   return (
     <DrawerDialog
-      title={isRejected ? "Item Rejected" : "Item Return Reason"}
+      title={isRejected ? "Item Rejected" : "Item Notes"}
       description=""
       responsive
       className="max-w-md"
@@ -631,18 +652,183 @@ function ItemReasonDialog({ item }: { item: TransmittalItems }) {
         </Button>
       }
     >
-      <div className="space-y-3 px-4 sm:px-0 pb-4">
-        <p className="text-sm text-muted-foreground break-all">
-          {item.rejection_reason}
-        </p>
-        {item.return_date && (
-          <p className="text-xs text-muted-foreground">
-            {isRejected ? "Rejected" : "Updated"} on{" "}
-            {new Date(item.return_date).toLocaleDateString()}
-          </p>
+      <div className="space-y-4 px-4 sm:px-0 pb-4">
+        {item.rejection_reason && (
+          <div className="space-y-2">
+            <h4 className="text-sm font-medium">
+              {isRejected ? "Rejection Reason" : "Return Reason"}
+            </h4>
+            <p className="text-sm text-muted-foreground break-all">
+              {item.rejection_reason}
+            </p>
+            {item.return_date && (
+              <p className="text-xs text-muted-foreground">
+                {isRejected ? "Rejected" : "Updated"} on{" "}
+                {new Date(item.return_date).toLocaleDateString()}
+              </p>
+            )}
+          </div>
+        )}
+        {item.remarks && (
+          <div className="space-y-2">
+            <h4 className="text-sm font-medium">Remarks</h4>
+            <p className="text-sm text-muted-foreground break-all">
+              {item.remarks}
+            </p>
+          </div>
         )}
       </div>
     </DrawerDialog>
+  );
+}
+
+function RemarksDialog({
+  item,
+  onSaveComplete,
+}: {
+  item: TransmittalItems;
+  onSaveComplete?: () => void;
+}) {
+  const { execute: updateRemarks, loading } = useUpdateTransmittalItemRemarks();
+  const [remarks, setRemarks] = useState(item.remarks || "");
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const maxLength = 1000;
+
+  const hasRemarks = item.remarks && item.remarks.trim().length > 0;
+
+  const handleSave = async (closeDialog?: () => void) => {
+    const { error } = await updateRemarks({
+      params: `/${item.id}/remarks`,
+      body: { remarks: remarks.trim() || null },
+    });
+
+    if (error) {
+      toast.error(error.message || "Failed to save remarks");
+      return;
+    }
+
+    toast.success("Remarks saved successfully");
+    closeDialog?.();
+    onSaveComplete?.();
+  };
+
+  const handleClear = async (closeDialog?: () => void) => {
+    const { error } = await updateRemarks({
+      params: `/${item.id}`,
+      body: { remarks: null },
+    });
+
+    if (error) {
+      toast.error(error.message || "Failed to clear remarks");
+      return;
+    }
+
+    toast.success("Remarks cleared");
+    setShowClearConfirm(false);
+    closeDialog?.();
+    onSaveComplete?.();
+  };
+
+  return (
+    <>
+      {showClearConfirm && (
+        <Dialog open={showClearConfirm} onOpenChange={setShowClearConfirm}>
+          <DialogContent className="max-w-sm">
+            <DialogHeader>
+              <DialogTitle>Clear Remarks?</DialogTitle>
+            </DialogHeader>
+            <p className="text-sm text-muted-foreground">
+              Are you sure you want to clear the remarks for this item? This
+              cannot be undone.
+            </p>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setShowClearConfirm(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={() => handleClear()}
+                disabled={loading}
+              >
+                {loading ? "Clearing..." : "Clear"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      <DrawerDialog
+        title={hasRemarks ? "Edit Remarks" : "Add Remarks"}
+        description=""
+        responsive
+        className="max-w-md"
+        renderTrigger={
+          <Button variant="outline" size="sm">
+            {hasRemarks ? (
+              <>
+                <Edit className="w-4 h-4 mr-2" />
+                Remarks
+              </>
+            ) : (
+              <>
+                <Edit className="w-4 h-4 mr-2" />
+                Add Notes
+              </>
+            )}
+          </Button>
+        }
+      >
+        {(closeDialog) => (
+          <div className="space-y-4 px-4 sm:px-0 pb-4">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium">Remarks</label>
+                <span className="text-xs text-muted-foreground">
+                  {remarks.length} / {maxLength}
+                </span>
+              </div>
+              <Textarea
+                value={remarks}
+                onChange={(e) => setRemarks(e.target.value.slice(0, maxLength))}
+                placeholder="Add your remarks here..."
+                className="min-h-[120px] resize-none"
+                disabled={loading}
+              />
+            </div>
+
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={closeDialog}
+                disabled={loading}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              {hasRemarks && (
+                <Button
+                  variant="destructive"
+                  onClick={() => setShowClearConfirm(true)}
+                  disabled={loading}
+                >
+                  Clear
+                </Button>
+              )}
+              <Button
+                onClick={() => handleSave(closeDialog)}
+                disabled={loading}
+                className="flex-1"
+              >
+                {loading ? "Saving..." : "Save"}
+              </Button>
+            </div>
+          </div>
+        )}
+      </DrawerDialog>
+    </>
   );
 }
 
@@ -818,12 +1004,13 @@ function ReturnToDraft({
 
   return (
     <>
-      {!cantRevert ? (
-        <Button onClick={() => handleAction("undo")} disabled={loading}>
-          Undo
-        </Button>
-      ) : (
-        <Button onClick={() => setOpen(true)} disabled={loading}>
+      {cantRevert && (
+        <Button
+          size="sm"
+          variant="destructive"
+          onClick={() => setOpen(true)}
+          disabled={loading}
+        >
           Return
         </Button>
       )}
@@ -854,7 +1041,7 @@ function ReturnToDraft({
             >
               <div className="rounded-md border border-yellow-300 bg-yellow-50 p-3">
                 <p className="text-sm text-yellow-800">
-                  Provide a return reason. The item will be marked as returned.
+                  Provide a return reason. The item will be marked as draft.
                 </p>
               </div>
 
@@ -1012,5 +1199,116 @@ export function ReturnTransmittalComponent({
         </DialogContent>
       </Dialog>
     </>
+  );
+}
+
+export function ForwardItemDialog({
+  item,
+  onConfirm,
+  loading,
+  disabled,
+}: {
+  item: TransmittalItems;
+  onConfirm: () => void;
+  loading?: boolean;
+  disabled?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <>
+      <Button
+        variant="success"
+        size="sm"
+        onClick={() => setOpen(true)}
+        disabled={disabled}
+      >
+        Forward
+      </Button>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-green-600">
+              <CheckCircle className="w-5 h-5" />
+              Forward Item
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Are you sure you want to mark this item as forwarded?
+            </p>
+            <div className="bg-muted p-3 rounded-lg space-y-2">
+              <div>
+                <p className="text-xs text-muted-foreground">File Name</p>
+                <p className="text-sm font-medium truncate">{item.file_name}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">
+                  Reference Number
+                </p>
+                <p className="text-sm font-mono">{item.reference_number}</p>
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              This action cannot be undone.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              className="bg-green-600 hover:bg-green-700"
+              onClick={() => {
+                onConfirm();
+                setOpen(false);
+              }}
+              disabled={loading}
+            >
+              {loading ? "Processing..." : "Confirm Forward"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
+function ForwardItemButton({
+  item,
+  onForwardComplete,
+}: {
+  item: TransmittalItems;
+  onForwardComplete: () => void;
+}) {
+  const { execute: itemAction, loading } = useItemAction();
+
+  const handleForward = async () => {
+    const { error } = await itemAction({
+      query: {
+        id: item.id,
+      },
+      body: {
+        status: "forwarded",
+      },
+    });
+
+    if (error) {
+      toast.error(error.message || "Failed to forward item");
+      return;
+    }
+
+    toast.success("Item forwarded successfully");
+    onForwardComplete();
+  };
+
+  return (
+    <ForwardItemDialog
+      item={item}
+      disabled={loading}
+      loading={loading}
+      onConfirm={handleForward}
+    />
   );
 }
