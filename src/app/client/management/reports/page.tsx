@@ -404,6 +404,98 @@ export default function ManagementReportsPage() {
         </div>
       ) : (
         <>
+          {activeAdvancedFilterCount > 0 && (
+            <div className="rounded-lg border bg-muted/20 p-4">
+              <div className="space-y-3 text-sm">
+                {businessUnitIds.length > 0 && (
+                  <div>
+                    <span className="font-medium">Business Units:</span>
+                    <div className="mt-1 flex flex-wrap gap-2">
+                      {businessUnitIds.map((id) => {
+                        const unit = businessUnitsData?.find(
+                          (u) => u.id === id,
+                        );
+                        return (
+                          <span
+                            key={id}
+                            className="inline-flex items-center rounded-full bg-background px-3 py-1 text-xs font-medium border"
+                          >
+                            {unit?.name || `Business Unit #${id}`}
+                          </span>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+                {billingAdminIds.length > 0 && (
+                  <div>
+                    <span className="font-medium">Billing Admin(s):</span>
+                    <div className="mt-1 flex flex-wrap gap-2">
+                      {billingAdminIds.map((id) => {
+                        const user = billingAdminOptions.find(
+                          (u) => u.id === id,
+                        );
+                        return (
+                          <span
+                            key={id}
+                            className="inline-flex items-center rounded-full bg-background px-3 py-1 text-xs font-medium border"
+                          >
+                            {user
+                              ? `${user.first_name} ${user.last_name}`
+                              : `User #${id}`}
+                          </span>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+                {operationAdminIds.length > 0 && (
+                  <div>
+                    <span className="font-medium">Operation Admin(s):</span>
+                    <div className="mt-1 flex flex-wrap gap-2">
+                      {operationAdminIds.map((id) => {
+                        const user = operationAdminOptions.find(
+                          (u) => u.id === id,
+                        );
+                        return (
+                          <span
+                            key={id}
+                            className="inline-flex items-center rounded-full bg-background px-3 py-1 text-xs font-medium border"
+                          >
+                            {user
+                              ? `${user.first_name} ${user.last_name}`
+                              : `User #${id}`}
+                          </span>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+                {billingOfficerIds.length > 0 && (
+                  <div>
+                    <span className="font-medium">Billing Officer(s):</span>
+                    <div className="mt-1 flex flex-wrap gap-2">
+                      {billingOfficerIds.map((id) => {
+                        const user = billingOfficerOptions.find(
+                          (u) => u.id === id,
+                        );
+                        return (
+                          <span
+                            key={id}
+                            className="inline-flex items-center rounded-full bg-background px-3 py-1 text-xs font-medium border"
+                          >
+                            {user
+                              ? `${user.first_name} ${user.last_name}`
+                              : `User #${id}`}
+                          </span>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
           <div className="rounded-lg border">
             <div className="border-b px-4 py-3 text-sm font-medium">Trend</div>
             {isLoading ? (
