@@ -467,7 +467,7 @@ export type UpdateBusinessUnit = Partial<CreateBusinessUnit> & {
   is_active?: boolean;
 };
 
-export type TrendGroupBy = "day" | "week" | "month";
+export type TrendGroupBy = "user";
 export type ReportFormat = "csv" | "xlsx" | "pdf";
 
 export type ReportFilters = {
@@ -515,13 +515,43 @@ export type TransmittalReportTrendItem = {
   partially_returned: number;
 };
 
+export type UserRoleTrendItem = {
+  user_id: number;
+  user: string;
+  role: string;
+  total: number;
+  // Timeline with durations
+  created_at?: string | null;
+  created_at_to_submitted_duration?: string | null;
+  submitted_at?: string | null;
+  submitted_at_to_endorsed_duration?: string | null;
+  endorsed_at?: string | null;
+  endorsed_at_to_forwarded_duration?: string | null;
+  forwarded_at?: string | null;
+  // Status counts
+  draft: number;
+  pending: number;
+  endorsed: number;
+  forwarded: number;
+  sent: number;
+  accepted: number;
+  rejected: number;
+  returned: number;
+  partially_returned: number;
+};
+
 export type TransmittalReportTrendResponse = {
   group_by: TrendGroupBy;
-  items: TransmittalReportTrendItem[];
+  items: TransmittalReportTrendItem[] | UserRoleTrendItem[];
 };
 
 export type ReportExportRequest = {
   format: ReportFormat;
+  group_by: TrendGroupBy;
+  filters: ReportFilters;
+};
+
+export type ReportTrendRequest = {
   group_by: TrendGroupBy;
   filters: ReportFilters;
 };

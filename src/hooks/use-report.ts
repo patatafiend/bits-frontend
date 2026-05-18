@@ -3,6 +3,7 @@ import {
   ReportExportRequest,
   ReportJob,
   ReportJobCreateResponse,
+  ReportTrendRequest,
   TransmittalReportSummary,
   TransmittalReportTrendResponse,
 } from "@/lib/types";
@@ -20,11 +21,10 @@ export function useFetchTransmittalReportSummary() {
 }
 
 export function useFetchTransmittalReportTrend() {
-  return useServerFetch<TransmittalReportTrendResponse>(
+  return useServerAction<TransmittalReportTrendResponse, ReportTrendRequest>(
     "/reports/transmittals/trend",
     {
-      fetchImmediately: false,
-      method: "GET",
+      method: "POST",
     },
   );
 }

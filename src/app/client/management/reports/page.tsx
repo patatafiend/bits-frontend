@@ -38,6 +38,15 @@ function toIsoDate(value: Date) {
   return value.toISOString().slice(0, 10);
 }
 
+function formatRoleDisplay(role: string): string {
+  const roleMap: Record<string, string> = {
+    billing_officer: "Officer",
+    operation_admin: "Admin",
+    billing_admin: "Billing",
+  };
+  return roleMap[role.toLowerCase()] || role;
+}
+
 function buildDateDefaults() {
   const now = new Date();
   const thirtyDaysAgo = new Date(now);
@@ -58,7 +67,7 @@ export default function ManagementReportsPage() {
     () => buildDateDefaults().startDate,
   );
   const [endDate, setEndDate] = useState(() => buildDateDefaults().endDate);
-  const [groupBy, setGroupBy] = useState<TrendGroupBy>("day");
+  const groupBy: TrendGroupBy = "user";
   const [exportFormat, setExportFormat] = useState<ReportFormat>("csv");
   const [jobId, setJobId] = useState<number | null>(null);
   const [businessUnitIds, setBusinessUnitIds] = useState<number[]>([]);
@@ -74,7 +83,7 @@ export default function ManagementReportsPage() {
   const {
     data: trend,
     loading: trendLoading,
-    refetch: refetchTrend,
+    execute: refetchTrend,
   } = useFetchTransmittalReportTrend();
   const { execute: queueExport, loading: queueingExport } =
     useCreateTransmittalReportExportJob();
@@ -103,19 +112,19 @@ export default function ManagementReportsPage() {
 
   const operationAdminOptions = useMemo(() => {
     return (usersData ?? []).filter((entry) =>
-      (entry.role ?? "").toLowerCase().includes("operations admin"),
+      (entry.role ?? "").toLowerCase().includes("admin"),
     );
   }, [usersData]);
 
   const billingOfficerOptions = useMemo(() => {
     return (usersData ?? []).filter((entry) =>
-      (entry.role ?? "").toLowerCase().includes("billing officer"),
+      (entry.role ?? "").toLowerCase().includes("officer"),
     );
   }, [usersData]);
 
   const billingAdminOptions = useMemo(() => {
     return (usersData ?? []).filter((entry) =>
-      (entry.role ?? "").toLowerCase().includes("billing admin"),
+      (entry.role ?? "").toLowerCase().includes("billing"),
     );
   }, [usersData]);
 
@@ -197,7 +206,12 @@ export default function ManagementReportsPage() {
     }
 
     const filters = buildFilterQuery();
-    refetchTrend({ query: { ...filters, group_by: groupBy } });
+    refetchTrend({
+      body: {
+        group_by: groupBy,
+        filters,
+      },
+    });
   }
 
   async function onQueueExport() {
@@ -286,7 +300,7 @@ export default function ManagementReportsPage() {
         </p>
       </div>
 
-      <div className="grid gap-3 md:grid-cols-4">
+      <div className="grid gap-3 md:grid-cols-3">
         <div className="space-y-1 text-sm">
           <span className="text-muted-foreground">Start date</span>
           <DatePicker value={startDate} onChange={setStartDate} />
@@ -296,23 +310,6 @@ export default function ManagementReportsPage() {
           <span className="text-muted-foreground">End date</span>
           <DatePicker value={endDate} onChange={setEndDate} />
         </div>
-
-        <label className="space-y-1 text-sm">
-          <span className="text-muted-foreground">Group by</span>
-          <Select
-            value={groupBy}
-            onValueChange={(value) => setGroupBy(value as TrendGroupBy)}
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Select grouping" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="day">Day</SelectItem>
-              <SelectItem value="week">Week</SelectItem>
-              <SelectItem value="month">Month</SelectItem>
-            </SelectContent>
-          </Select>
-        </label>
 
         <div className="flex items-end">
           <Button onClick={refreshReport} className="w-full" variant="outline">
@@ -346,7 +343,7 @@ export default function ManagementReportsPage() {
             </label>
 
             <label className="space-y-1 text-sm">
-              <span className="text-muted-foreground">Billing Admin</span>
+              <span className="text-muted-foreground">Billing</span>
               <MultiSelect
                 modalPopover
                 placeholder="Select billing admins"
@@ -360,9 +357,7 @@ export default function ManagementReportsPage() {
             </label>
 
             <label className="space-y-1 text-sm">
-              <span className="text-muted-foreground">
-                Assigned Operation Admin
-              </span>
+              <span className="text-muted-foreground">Admin</span>
               <MultiSelect
                 modalPopover
                 placeholder="Select operation admins"
@@ -376,7 +371,7 @@ export default function ManagementReportsPage() {
             </label>
 
             <label className="space-y-1 text-sm">
-              <span className="text-muted-foreground">Billing Officer</span>
+              <span className="text-muted-foreground">Officer</span>
               <MultiSelect
                 modalPopover
                 placeholder="Select billing officers"
@@ -429,7 +424,7 @@ export default function ManagementReportsPage() {
                 )}
                 {billingAdminIds.length > 0 && (
                   <div>
-                    <span className="font-medium">Billing Admin(s):</span>
+                    <span className="font-medium">Billing:</span>
                     <div className="mt-1 flex flex-wrap gap-2">
                       {billingAdminIds.map((id) => {
                         const user = billingAdminOptions.find(
@@ -451,7 +446,7 @@ export default function ManagementReportsPage() {
                 )}
                 {operationAdminIds.length > 0 && (
                   <div>
-                    <span className="font-medium">Operation Admin(s):</span>
+                    <span className="font-medium">Admin:</span>
                     <div className="mt-1 flex flex-wrap gap-2">
                       {operationAdminIds.map((id) => {
                         const user = operationAdminOptions.find(
@@ -473,7 +468,7 @@ export default function ManagementReportsPage() {
                 )}
                 {billingOfficerIds.length > 0 && (
                   <div>
-                    <span className="font-medium">Billing Officer(s):</span>
+                    <span className="font-medium">Officer:</span>
                     <div className="mt-1 flex flex-wrap gap-2">
                       {billingOfficerIds.map((id) => {
                         const user = billingOfficerOptions.find(
@@ -507,10 +502,31 @@ export default function ManagementReportsPage() {
               <Table>
                 <TableHeader className="bg-muted/40">
                   <TableRow>
-                    <TableHead className="px-3 py-2 text-left">
-                      Bucket Range
-                    </TableHead>
+                    <TableHead className="px-3 py-2 text-left">User</TableHead>
+                    <TableHead className="px-3 py-2 text-left">Role</TableHead>
                     <TableHead className="px-3 py-2 text-left">Total</TableHead>
+                    <TableHead className="px-3 py-2 text-left text-xs">
+                      Created At
+                    </TableHead>
+                    <TableHead className="px-3 py-2 text-left text-xs">
+                      Duration
+                    </TableHead>
+                    <TableHead className="px-3 py-2 text-left text-xs">
+                      Submitted At
+                    </TableHead>
+                    <TableHead className="px-3 py-2 text-left text-xs">
+                      Duration
+                    </TableHead>
+                    <TableHead className="px-3 py-2 text-left text-xs">
+                      Endorsed At
+                    </TableHead>
+                    <TableHead className="px-3 py-2 text-left text-xs">
+                      Duration
+                    </TableHead>
+                    <TableHead className="px-3 py-2 text-left text-xs">
+                      Forwarded At
+                    </TableHead>
+                    <TableHead className="px-3 py-2 text-left">Draft</TableHead>
                     <TableHead className="px-3 py-2 text-left">
                       Pending
                     </TableHead>
@@ -521,27 +537,115 @@ export default function ManagementReportsPage() {
                       Forwarded
                     </TableHead>
                     <TableHead className="px-3 py-2 text-left">Sent</TableHead>
+                    <TableHead className="px-3 py-2 text-left">
+                      Accepted
+                    </TableHead>
+                    <TableHead className="px-3 py-2 text-left">
+                      Rejected
+                    </TableHead>
+                    <TableHead className="px-3 py-2 text-left">
+                      Returned
+                    </TableHead>
+                    <TableHead className="px-3 py-2 text-left">
+                      Partially Returned
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {trend.items.map((item) => (
-                    <TableRow key={item.bucket}>
-                      <TableCell className="px-3 py-2">
-                        {item.bucket_label}
-                      </TableCell>
-                      <TableCell className="px-3 py-2">{item.total}</TableCell>
-                      <TableCell className="px-3 py-2">
-                        {item.pending}
-                      </TableCell>
-                      <TableCell className="px-3 py-2">
-                        {item.endorsed}
-                      </TableCell>
-                      <TableCell className="px-3 py-2">
-                        {item.forwarded}
-                      </TableCell>
-                      <TableCell className="px-3 py-2">{item.sent}</TableCell>
-                    </TableRow>
-                  ))}
+                  {trend.items.map((item, index) => {
+                    const userItem = item as typeof item & {
+                      user_id: number;
+                      user: string;
+                      role: string;
+                      created_at?: string | null;
+                      created_at_to_submitted_duration?: string | null;
+                      submitted_at?: string | null;
+                      submitted_at_to_endorsed_duration?: string | null;
+                      endorsed_at?: string | null;
+                      endorsed_at_to_forwarded_duration?: string | null;
+                      forwarded_at?: string | null;
+                    };
+
+                    const formatDate = (dateStr?: string | null) => {
+                      if (!dateStr) return "-";
+                      try {
+                        const date = new Date(dateStr);
+                        return date.toLocaleDateString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                          year: "2-digit",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        });
+                      } catch {
+                        return dateStr;
+                      }
+                    };
+
+                    return (
+                      <TableRow
+                        key={`${userItem.user_id}-${userItem.role}-${index}`}
+                      >
+                        <TableCell className="px-3 py-2">
+                          {userItem.user}
+                        </TableCell>
+                        <TableCell className="px-3 py-2">
+                          {formatRoleDisplay(userItem.role)}
+                        </TableCell>
+                        <TableCell className="px-3 py-2">
+                          {userItem.total}
+                        </TableCell>
+                        <TableCell className="px-3 py-2 text-xs">
+                          {formatDate(userItem.created_at)}
+                        </TableCell>
+                        <TableCell className="px-3 py-2 text-xs">
+                          {userItem.created_at_to_submitted_duration || "-"}
+                        </TableCell>
+                        <TableCell className="px-3 py-2 text-xs">
+                          {formatDate(userItem.submitted_at)}
+                        </TableCell>
+                        <TableCell className="px-3 py-2 text-xs">
+                          {userItem.submitted_at_to_endorsed_duration || "-"}
+                        </TableCell>
+                        <TableCell className="px-3 py-2 text-xs">
+                          {formatDate(userItem.endorsed_at)}
+                        </TableCell>
+                        <TableCell className="px-3 py-2 text-xs">
+                          {userItem.endorsed_at_to_forwarded_duration || "-"}
+                        </TableCell>
+                        <TableCell className="px-3 py-2 text-xs">
+                          {formatDate(userItem.forwarded_at)}
+                        </TableCell>
+                        <TableCell className="px-3 py-2">
+                          {userItem.draft}
+                        </TableCell>
+                        <TableCell className="px-3 py-2">
+                          {userItem.pending}
+                        </TableCell>
+                        <TableCell className="px-3 py-2">
+                          {userItem.endorsed}
+                        </TableCell>
+                        <TableCell className="px-3 py-2">
+                          {userItem.forwarded}
+                        </TableCell>
+                        <TableCell className="px-3 py-2">
+                          {userItem.sent}
+                        </TableCell>
+                        <TableCell className="px-3 py-2">
+                          {userItem.accepted}
+                        </TableCell>
+                        <TableCell className="px-3 py-2">
+                          {userItem.rejected}
+                        </TableCell>
+                        <TableCell className="px-3 py-2">
+                          {userItem.returned}
+                        </TableCell>
+                        <TableCell className="px-3 py-2">
+                          {userItem.partially_returned}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             ) : (
