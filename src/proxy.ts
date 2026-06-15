@@ -22,19 +22,30 @@ const BLOCKED_PATHS = [
 ];
 
 export default async function middleware(request: NextRequest) {
+  // Skip rate limiting for Next.js internal requests
+  const purpose = request.headers.get("purpose");
+  const isRSC = request.headers.get("rsc") === "1";
+  const isPrefetch = request.headers.get("next-router-prefetch") === "1";
+
+  const isInternalNextRequest = isRSC || isPrefetch || purpose === "prefetch";
+
   if (BLOCKED_PATHS.some((path) => request.nextUrl.pathname.includes(path))) {
     logger(request, { blocked: true });
     return new NextResponse("Not Found", { status: 404 });
   }
-  const ip =
-    request.headers.get("x-real-ip") ||
-    request.headers.get("x-forwarded-for")?.split(",")[0].trim();
-  try {
-    await limiter.consume(ip || "unknown");
-  } catch {
-    logger(request, { tooManyRequests: true });
-    return new NextResponse("Too Many Requests", { status: 429 });
+
+  if (!isInternalNextRequest) {
+    const ip =
+      request.headers.get("x-real-ip") ||
+      request.headers.get("x-forwarded-for")?.split(",")[0].trim();
+    try {
+      await limiter.consume(ip || "unknown");
+    } catch {
+      logger(request, { tooManyRequests: true });
+      return new NextResponse("Too Many Requests", { status: 429 });
+    }
   }
+
   if (process.env.NODE_ENV === "production") {
     logger(request);
   }
@@ -92,6 +103,6 @@ function logger(
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|api/public).*)"
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.png|.*\\.jpg|.*\\.svg|.*\\.ico).*)",
   ],
 };

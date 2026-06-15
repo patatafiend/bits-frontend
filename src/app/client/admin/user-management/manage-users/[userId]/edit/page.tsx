@@ -44,7 +44,8 @@ function EditUserPage() {
             account_type:
               data.account_type === "company_account" ||
               data.account_type === "admin_account" ||
-              data.account_type === "billing_account"
+              data.account_type === "billing_account" ||
+              data.account_type === "audit_account"
                 ? data.account_type
                 : undefined,
           }}
