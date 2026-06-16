@@ -252,7 +252,7 @@ export default function TransmittalDetailPage() {
                   forceShowViewButton
                   allowFileDownload={false}
                   enableItemActions
-                  itemActionMode="return"
+                  itemActionMode="draft"
                   onItemActionComplete={refetchTransmittals}
                   requiredForwardStatus="endorsed"
                 />

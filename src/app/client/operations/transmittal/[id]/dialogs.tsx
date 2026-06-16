@@ -1000,7 +1000,7 @@ function ReturnToDraft({
     onClick();
   };
 
-  const cantRevert = item.status === "pending";
+  const cantRevert = item.status === "pending" || item.status === "endorsed";
 
   return (
     <>
