@@ -239,3 +239,41 @@ export const serverFetch = {
     ) => createService<T>(BACKEND.bits_backend, route, options, loadingState),
   },
 };
+
+export function getPaginationRange(
+  page: number,
+  pageCount: number,
+  siblingCount = 1
+): (number | "ellipsis")[] {
+  const totalVisible = siblingCount * 2 + 5; // first, last, current, 2 siblings, 2 ellipses (worst case)
+
+  if (totalVisible >= pageCount) {
+    return Array.from({ length: pageCount }, (_, i) => i + 1);
+  }
+
+  const leftSibling = Math.max(page - siblingCount, 1);
+  const rightSibling = Math.min(page + siblingCount, pageCount);
+
+  const showLeftEllipsis = leftSibling > 2;
+  const showRightEllipsis = rightSibling < pageCount - 1;
+
+  if (!showLeftEllipsis && showRightEllipsis) {
+    const leftRange = Array.from({ length: 3 + siblingCount * 2 }, (_, i) => i + 1);
+    return [...leftRange, "ellipsis", pageCount];
+  }
+
+  if (showLeftEllipsis && !showRightEllipsis) {
+    const rightCount = 3 + siblingCount * 2;
+    const rightRange = Array.from(
+      { length: rightCount },
+      (_, i) => pageCount - rightCount + 1 + i
+    );
+    return [1, "ellipsis", ...rightRange];
+  }
+
+  const middleRange = Array.from(
+    { length: rightSibling - leftSibling + 1 },
+    (_, i) => leftSibling + i
+  );
+  return [1, "ellipsis", ...middleRange, "ellipsis", pageCount];
+}

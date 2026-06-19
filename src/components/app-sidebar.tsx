@@ -68,7 +68,7 @@ const clientData: { navMain: NavItem[]; adminMain: NavItem[] } = {
       url: "/client/bill-management",
       icon: ReceiptText,
       isActive: true,
-      roles: ["admin", "billing admin", "billing admin MWFL", "Audit(MWFL-MET)"],
+      roles: ["admin", "billing admin", "billing admin MWFL", "audit"],
       items: [
         {
           title: "Transmittals",

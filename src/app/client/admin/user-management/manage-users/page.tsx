@@ -36,7 +36,9 @@ import {
   PaginationLink,
   PaginationPrevious,
   PaginationNext,
+  PaginationEllipsis
 } from "@/components/ui/pagination";
+import { getPaginationRange } from "@/lib/utils";
 
 type UserFilterParams = {
   search?: string;
@@ -122,7 +124,6 @@ export function UsersList({
   total: number;
 }) {
   const pageCount = Math.ceil(total / limit);
-  const pages = [...Array(pageCount)].map((_, i) => i + 1);
 
   return (
     <>
@@ -217,17 +218,23 @@ export function UsersList({
             />
           </PaginationItem>
 
-          {pages.map((p) => (
-            <PaginationItem key={p}>
-              <PaginationLink
-                isActive={p === page}
-                onClick={() => setPage(p)}
-                className="cursor-pointer"
-              >
-                {p}
-              </PaginationLink>
-            </PaginationItem>
-          ))}
+          {getPaginationRange(page, pageCount).map((p, i) =>
+            p === "ellipsis" ? (
+              <PaginationItem key={`ellipsis-${i}`}>
+                <PaginationEllipsis />
+              </PaginationItem>
+            ) : (
+              <PaginationItem key={p}>
+                <PaginationLink
+                  isActive={p === page}
+                  onClick={() => setPage(p)}
+                  className="cursor-pointer"
+                >
+                  {p}
+                </PaginationLink>
+              </PaginationItem>
+            ),
+          )}
 
           <PaginationItem>
             <PaginationNext

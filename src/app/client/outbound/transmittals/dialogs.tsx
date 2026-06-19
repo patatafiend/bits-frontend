@@ -28,11 +28,13 @@ import {
   PaginationLink,
   PaginationPrevious,
   PaginationNext,
+  PaginationEllipsis
 } from "@/components/ui/pagination";
 import Loader from "@/components/ui/loader";
 import { StatusBadge } from "@/components/status-badge";
 import BusinessUnitComboBox from "@/components/business-units";
 import { useFetchBusinessUnits } from "@/hooks/use-client";
+import { getPaginationRange } from "@/lib/utils";
 
 export function TransmittalList({
   data,
@@ -48,7 +50,6 @@ export function TransmittalList({
   total: number;
 }) {
   const pageCount = Math.ceil(total / limit);
-  const pages = [...Array(pageCount)].map((_, i) => i + 1);
 
   return (
     <>
@@ -99,17 +100,23 @@ export function TransmittalList({
             />
           </PaginationItem>
 
-          {pages.map((p) => (
-            <PaginationItem key={p}>
-              <PaginationLink
-                isActive={p === page}
-                onClick={() => setPage(p)}
-                className="cursor-pointer"
-              >
-                {p}
-              </PaginationLink>
-            </PaginationItem>
-          ))}
+          {getPaginationRange(page, pageCount).map((p, i) =>
+            p === "ellipsis" ? (
+              <PaginationItem key={`ellipsis-${i}`}>
+                <PaginationEllipsis />
+              </PaginationItem>
+            ) : (
+              <PaginationItem key={p}>
+                <PaginationLink
+                  isActive={p === page}
+                  onClick={() => setPage(p)}
+                  className="cursor-pointer"
+                >
+                  {p}
+                </PaginationLink>
+              </PaginationItem>
+            ),
+          )}
 
           <PaginationItem>
             <PaginationNext
