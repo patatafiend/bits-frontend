@@ -59,6 +59,7 @@ import {
 import { StatusBadge } from "@/components/status-badge";
 import BusinessUnitComboBox from "@/components/business-units";
 import { useFetchBusinessUnits } from "@/hooks/use-client";
+import { useFetchUsers } from "@/hooks/use-user";
 import { formatDate, getPaginationRange } from "@/lib/utils";
 
 function CancelTransmittalDialog({
@@ -180,6 +181,8 @@ export function TransmittalList({
             <TableHead>Created Date</TableHead>
             <TableHead>Created By</TableHead>
             <TableHead>Status</TableHead>
+            <TableHead>Ops Admin</TableHead>
+            <TableHead>Billing Officer</TableHead>
             <TableHead className="text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
@@ -196,6 +199,16 @@ export function TransmittalList({
               <TableCell>{transmittal.created_by}</TableCell>
               <TableCell>
                 <StatusBadge status={transmittal.status} />
+              </TableCell>
+              <TableCell>
+                {transmittal.operation_admin_assigned
+                  ? `${transmittal.operation_admin_assigned.first_name} ${transmittal.operation_admin_assigned.last_name}`
+                  : "-"}
+              </TableCell>
+              <TableCell>
+                {transmittal.billing_officer_assigned
+                  ? `${transmittal.billing_officer_assigned.first_name} ${transmittal.billing_officer_assigned.last_name}`
+                  : "-"}
               </TableCell>
               <TableCell className="text-right">
                 <div className="flex gap-2 justify-end items-center">
@@ -445,6 +458,8 @@ export function SearchTransmittalComponent({
   initialStatus = "all",
   initialBusinessUnit = null,
   initialOrderBy = "recent",
+  initialOpsAdmin = null,
+  initialBillingOfficer = null,
 }: {
   data: PaginatedTransmittal;
   loading: boolean;
@@ -455,6 +470,8 @@ export function SearchTransmittalComponent({
   initialStatus?: string;
   initialBusinessUnit?: number | null;
   initialOrderBy?: string;
+  initialOpsAdmin?: number | null;
+  initialBillingOfficer?: number | null;
   onFilter: (params: {
     search?: string;
     billing_transmittal_number?: string;
@@ -464,10 +481,13 @@ export function SearchTransmittalComponent({
     skip?: number;
     order_by?: string;
     page?: number;
+    assigned_operation_admin?: number | null;
+    assigned_billing_officer?: number | null;
   }) => void;
 }) {
   const { data: businessUnitData, refetch: refetchBusinessUnits } =
     useFetchBusinessUnits();
+  const { data: usersData, refetch: refetchUsers } = useFetchUsers();
   const [query, setQuery] = useState(initialSearch);
   const [statusFilter, setStatusFilter] = useState(initialStatus);
   const [businessUnitFilter, setBusinessUnitFilter] = useState<number | null>(
@@ -476,10 +496,20 @@ export function SearchTransmittalComponent({
   const [orderBy, setOrderBy] = useState(initialOrderBy);
   const [limit, setLimit] = useState(initialLimit);
   const [page, setPage] = useState(initialPage);
+  const [opsAdminFilter, setOpsAdminFilter] = useState<number | null>(initialOpsAdmin);
+  const [billingOfficerFilter, setBillingOfficerFilter] = useState<number | null>(initialBillingOfficer);
+
+  const opsAdminOptions = (usersData ?? []).filter((u) =>
+    (u.role ?? "").toLowerCase().includes("admin"),
+  );
+  const billingOfficerOptions = (usersData ?? []).filter((u) =>
+    (u.role ?? "").toLowerCase().includes("officer"),
+  );
 
   useEffect(() => {
     if (client_id) {
       refetchBusinessUnits({ params: `${client_id}/business_units` });
+      refetchUsers({ query: { client_id } });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [client_id]);
@@ -500,11 +530,13 @@ export function SearchTransmittalComponent({
         skip: (page - 1) * limit,
         order_by: orderBy,
         page: page,
+        assigned_operation_admin: opsAdminFilter,
+        assigned_billing_officer: billingOfficerFilter,
       });
     }, 350);
     return () => clearTimeout(timeout);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query, statusFilter, businessUnitFilter, page, orderBy, limit]);
+  }, [query, statusFilter, businessUnitFilter, page, orderBy, limit, opsAdminFilter, billingOfficerFilter]);
 
   function handleQueryChange(e: React.ChangeEvent<HTMLInputElement>) {
     setQuery(e.target.value);
@@ -531,6 +563,16 @@ export function SearchTransmittalComponent({
     setPage(1);
   }
 
+  function handleOpsAdminChange(value: string) {
+    setOpsAdminFilter(value === "all" ? null : Number(value));
+    setPage(1);
+  }
+
+  function handleBillingOfficerChange(value: string) {
+    setBillingOfficerFilter(value === "all" ? null : Number(value));
+    setPage(1);
+  }
+
   function handleClear() {
     setQuery("");
     setStatusFilter("all");
@@ -538,6 +580,8 @@ export function SearchTransmittalComponent({
     setOrderBy("recent");
     setLimit(10);
     setPage(1);
+    setOpsAdminFilter(null);
+    setBillingOfficerFilter(null);
   }
 
   const isDirty =
@@ -545,7 +589,9 @@ export function SearchTransmittalComponent({
     statusFilter !== "all" ||
     businessUnitFilter !== null ||
     orderBy !== "recent" ||
-    limit !== 10;
+    limit !== 10 ||
+    opsAdminFilter !== null ||
+    billingOfficerFilter !== null;
 
   return (
     <div className="space-y-4">
@@ -588,6 +634,40 @@ export function SearchTransmittalComponent({
           placeholder="Business unit"
           className="w-56"
         />
+
+        <Select
+          value={opsAdminFilter !== null ? String(opsAdminFilter) : "all"}
+          onValueChange={handleOpsAdminChange}
+        >
+          <SelectTrigger className="w-44">
+            <SelectValue placeholder="Ops Admin" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Ops Admins</SelectItem>
+            {opsAdminOptions.map((u) => (
+              <SelectItem key={u.id} value={String(u.id)}>
+                {u.first_name} {u.last_name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <Select
+          value={billingOfficerFilter !== null ? String(billingOfficerFilter) : "all"}
+          onValueChange={handleBillingOfficerChange}
+        >
+          <SelectTrigger className="w-44">
+            <SelectValue placeholder="Billing Officer" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Billing Officers</SelectItem>
+            {billingOfficerOptions.map((u) => (
+              <SelectItem key={u.id} value={String(u.id)}>
+                {u.first_name} {u.last_name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
         <Select value={orderBy} onValueChange={handleOrderByChange}>
           <SelectTrigger className="w-40">
@@ -645,6 +725,8 @@ export function SearchTransmittalComponent({
               skip: (page - 1) * limit,
               order_by: orderBy,
               page: page,
+              assigned_operation_admin: opsAdminFilter,
+              assigned_billing_officer: billingOfficerFilter,
             });
           }}
         />

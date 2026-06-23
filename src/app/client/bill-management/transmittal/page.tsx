@@ -33,6 +33,8 @@ function TransmittalListComponent() {
   const currentStatus = searchParams.get("status") ?? "all";
   const currentBusinessUnit = searchParams.get("business_unit");
   const currentOrderBy = searchParams.get("order_by") ?? "recent";
+  const currentOpsAdmin = searchParams.get("ops_admin");
+  const currentBillingOfficer = searchParams.get("billing_officer");
 
   function updateUrlParams(params: {
     page?: number;
@@ -41,6 +43,8 @@ function TransmittalListComponent() {
     status?: string;
     business_unit?: number | null;
     order_by?: string;
+    ops_admin?: number | null;
+    billing_officer?: number | null;
   }) {
     const newParams = new URLSearchParams();
 
@@ -56,6 +60,10 @@ function TransmittalListComponent() {
       newParams.set("business_unit", String(params.business_unit));
     if (params.order_by && params.order_by !== "recent")
       newParams.set("order_by", params.order_by);
+    if (params.ops_admin)
+      newParams.set("ops_admin", String(params.ops_admin));
+    if (params.billing_officer)
+      newParams.set("billing_officer", String(params.billing_officer));
 
     const queryString = newParams.toString();
     router.push(
@@ -76,6 +84,8 @@ function TransmittalListComponent() {
     limit?: number;
     order_by?: string;
     page?: number;
+    assigned_operation_admin?: number | null;
+    assigned_billing_officer?: number | null;
   }) {
     const page = params.page ?? currentPage;
     const limit = params.limit ?? currentLimit;
@@ -89,6 +99,18 @@ function TransmittalListComponent() {
           ? parseInt(currentBusinessUnit)
           : null;
     const orderBy = "order_by" in params ? params.order_by : currentOrderBy;
+    const opsAdmin =
+      "assigned_operation_admin" in params
+        ? params.assigned_operation_admin
+        : currentOpsAdmin
+          ? parseInt(currentOpsAdmin)
+          : null;
+    const billingOfficer =
+      "assigned_billing_officer" in params
+        ? params.assigned_billing_officer
+        : currentBillingOfficer
+          ? parseInt(currentBillingOfficer)
+          : null;
 
     // Update URL with new params
     updateUrlParams({
@@ -98,6 +120,8 @@ function TransmittalListComponent() {
       status,
       business_unit: businessUnit,
       order_by: orderBy,
+      ops_admin: opsAdmin,
+      billing_officer: billingOfficer,
     });
 
     refetch({
@@ -116,6 +140,8 @@ function TransmittalListComponent() {
           : businessUnit,
         order_by: orderBy,
         status: status === "all" ? undefined : status,
+        assigned_operation_admin: opsAdmin ?? undefined,
+        assigned_billing_officer: billingOfficer ?? undefined,
       },
     });
   }
@@ -163,6 +189,12 @@ function TransmittalListComponent() {
                 currentBusinessUnit ? parseInt(currentBusinessUnit) : null
               }
               initialOrderBy={currentOrderBy}
+              initialOpsAdmin={
+                currentOpsAdmin ? parseInt(currentOpsAdmin) : null
+              }
+              initialBillingOfficer={
+                currentBillingOfficer ? parseInt(currentBillingOfficer) : null
+              }
             />
           )}
         </CardContent>
