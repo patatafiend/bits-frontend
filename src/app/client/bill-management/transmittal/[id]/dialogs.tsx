@@ -1182,12 +1182,13 @@ export function SearchTransmittalItemsComponent({
                         onSaveComplete={refetchTransmittals}
                       />
                       <ItemRejectionReasonDialog item={item} />
-                      {item.status === "draft" && (
-                        <ForwardItemButton
-                          item={item}
-                          onForwardComplete={refetchTransmittals}
-                        />
-                      )}
+                      {item.status === "draft" ||
+                        (item.status === "endorsed" && (
+                          <ForwardItemButton
+                            item={item}
+                            onForwardComplete={refetchTransmittals}
+                          />
+                        ))}
                       {canReturn && (
                         <ItemAction item={item} onClick={refetchTransmittals} />
                       )}

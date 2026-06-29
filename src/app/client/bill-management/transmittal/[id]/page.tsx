@@ -163,6 +163,7 @@ export default function TransmittalDetailPage() {
 
   //const isRejected = transmittalData?.status === "rejected";
   const isDraft = transmittalData?.status === "draft";
+  const isEndorsed = transmittalData?.status === "endorsed";
   const isReturned =
     transmittalData?.status === "returned" ||
     transmittalData?.status === "partially_returned";
@@ -172,11 +173,7 @@ export default function TransmittalDetailPage() {
 
   return (
     <div className="container mx-auto py-8">
-      <Button
-        variant="ghost"
-        className="mb-4"
-        onClick={() => router.back()}
-      >
+      <Button variant="ghost" className="mb-4" onClick={() => router.back()}>
         <ArrowLeft className="w-4 h-4 mr-2" />
         Back to Transmittals
       </Button>
@@ -286,49 +283,54 @@ export default function TransmittalDetailPage() {
                       />
                     </>
                   )}
-                  {isDraft && (
-                    <>
-                      <div className="flex items-center gap-4 ml-auto">
-                        <div className="flex items-center gap-2">
-                          <Switch
-                            id="forward-mode"
-                            checked={isForwardMode}
-                            onCheckedChange={setIsForwardMode}
-                          />
-                          <Label
-                            htmlFor="forward-mode"
-                            className="cursor-pointer text-sm"
-                          >
-                            Forward
-                          </Label>
+                  {isDraft ||
+                    (isEndorsed && (
+                      <>
+                        <div className="flex items-center gap-4 ml-auto">
+                          <div className="flex items-center gap-2">
+                            <Switch
+                              id="forward-mode"
+                              checked={isForwardMode}
+                              onCheckedChange={setIsForwardMode}
+                            />
+                            <Label
+                              htmlFor="forward-mode"
+                              className="cursor-pointer text-sm"
+                            >
+                              Forward
+                            </Label>
+                          </div>
+                          {isDraft && isEndorsed && (
+                            <div className="flex items-center gap-2">
+                              <Switch
+                                id="send-mode"
+                                checked={isSendMode}
+                                onCheckedChange={setIsSendMode}
+                              />
+                              <Label
+                                htmlFor="send-mode"
+                                className="cursor-pointer text-sm"
+                              >
+                                {isSendMode ? "Email" : "Operations"}
+                              </Label>
+                            </div>
+                          )}
                         </div>
-                        <div className="flex items-center gap-2">
-                          <Switch
-                            id="send-mode"
-                            checked={isSendMode}
-                            onCheckedChange={setIsSendMode}
-                          />
-                          <Label
-                            htmlFor="send-mode"
-                            className="cursor-pointer text-sm"
-                          >
-                            {isSendMode ? "Email" : "Operations"}
-                          </Label>
-                        </div>
-                      </div>
-                      {isSendMode ? (
-                        <SendTransmittalComponent
-                          transmittalData={transmittalData}
-                          onSend={refetchTransmittals}
-                        />
-                      ) : (
-                        <PostTransmittalComponent
-                          transmittalData={transmittalData}
-                          onPost={refetchTransmittals}
-                        />
-                      )}
-                    </>
-                  )}
+                        {isDraft &&
+                          !isEndorsed &&
+                          (isSendMode ? (
+                            <SendTransmittalComponent
+                              transmittalData={transmittalData}
+                              onSend={refetchTransmittals}
+                            />
+                          ) : (
+                            <PostTransmittalComponent
+                              transmittalData={transmittalData}
+                              onPost={refetchTransmittals}
+                            />
+                          ))}
+                      </>
+                    ))}
                 </div>
               </div>
             </CardHeader>
@@ -378,7 +380,10 @@ export default function TransmittalDetailPage() {
                   </p>
                   <p className="font-medium">
                     {transmittalData.operation_admin_assigned
-                      ? formatFullName(transmittalData.operation_admin_assigned, true)
+                      ? formatFullName(
+                          transmittalData.operation_admin_assigned,
+                          true,
+                        )
                       : "No Admin assigned"}
                   </p>
                 </div>
@@ -386,7 +391,10 @@ export default function TransmittalDetailPage() {
                   <p className="text-sm text-muted-foreground">Officer</p>
                   <p className="font-medium">
                     {transmittalData.billing_officer_assigned
-                      ? formatFullName(transmittalData.billing_officer_assigned, true)
+                      ? formatFullName(
+                          transmittalData.billing_officer_assigned,
+                          true,
+                        )
                       : "No Officer assigned"}
                   </p>
                 </div>
@@ -431,14 +439,15 @@ export default function TransmittalDetailPage() {
             refetchTransmittal={refetchTransmittal}
           />
         )}
-        {isDraft && isForwardMode && (
-          <UploadFile
-            mode="proof_attachment"
-            transmittalData={transmittalData}
-            transmittalId={transmittalId ? Number(transmittalId) : undefined}
-            refetchTransmittal={refetchTransmittal}
-          />
-        )}
+        {isDraft ||
+          (isEndorsed && isForwardMode && (
+            <UploadFile
+              mode="proof_attachment"
+              transmittalData={transmittalData}
+              transmittalId={transmittalId ? Number(transmittalId) : undefined}
+              refetchTransmittal={refetchTransmittal}
+            />
+          ))}
       </div>
     </div>
   );
