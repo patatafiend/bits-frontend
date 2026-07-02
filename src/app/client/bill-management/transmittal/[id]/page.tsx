@@ -283,54 +283,53 @@ export default function TransmittalDetailPage() {
                       />
                     </>
                   )}
-                  {isDraft ||
-                    (isEndorsed && (
-                      <>
-                        <div className="flex items-center gap-4 ml-auto">
+                  {(isDraft || isEndorsed) && (
+                    <>
+                      <div className="flex items-center gap-4 ml-auto">
+                        <div className="flex items-center gap-2">
+                          <Switch
+                            id="forward-mode"
+                            checked={isForwardMode}
+                            onCheckedChange={setIsForwardMode}
+                          />
+                          <Label
+                            htmlFor="forward-mode"
+                            className="cursor-pointer text-sm"
+                          >
+                            Forward
+                          </Label>
+                        </div>
+                        {(isDraft || isEndorsed) && (
                           <div className="flex items-center gap-2">
                             <Switch
-                              id="forward-mode"
-                              checked={isForwardMode}
-                              onCheckedChange={setIsForwardMode}
+                              id="send-mode"
+                              checked={isSendMode}
+                              onCheckedChange={setIsSendMode}
                             />
                             <Label
-                              htmlFor="forward-mode"
+                              htmlFor="send-mode"
                               className="cursor-pointer text-sm"
                             >
-                              Forward
+                              {isSendMode ? "Email" : "Operations"}
                             </Label>
                           </div>
-                          {isDraft && isEndorsed && (
-                            <div className="flex items-center gap-2">
-                              <Switch
-                                id="send-mode"
-                                checked={isSendMode}
-                                onCheckedChange={setIsSendMode}
-                              />
-                              <Label
-                                htmlFor="send-mode"
-                                className="cursor-pointer text-sm"
-                              >
-                                {isSendMode ? "Email" : "Operations"}
-                              </Label>
-                            </div>
-                          )}
-                        </div>
-                        {isDraft &&
-                          !isEndorsed &&
-                          (isSendMode ? (
-                            <SendTransmittalComponent
-                              transmittalData={transmittalData}
-                              onSend={refetchTransmittals}
-                            />
-                          ) : (
-                            <PostTransmittalComponent
-                              transmittalData={transmittalData}
-                              onPost={refetchTransmittals}
-                            />
-                          ))}
-                      </>
-                    ))}
+                        )}
+                      </div>
+                      {isDraft &&
+                        !isEndorsed &&
+                        (isSendMode ? (
+                          <SendTransmittalComponent
+                            transmittalData={transmittalData}
+                            onSend={refetchTransmittals}
+                          />
+                        ) : (
+                          <PostTransmittalComponent
+                            transmittalData={transmittalData}
+                            onPost={refetchTransmittals}
+                          />
+                        ))}
+                    </>
+                  )}
                 </div>
               </div>
             </CardHeader>
@@ -439,15 +438,14 @@ export default function TransmittalDetailPage() {
             refetchTransmittal={refetchTransmittal}
           />
         )}
-        {isDraft ||
-          (isEndorsed && isForwardMode && (
-            <UploadFile
-              mode="proof_attachment"
-              transmittalData={transmittalData}
-              transmittalId={transmittalId ? Number(transmittalId) : undefined}
-              refetchTransmittal={refetchTransmittal}
-            />
-          ))}
+        {(isDraft || isEndorsed) && isForwardMode && (
+          <UploadFile
+            mode="proof_attachment"
+            transmittalData={transmittalData}
+            transmittalId={transmittalId ? Number(transmittalId) : undefined}
+            refetchTransmittal={refetchTransmittal}
+          />
+        )}
       </div>
     </div>
   );
