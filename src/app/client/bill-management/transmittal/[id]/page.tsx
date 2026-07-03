@@ -4,7 +4,7 @@ import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, ImageIcon, RefreshCw } from "lucide-react";
+import { ArrowLeft, ImageIcon, RefreshCw, Download } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useCurrentUser } from "@/components/providers/auth-provider";
@@ -37,8 +37,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-// import { PDFDownloadLink } from "@react-pdf/renderer";
-// import { TransmittalPDF } from "./export-to-pdf";
+//  import { PDFDownloadLink } from "@react-pdf/renderer";
+//  import { TransmittalPDF } from "./export-to-pdf";
 
 const OPERATIONS_ADMIN = 4;
 const BILLING_OFFICER = 3;

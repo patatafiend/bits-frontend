@@ -10,13 +10,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Eye, RefreshCcw } from "lucide-react";
+import { Eye, RefreshCcw, CheckCircle } from "lucide-react";
 import Link from "next/link";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import Loader from "@/components/ui/loader";
@@ -37,9 +38,14 @@ import {
   useCreateTransmittal,
   useGenerateTMN,
   useCancelTransmittal,
+  useItemAction,
 } from "@/hooks/use-transmittal";
 import { toast } from "sonner";
-import { PaginatedTransmittal, TransmittalModalProps } from "@/lib/types";
+import {
+  PaginatedTransmittal,
+  TransmittalItems,
+  TransmittalModalProps,
+} from "@/lib/types";
 import {
   Select,
   SelectContent,
@@ -148,6 +154,119 @@ function CancelTransmittalDialog({
               </Button>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
+export function CancelItemButton({
+  item,
+  onSuccess,
+}: {
+  item: TransmittalItems;
+  onSuccess: () => void;
+}) {
+  const { execute, loading } = useItemAction();
+
+  const handleCancel = async () => {
+    const { error } = await execute({
+      query: {
+        id: item.id,
+      },
+      body: {
+        status: "cancelled",
+      },
+    });
+
+    if (error) {
+      toast.error(error.message || "Failed to cancel item");
+      return;
+    }
+
+    toast.success("Item cancelled successfully");
+    onSuccess();
+  };
+
+  return (
+    <>
+      <CancelItemDialog
+        item={item}
+        disabled={loading}
+        loading={loading}
+        onConfirm={handleCancel}
+      />
+    </>
+  );
+}
+
+export function CancelItemDialog({
+  item,
+  onConfirm,
+  loading,
+  disabled,
+}: {
+  item: TransmittalItems;
+  onConfirm: () => void;
+  loading?: boolean;
+  disabled?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <>
+      <Button
+        variant="destructive"
+        size="sm"
+        onClick={() => setOpen(true)}
+        disabled={disabled}
+      >
+        Cancel
+      </Button>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-600">
+              <CheckCircle className="w-5 h-5" />
+              Cancel Item
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Are you sure you want to mark this item as cancelled?
+            </p>
+            <div className="bg-muted p-3 rounded-lg space-y-2">
+              <div>
+                <p className="text-xs text-muted-foreground">File Name</p>
+                <p className="text-sm font-medium truncate">{item.file_name}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">
+                  Reference Number
+                </p>
+                <p className="text-sm font-mono">{item.reference_number}</p>
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              This action cannot be undone.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              className="bg-green-600 hover:bg-green-700"
+              onClick={() => {
+                onConfirm();
+                setOpen(false);
+              }}
+              disabled={loading}
+            >
+              {loading ? "Processing..." : "Confirm Cancel"}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </>
@@ -496,8 +615,12 @@ export function SearchTransmittalComponent({
   const [orderBy, setOrderBy] = useState(initialOrderBy);
   const [limit, setLimit] = useState(initialLimit);
   const [page, setPage] = useState(initialPage);
-  const [opsAdminFilter, setOpsAdminFilter] = useState<number | null>(initialOpsAdmin);
-  const [billingOfficerFilter, setBillingOfficerFilter] = useState<number | null>(initialBillingOfficer);
+  const [opsAdminFilter, setOpsAdminFilter] = useState<number | null>(
+    initialOpsAdmin,
+  );
+  const [billingOfficerFilter, setBillingOfficerFilter] = useState<
+    number | null
+  >(initialBillingOfficer);
 
   const opsAdminOptions = (usersData ?? []).filter((u) =>
     (u.role ?? "").toLowerCase().includes("admin"),
@@ -536,7 +659,16 @@ export function SearchTransmittalComponent({
     }, 350);
     return () => clearTimeout(timeout);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query, statusFilter, businessUnitFilter, page, orderBy, limit, opsAdminFilter, billingOfficerFilter]);
+  }, [
+    query,
+    statusFilter,
+    businessUnitFilter,
+    page,
+    orderBy,
+    limit,
+    opsAdminFilter,
+    billingOfficerFilter,
+  ]);
 
   function handleQueryChange(e: React.ChangeEvent<HTMLInputElement>) {
     setQuery(e.target.value);
@@ -653,7 +785,9 @@ export function SearchTransmittalComponent({
         </Select>
 
         <Select
-          value={billingOfficerFilter !== null ? String(billingOfficerFilter) : "all"}
+          value={
+            billingOfficerFilter !== null ? String(billingOfficerFilter) : "all"
+          }
           onValueChange={handleBillingOfficerChange}
         >
           <SelectTrigger className="w-44">

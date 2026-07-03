@@ -77,6 +77,7 @@ import { useGetPresignedUrl } from "@/hooks/use-media";
 import { useDeleteTransmittalItem } from "@/hooks/use-transmittal";
 import { useDeleteS3Object } from "@/hooks/use-media";
 import { useCurrentUser } from "@/components/providers/auth-provider";
+import { CancelItemButton } from "../dialogs";
 
 export function FileViewerModal({ file, onClose }: FileViewerModalProps) {
   const [isDownloading, setIsDownloading] = useState(false);
@@ -990,6 +991,7 @@ export function SearchTransmittalItemsComponent({
   refetchTransmittals: () => void;
   onFilter: (params: { search?: string; status?: string }) => void;
 }) {
+  const user = useCurrentUser();
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [urlCache, setUrlCache] = useState<
@@ -1184,10 +1186,18 @@ export function SearchTransmittalItemsComponent({
                       <ItemRejectionReasonDialog item={item} />
                       {(item.status === "draft" ||
                         item.status === "endorsed") && (
-                        <ForwardItemButton
-                          item={item}
-                          onForwardComplete={refetchTransmittals}
-                        />
+                        <>
+                          <ForwardItemButton
+                            item={item}
+                            onForwardComplete={refetchTransmittals}
+                          />
+                          {user?.role === "admin" && (
+                            <CancelItemButton
+                              item={item}
+                              onSuccess={refetchTransmittals}
+                            />
+                          )}
+                        </>
                       )}
                       {canReturn && (
                         <ItemAction item={item} onClick={refetchTransmittals} />
