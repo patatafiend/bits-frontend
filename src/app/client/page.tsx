@@ -6,12 +6,33 @@ import { Shield, Send, Wrench } from "lucide-react";
 import ArrowLink from "@/components/arrow-link";
 import Loader from "@/components/ui/loader";
 import { useFetchTransmittalStats } from "@/hooks/use-transmittal";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { DateRangePicker } from "@/components/ui/date-range-picker";
 
 type StatCardProps = {
   title: string;
   value?: string | number;
 };
+
+type DateQuery = {
+  date_from?: string;
+  date_to?: string;
+};
+
+const toISODate = (d?: Date) => (d ? d.toISOString().split("T")[0] : undefined);
+
+function useDateRangeFilter() {
+  const [dateQuery, setDateQuery] = useState<DateQuery>({});
+
+  function handleUpdate({ range }: { range: { from: Date; to?: Date } }) {
+    setDateQuery({
+      date_from: toISODate(range.from),
+      date_to: toISODate(range.to ?? range.from),
+    });
+  }
+
+  return { dateQuery, handleUpdate };
+}
 
 function StatCard({ title, value }: StatCardProps) {
   return (
@@ -100,7 +121,10 @@ export default function HomePage() {
     return <BillingOfficerDashboard />;
   }
 
-  if (user.role === "operations admin" || user.role === "operations admin MWFL") {
+  if (
+    user.role === "operations admin" ||
+    user.role === "operations admin MWFL"
+  ) {
     return <OperationsDashboard />;
   }
 
@@ -127,23 +151,38 @@ export default function HomePage() {
 export function AdminDashboard() {
   const { data, refetch } = useFetchTransmittalStats();
   const user = useCurrentUser();
+  const { dateQuery, handleUpdate } = useDateRangeFilter();
 
   function refetchStats() {
     refetch({
+      query: { ...dateQuery },
     });
   }
+
   useEffect(() => {
     if (user) {
       refetchStats();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [user, dateQuery]);
+
   return (
     <DashboardShell
       title="Admin Dashboard"
       subtitle="Manage users and user roles"
       icon={<Shield className="w-5 h-5" />}
     >
+      <div className="flex justify-end">
+        <DateRangePicker
+          onUpdate={handleUpdate}
+          initialDateFrom={
+            new Date(new Date().setDate(new Date().getDate() - 30))
+          }
+          initialDateTo={new Date()}
+          align="end"
+          showCompare={false}
+        />
+      </div>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <StatCard title="Transmittals" value={data?.total} />
         <StatCard title="Pending" value={data?.pending} />
@@ -170,10 +209,11 @@ export function AdminDashboard() {
 export function BillingAdminDashboard() {
   const { data, refetch } = useFetchTransmittalStats();
   const user = useCurrentUser();
+  const { dateQuery, handleUpdate } = useDateRangeFilter();
 
   function refetchStats() {
     refetch({
-      query: { client_id: user?.client.id },
+      query: { client_id: user?.client.id, ...dateQuery },
     });
   }
   useEffect(() => {
@@ -181,13 +221,24 @@ export function BillingAdminDashboard() {
       refetchStats();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [user, dateQuery]);
   return (
     <DashboardShell
       title="Billing Dashboard"
       subtitle="Track and process outbound transmittals"
       icon={<Send className="w-5 h-5" />}
     >
+      <div className="flex justify-end">
+        <DateRangePicker
+          onUpdate={handleUpdate}
+          initialDateFrom={
+            new Date(new Date().setDate(new Date().getDate() - 30))
+          }
+          initialDateTo={new Date()}
+          align="end"
+          showCompare={false}
+        />
+      </div>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <StatCard title="Transmittals" value={data?.total} />
         <StatCard title="Pending" value={data?.pending} />
@@ -207,24 +258,42 @@ export function BillingAdminDashboard() {
 export function BillingOfficerDashboard() {
   const { data, refetch } = useFetchTransmittalStats();
   const user = useCurrentUser();
+  const { dateQuery, handleUpdate } = useDateRangeFilter();
 
   function refetchStats() {
     refetch({
-      query: { client_id: user?.client.id, assigned_billing_officer: user?.id },
+      query: {
+        client_id: user?.client.id,
+        assigned_billing_officer: user?.id,
+        ...dateQuery,
+      },
     });
   }
+
   useEffect(() => {
     if (user) {
       refetchStats();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [user, dateQuery]);
+
   return (
     <DashboardShell
       title="Billing Officer Dashboard"
       subtitle="Track and process outbound transmittals"
       icon={<Send className="w-5 h-5" />}
     >
+      <div className="flex justify-end">
+        <DateRangePicker
+          onUpdate={handleUpdate}
+          initialDateFrom={
+            new Date(new Date().setDate(new Date().getDate() - 30))
+          }
+          initialDateTo={new Date()}
+          align="end"
+          showCompare={false}
+        />
+      </div>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-2">
         <StatCard title="Assigned" value={data?.endorsed} />
         <StatCard title="Forwarded" value={data?.forwarded} />
@@ -241,10 +310,15 @@ export function BillingOfficerDashboard() {
 export function OperationsDashboard() {
   const { data, refetch } = useFetchTransmittalStats();
   const user = useCurrentUser();
+  const { dateQuery, handleUpdate } = useDateRangeFilter();
 
   function refetchStats() {
     refetch({
-      query: { client_id: user?.client.id, assigned_operation_admin: user?.id },
+      query: {
+        client_id: user?.client.id,
+        assigned_operation_admin: user?.id,
+        ...dateQuery,
+      },
     });
   }
   useEffect(() => {
@@ -252,7 +326,7 @@ export function OperationsDashboard() {
       refetchStats();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [user, dateQuery]);
 
   return (
     <DashboardShell
@@ -260,6 +334,17 @@ export function OperationsDashboard() {
       subtitle="Monitor and process operations transmittals"
       icon={<Wrench className="w-5 h-5" />}
     >
+      <div className="flex justify-end">
+        <DateRangePicker
+          onUpdate={handleUpdate}
+          initialDateFrom={
+            new Date(new Date().setDate(new Date().getDate() - 30))
+          }
+          initialDateTo={new Date()}
+          align="end"
+          showCompare={false}
+        />
+      </div>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-2">
         <StatCard title="Assigned" value={data?.pending} />
         <StatCard title="Endorsed" value={data?.endorsed} />
