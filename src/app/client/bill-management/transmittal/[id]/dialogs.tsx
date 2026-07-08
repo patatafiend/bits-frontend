@@ -543,6 +543,7 @@ export function EditModal({
       .or(z.literal("")),
     billing_receiver_name: z.string().optional(),
     billing_receiver_company: z.string().optional(),
+    billing_cutoff: z.string().default(new Date().toISOString().split("T")[0]),
   });
   const form = useForm({
     resolver: zodResolver(formSchema),
@@ -558,6 +559,7 @@ export function EditModal({
       billing_receiver_email: transmittalData.billing_receiver_email ?? "",
       billing_receiver_name: transmittalData.billing_receiver_name ?? "",
       billing_receiver_company: transmittalData.billing_receiver_company ?? "",
+      billing_cutoff: transmittalData.billing_cutoff,
     },
   });
 
@@ -576,6 +578,7 @@ export function EditModal({
         billing_receiver_email: data.billing_receiver_email || null,
         billing_receiver_name: data.billing_receiver_name,
         billing_receiver_company: data.billing_receiver_company,
+        billing_cutoff: data.billing_cutoff,
       },
     });
     if (error) {
@@ -670,6 +673,19 @@ export function EditModal({
                         allowNull
                         nullLabel="Unassigned"
                       />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="billing_cutoff"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Billing CutOff</FormLabel>
+                    <FormControl>
+                      <DatePicker {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

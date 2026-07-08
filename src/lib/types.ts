@@ -258,6 +258,7 @@ export type Transmittal = {
   operation_admin_assigned: User;
   billing_officer_assigned: User;
   business_unit_id: number;
+  billing_cutoff: string;
 };
 
 export type TransmittalWithItems = {
@@ -290,6 +291,7 @@ export type TransmittalWithItems = {
   operation_admin_assigned: User;
   billing_officer_assigned: User;
   business_unit_id: number;
+  billing_cutoff: string;
 };
 
 export type TransmittalItems = {
