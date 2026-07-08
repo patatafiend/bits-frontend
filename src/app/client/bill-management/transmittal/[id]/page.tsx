@@ -360,6 +360,14 @@ export default function TransmittalDetailPage() {
                   </p>
                 </div>
                 <div>
+                  <p className="text-sm text-muted-foreground">
+                    Billing Cutoff
+                  </p>
+                  <p className="font-medium">
+                    {formatDate(transmittalData.billing_cutoff)}
+                  </p>
+                </div>
+                <div>
                   <p className="text-sm text-muted-foreground">Endorsed Date</p>
                   <p className="font-medium">
                     {formatDate(transmittalData.endorsed_date) ?? "-"}

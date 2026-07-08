@@ -184,7 +184,7 @@ export function AdminDashboard() {
         />
       </div>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <StatCard title="Transmittals" value={data?.total} />
+        <StatCard title="Invoices" value={data?.total} />
         <StatCard title="Pending" value={data?.pending} />
         <StatCard title="Endorsed" value={data?.endorsed} />
         <StatCard title="Forwarded" value={data?.forwarded} />
@@ -240,7 +240,7 @@ export function BillingAdminDashboard() {
         />
       </div>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <StatCard title="Transmittals" value={data?.total} />
+        <StatCard title="Invoices" value={data?.total} />
         <StatCard title="Pending" value={data?.pending} />
         <StatCard title="Endorsed" value={data?.endorsed} />
         <StatCard title="Forwarded" value={data?.forwarded} />
@@ -348,6 +348,7 @@ export function OperationsDashboard() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-2">
         <StatCard title="Assigned" value={data?.pending} />
         <StatCard title="Endorsed" value={data?.endorsed} />
+        <StatCard title="Forwarded" value={data?.forwarded} />
       </div>
       <ActionCard
         title="Operations Transmittals"
