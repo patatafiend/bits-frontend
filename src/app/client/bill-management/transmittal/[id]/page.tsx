@@ -356,7 +356,7 @@ export default function TransmittalDetailPage() {
                     Transmittal Date
                   </p>
                   <p className="font-medium">
-                    {formatDate(transmittalData.transmittal_date)}
+                    {formatDate(transmittalData.transmittal_date, false)}
                   </p>
                 </div>
                 <div>
@@ -364,7 +364,7 @@ export default function TransmittalDetailPage() {
                     Billing Cutoff
                   </p>
                   <p className="font-medium">
-                    {formatDate(transmittalData.billing_cutoff)}
+                    {formatDate(transmittalData.billing_cutoff, false)}
                   </p>
                 </div>
                 <div>

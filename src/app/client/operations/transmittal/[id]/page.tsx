@@ -304,6 +304,7 @@ export default function TransmittalDetailPage() {
                   enableItemActions
                   itemActionMode="draft"
                   onItemActionComplete={refetchTransmittals}
+                  refetchTransmittals={refetchTransmittal}
                 />
               </div>
             </CardContent>

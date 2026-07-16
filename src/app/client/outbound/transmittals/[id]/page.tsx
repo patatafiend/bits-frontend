@@ -255,6 +255,8 @@ export default function TransmittalDetailPage() {
                   itemActionMode="draft"
                   onItemActionComplete={refetchTransmittals}
                   requiredForwardStatus="endorsed"
+                  transmittalId={transmittalData.id}
+                  refetchTransmittals={refetchTransmittals}
                 />
               </div>
             </CardContent>

@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { FileText, AlertCircle, CheckCircle } from "lucide-react";
+import { FileText, AlertCircle, CheckCircle, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -48,6 +48,9 @@ import { useGetPresignedUrl } from "@/hooks/use-media";
 import Loader from "@/components/ui/loader";
 import { StatusBadge } from "@/components/status-badge";
 import { useCurrentUser } from "@/components/providers/auth-provider";
+import { useDeleteTransmittalItem } from "@/hooks/use-transmittal";
+import { useDeleteS3Object } from "@/hooks/use-media";
+import { DeleteItemDialog } from "@/app/client/bill-management/transmittal/[id]/dialogs";
 
 export function FileViewerModal({
   file,
@@ -409,6 +412,8 @@ export function SearchTransmittalItemsComponent({
   itemActionMode,
   onItemActionComplete,
   requiredForwardStatus = "pending",
+  transmittalId,
+  refetchTransmittals,
 }: {
   data: TransmittalItems[];
   loading: boolean;
@@ -419,6 +424,8 @@ export function SearchTransmittalItemsComponent({
   itemActionMode?: "draft" | "return";
   onItemActionComplete?: () => void;
   requiredForwardStatus?: string;
+  transmittalId?: number;
+  refetchTransmittals: () => void;
 }) {
   const [query, setQuery] = useState("");
   const [urlCache, setUrlCache] = useState<
@@ -432,6 +439,9 @@ export function SearchTransmittalItemsComponent({
     type: string;
   } | null>(null);
   const user = useCurrentUser();
+  const { execute: deleteTransmittalItem } = useDeleteTransmittalItem();
+  const { deleteObject: deleteS3Object, loading: deletingFile } =
+    useDeleteS3Object();
 
   useEffect(() => {
     const timeout = setTimeout(() => {
@@ -449,6 +459,25 @@ export function SearchTransmittalItemsComponent({
 
   function handleClear() {
     setQuery("");
+  }
+
+  async function handleDeleteItem(itemId: number, fileKey: string) {
+    const { error: s3Error } = await deleteS3Object(fileKey);
+    if (s3Error) {
+      toast.error("Failed to delete file from storage");
+      return;
+    }
+
+    const { error: dbError } = await deleteTransmittalItem({
+      params: `/${transmittalId}/items/${itemId}`,
+    });
+    if (dbError) {
+      toast.error("File removed from storage but failed to delete record");
+      return;
+    }
+
+    refetchTransmittals();
+    toast.success("File deleted successfully");
   }
 
   async function handleViewFile(
@@ -533,6 +562,12 @@ export function SearchTransmittalItemsComponent({
             >
               {loadingUrl ? "Loading..." : "View"}
             </Button>
+          )}
+          {isProofAttachment && user?.role == "billing officer" && (
+            <DeleteItemDialog
+              disabled={deletingFile}
+              onConfirm={() => handleDeleteItem(item.id, item.file_key)}
+            />
           )}
           {!isProofAttachment && (
             <>

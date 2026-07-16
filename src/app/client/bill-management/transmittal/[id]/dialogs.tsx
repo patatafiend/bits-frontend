@@ -1444,7 +1444,7 @@ const returnReasonSchema = z.object({
 
 type ReturnReasonFormValues = z.infer<typeof returnReasonSchema>;
 
-function DeleteItemDialog({
+export function DeleteItemDialog({
   onConfirm,
   disabled,
 }: {
