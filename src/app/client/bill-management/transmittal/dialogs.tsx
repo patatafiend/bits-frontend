@@ -727,16 +727,16 @@ export function SearchTransmittalComponent({
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <Input
           type="text"
           placeholder="Search transmittal, billing TM, or date..."
           value={query}
           onChange={handleQueryChange}
-          className="max-w-md"
+          className="w-full sm:w-auto sm:max-w-md sm:flex-1"
         />
         <Select value={statusFilter} onValueChange={handleStatusChange}>
-          <SelectTrigger className="w-40">
+          <SelectTrigger className="w-full sm:w-40">
             <SelectValue placeholder="Status" />
           </SelectTrigger>
           <SelectContent>
@@ -764,14 +764,14 @@ export function SearchTransmittalComponent({
           allowNull
           nullLabel="All"
           placeholder="Business unit"
-          className="w-56"
+          className="w-full sm:w-56"
         />
 
         <Select
           value={opsAdminFilter !== null ? String(opsAdminFilter) : "all"}
           onValueChange={handleOpsAdminChange}
         >
-          <SelectTrigger className="w-44">
+          <SelectTrigger className="w-full sm:w-44">
             <SelectValue placeholder="Ops Admin" />
           </SelectTrigger>
           <SelectContent>
@@ -790,7 +790,7 @@ export function SearchTransmittalComponent({
           }
           onValueChange={handleBillingOfficerChange}
         >
-          <SelectTrigger className="w-44">
+          <SelectTrigger className="w-full sm:w-40">
             <SelectValue placeholder="Billing Officer" />
           </SelectTrigger>
           <SelectContent>
@@ -804,7 +804,7 @@ export function SearchTransmittalComponent({
         </Select>
 
         <Select value={orderBy} onValueChange={handleOrderByChange}>
-          <SelectTrigger className="w-40">
+          <SelectTrigger className="w-full sm:w-40">
             <SelectValue placeholder="Order by" />
           </SelectTrigger>
           <SelectContent>
@@ -829,7 +829,12 @@ export function SearchTransmittalComponent({
         </Select>
 
         {isDirty && (
-          <Button variant="ghost" size="sm" onClick={handleClear}>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleClear}
+            className="w-full sm:w-auto"
+          >
             Clear
           </Button>
         )}
@@ -838,32 +843,37 @@ export function SearchTransmittalComponent({
       {loading ? (
         <Loader loading={loading} />
       ) : (data?.items?.length ?? 0) > 0 ? (
-        <TransmittalList
-          data={data.items}
-          page={page}
-          setPage={setPage}
-          limit={limit}
-          total={data.total}
-          onSuccess={() => {
-            const normalizedQuery = query.trim();
-            const isBillingQuery = /^btm/i.test(normalizedQuery);
+        <div className="overflow-x-auto">
+          {" "}
+          <TransmittalList
+            data={data.items}
+            page={page}
+            setPage={setPage}
+            limit={limit}
+            total={data.total}
+            onSuccess={() => {
+              const normalizedQuery = query.trim();
+              const isBillingQuery = /^btm/i.test(normalizedQuery);
 
-            onFilter({
-              search: isBillingQuery ? undefined : normalizedQuery || undefined,
-              billing_transmittal_number: isBillingQuery
-                ? normalizedQuery
-                : undefined,
-              status: statusFilter,
-              business_unit_id: businessUnitFilter,
-              limit: limit,
-              skip: (page - 1) * limit,
-              order_by: orderBy,
-              page: page,
-              assigned_operation_admin: opsAdminFilter,
-              assigned_billing_officer: billingOfficerFilter,
-            });
-          }}
-        />
+              onFilter({
+                search: isBillingQuery
+                  ? undefined
+                  : normalizedQuery || undefined,
+                billing_transmittal_number: isBillingQuery
+                  ? normalizedQuery
+                  : undefined,
+                status: statusFilter,
+                business_unit_id: businessUnitFilter,
+                limit: limit,
+                skip: (page - 1) * limit,
+                order_by: orderBy,
+                page: page,
+                assigned_operation_admin: opsAdminFilter,
+                assigned_billing_officer: billingOfficerFilter,
+              });
+            }}
+          />
+        </div>
       ) : (
         <p className="text-sm text-muted-foreground py-4 text-center">
           No transmittals match your search.

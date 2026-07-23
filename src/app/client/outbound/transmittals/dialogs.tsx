@@ -28,7 +28,7 @@ import {
   PaginationLink,
   PaginationPrevious,
   PaginationNext,
-  PaginationEllipsis
+  PaginationEllipsis,
 } from "@/components/ui/pagination";
 import Loader from "@/components/ui/loader";
 import { StatusBadge } from "@/components/status-badge";
@@ -204,14 +204,7 @@ export function SearchTransmittalComponent({
     }, 350);
     return () => clearTimeout(timeout);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    query,
-    statusFilter,
-    businessUnitFilter,
-    page,
-    orderBy,
-    limit,
-  ]);
+  }, [query, statusFilter, businessUnitFilter, page, orderBy, limit]);
 
   function handleQueryChange(e: React.ChangeEvent<HTMLInputElement>) {
     setQuery(e.target.value);
@@ -256,16 +249,16 @@ export function SearchTransmittalComponent({
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <Input
           type="text"
           placeholder="Search transmittal, billing TM, or date..."
           value={query}
           onChange={handleQueryChange}
-          className="max-w-md"
+          className="w-full sm:w-auto sm:max-w-md sm:flex-1"
         />
         <Select value={statusFilter} onValueChange={handleStatusChange}>
-          <SelectTrigger className="w-40">
+          <SelectTrigger className="w-full sm:w-40">
             <SelectValue placeholder="Status" />
           </SelectTrigger>
           <SelectContent>
@@ -282,11 +275,11 @@ export function SearchTransmittalComponent({
           allowNull
           nullLabel="All"
           placeholder="Business unit"
-          className="w-56"
+          className="w-full sm:w-56"
         />
 
         <Select value={orderBy} onValueChange={handleOrderByChange}>
-          <SelectTrigger className="w-40">
+          <SelectTrigger className="w-full sm:w-44">
             <SelectValue placeholder="Order by" />
           </SelectTrigger>
           <SelectContent>
@@ -311,7 +304,12 @@ export function SearchTransmittalComponent({
         </Select>
 
         {isDirty && (
-          <Button variant="ghost" size="sm" onClick={handleClear}>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleClear}
+            className="w-full sm:w-auto"
+          >
             Clear
           </Button>
         )}
@@ -320,13 +318,15 @@ export function SearchTransmittalComponent({
       {loading ? (
         <Loader loading={loading} />
       ) : (data?.items?.length ?? 0) > 0 ? (
-        <TransmittalList
-          data={data.items}
-          page={page}
-          setPage={setPage}
-          limit={limit}
-          total={data.total}
-        />
+        <div className="overflow-x-auto">
+          <TransmittalList
+            data={data.items}
+            page={page}
+            setPage={setPage}
+            limit={limit}
+            total={data.total}
+          />
+        </div>
       ) : (
         <p className="text-sm text-muted-foreground py-4 text-center">
           No transmittals match your search.
