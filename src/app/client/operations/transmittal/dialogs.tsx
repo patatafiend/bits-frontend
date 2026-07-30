@@ -58,7 +58,7 @@ export function TransmittalList({
         <TableHeader>
           <TableRow>
             <TableHead>Transmittal Number</TableHead>
-            <TableHead>Billing TM Number</TableHead>
+            <TableHead className="max-w-[160px]">Billing TM Number</TableHead>
             <TableHead>Date</TableHead>
             <TableHead>Created By</TableHead>
             <TableHead>Status</TableHead>
@@ -71,7 +71,7 @@ export function TransmittalList({
               <TableCell className="font-medium">
                 {transmittal.transmittal_number}
               </TableCell>
-              <TableCell>
+              <TableCell className="max-w-[160px] whitespace-normal break-words">
                 {transmittal.billing_transmittal_number ?? "-"}
               </TableCell>
               <TableCell>{transmittal.transmittal_date}</TableCell>
