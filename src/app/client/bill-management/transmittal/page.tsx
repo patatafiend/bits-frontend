@@ -60,8 +60,7 @@ function TransmittalListComponent() {
       newParams.set("business_unit", String(params.business_unit));
     if (params.order_by && params.order_by !== "recent")
       newParams.set("order_by", params.order_by);
-    if (params.ops_admin)
-      newParams.set("ops_admin", String(params.ops_admin));
+    if (params.ops_admin) newParams.set("ops_admin", String(params.ops_admin));
     if (params.billing_officer)
       newParams.set("billing_officer", String(params.billing_officer));
 
@@ -73,7 +72,8 @@ function TransmittalListComponent() {
 
   const isAdmin =
     user?.account_type === "company_account" ||
-    user?.account_type === "admin_account";
+    user?.account_type === "admin_account" ||
+    user?.account_type === "super_admin_account";
 
   function refetchTransmittals(params: {
     search?: string;
